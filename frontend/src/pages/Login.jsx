@@ -48,9 +48,6 @@ export default function Login() {
         </form>
 
         <div className="hr" />
-        <div className="small">
-          Default admin after seeding: <span className="badge">admin@local.com / admin123</span>
-        </div>
       </div>
     </div>
     </>
