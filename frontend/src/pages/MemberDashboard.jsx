@@ -55,69 +55,49 @@ export default function MemberDashboard() {
       <div className="topbar">
 <div
   style={{
-    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    borderRadius: 20,
-    padding: "22px 20px 18px",
+    background: "linear-gradient(135deg, #6d7bf3, #7b4da8)",
+    borderRadius: 22,
+    padding: "26px 30px",
     color: "#fff",
-    textAlign: "center",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
+    boxShadow: "0 15px 40px rgba(0,0,0,0.25)",
+    marginBottom: 28,
+    position: "relative",
   }}
 >
-  {/* Logo + Brand */}
+  {/* Brand Row */}
   <div
     style={{
       display: "flex",
       alignItems: "center",
-      justifyContent: "center",
       gap: 14,
       marginBottom: 12,
     }}
   >
-    {/* TK Logo */}
-    <svg
-      width="52"
-      height="52"
-      viewBox="0 0 100 100"
-      xmlns="http://www.w3.org/2000/svg"
-      style={{ filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.35))" }}
+    {/* Logo */}
+    <div
+      style={{
+        width: 46,
+        height: 46,
+        borderRadius: 12,
+        background: "linear-gradient(135deg, #FFD700, #FFB300)",
+        color: "#1e1e1e",
+        fontWeight: 900,
+        fontSize: 22,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        boxShadow: "0 6px 15px rgba(0,0,0,0.3)",
+      }}
     >
-      <defs>
-        <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FFD700" />
-          <stop offset="50%" stopColor="#FFA500" />
-          <stop offset="100%" stopColor="#DAA520" />
-        </linearGradient>
+      TK
+    </div>
 
-        <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#1E3A8A" />
-          <stop offset="100%" stopColor="#3B82F6" />
-        </linearGradient>
-      </defs>
-
-      {/* T */}
-      <path
-        d="M10 15 H90 V30 H60 V85 H40 V30 H10 Z"
-        fill="url(#goldGrad)"
-      />
-
-      {/* K */}
-      <path
-        d="M60 15 V85 H75 V55 L90 85 H110 L85 50 L110 15 H90 L75 40 V15 Z"
-        fill="url(#blueGrad)"
-        transform="scale(0.7) translate(35 20)"
-      />
-    </svg>
-
-    {/* Brand Text */}
     <h2
       style={{
         margin: 0,
         fontSize: "1.9rem",
         fontWeight: 800,
-        letterSpacing: "1.5px",
-        background: "linear-gradient(90deg, #ffffff, #e5e7eb)",
-        WebkitBackgroundClip: "text",
-        WebkitTextFillColor: "transparent",
+        letterSpacing: "1px",
       }}
     >
       TK Branding
@@ -125,23 +105,27 @@ export default function MemberDashboard() {
   </div>
 
   {/* User Info */}
-  <div className="small" style={{ opacity: 0.95 }}>
-    Welcome,{" "}
-    <b style={{ color: "#FFD700", fontWeight: 600 }}>
-      {me?.nickname}
-    </b>{" "}
-    (ID: {me?.short_id || me?.id})
+  <div style={{ fontSize: 14, opacity: 0.95 }}>
+    Welcome,&nbsp;
+    <b style={{ color: "#FFD700" }}>{me?.nickname}</b>
   </div>
 
-  <div className="small" style={{ marginTop: 4, opacity: 0.95 }}>
-    Sponsor ID:{" "}
-    <b style={{ color: "#FFD700", fontWeight: 600 }}>
-      {me?.sponsor_short_id}
-    </b>
+  <div style={{ fontSize: 13, opacity: 0.85, marginTop: 4 }}>
+    ID: {me?.short_id || me?.id} · Sponsor:{" "}
+    <b style={{ color: "#FFD700" }}>{me?.sponsor_short_id}</b>
   </div>
+
+  {/* Divider */}
+  <div
+    style={{
+      height: 1,
+      background: "rgba(255,255,255,0.25)",
+      marginTop: 14,
+    }}
+  />
 </div>
 
-        
+
         <button className="btn danger" onClick={logout}>Logout</button>
       </div>
 
