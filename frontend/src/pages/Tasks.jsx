@@ -184,7 +184,7 @@ export default function Tasks() {
                 >
                   {t.image_url && (
                     <img
-                      src={t.image_url}
+                      src={`http://159.198.40.145:5010${t.image_url}`}
                       alt=""
                       style={{
                         width: 80,
