@@ -56,6 +56,11 @@ export default function MemberDashboard() {
           <div className="small">
             Welcome, <b>{me?.nickname}</b> (ID: {me?.short_id || me?.id})
           </div>
+
+			<div className="small">
+				Sponsor ID: <b>{me?.sponsor_id}</b>
+			</div>
+
         </div>
         <button className="btn danger" onClick={logout}>Logout</button>
       </div>
@@ -101,7 +106,7 @@ export default function MemberDashboard() {
               <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
                 {data.current_task.image_url && (
                   <img
-                    src={data.current_task.image_url}
+                    src={`${import.meta.env.VITE_API_URL}${data.current_task.image_url}`}
                     alt=""
                     style={{
                       width: 110,
