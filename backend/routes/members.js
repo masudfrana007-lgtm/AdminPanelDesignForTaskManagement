@@ -10,8 +10,6 @@ const router = express.Router();
 
 /**
  * Create Member
- * owner/agent can create members
- * sponsor_id = req.user.id (FK → users.id)
  */
 router.post("/", auth, allowRoles("owner", "agent"), async (req, res) => {
   const parsed = memberCreateSchema.safeParse(req.body);
@@ -43,8 +41,7 @@ router.post("/", auth, allowRoles("owner", "agent"), async (req, res) => {
            sponsor_id, ranking, withdraw_privilege, created_by)
          VALUES
           ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-         RETURNING id, short_id, nickname, email, phone, country,
-                   sponsor_id, ranking, withdraw_privilege, created_at`,
+         RETURNING id, short_id, nickname, email, phone, country, sponsor_id, ranking, withdraw_privilege, created_by, created_at`,
         [
           shortId,
           nickname,
@@ -53,7 +50,7 @@ router.post("/", auth, allowRoles("owner", "agent"), async (req, res) => {
           country,
           passHash,
           pinHash,
-          req.user.id, // ✅ numeric FK
+          req.user.id, // store numeric id
           ranking,
           withdraw_privilege === "Enabled",
           req.user.id,
@@ -63,7 +60,6 @@ router.post("/", auth, allowRoles("owner", "agent"), async (req, res) => {
       return res.status(201).json(r.rows[0]);
     } catch (e) {
       if (String(e).includes("members_short_id_key")) continue;
-      console.error(e);
       return res.status(500).json({ message: "Server error" });
     }
   }
@@ -71,61 +67,54 @@ router.post("/", auth, allowRoles("owner", "agent"), async (req, res) => {
 
 /**
  * List Members
- * agent → only their members
- * owner → own + their agents' members
  */
 router.get("/", auth, allowRoles("owner", "agent"), async (req, res) => {
-  try {
-    if (req.user.role === "agent") {
-      const r = await pool.query(
-        `SELECT 
-           m.id,
-           m.short_id,
-           m.nickname,
-           m.email,
-           m.phone,
-           m.country,
-           u.short_id AS sponsor_short_id,
-           m.ranking,
-           m.withdraw_privilege,
-           m.created_at
-         FROM members m
-         JOIN users u ON u.id = m.sponsor_id
-         WHERE m.sponsor_id = $1
-         ORDER BY m.id DESC`,
-        [req.user.id]
-      );
-      return res.json(r.rows);
-    }
-
-    // owner
+  if (req.user.role === "agent") {
     const r = await pool.query(
       `SELECT 
-           m.id,
-           m.short_id,
-           m.nickname,
-           m.email,
-           m.phone,
-           m.country,
-           u.short_id AS sponsor_short_id,
-           m.ranking,
-           m.withdraw_privilege,
-           m.created_at
+         m.id,
+         m.short_id,
+         m.nickname,
+         m.email,
+         m.phone,
+         m.country,
+         u.short_id AS sponsor_short_id,
+         m.ranking,
+         m.withdraw_privilege,
+         m.created_at
        FROM members m
        JOIN users u ON u.id = m.sponsor_id
        WHERE m.sponsor_id = $1
-          OR m.sponsor_id IN (
-            SELECT id FROM users WHERE created_by = $1 AND role = 'agent'
-          )
        ORDER BY m.id DESC`,
       [req.user.id]
     );
-
-    res.json(r.rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
+    return res.json(r.rows);
   }
+
+  // owner
+  const r = await pool.query(
+    `SELECT 
+         m.id,
+         m.short_id,
+         m.nickname,
+         m.email,
+         m.phone,
+         m.country,
+         u.short_id AS sponsor_short_id,
+         m.ranking,
+         m.withdraw_privilege,
+         m.created_at
+     FROM members m
+     JOIN users u ON u.id = m.sponsor_id
+     WHERE m.sponsor_id = $1
+        OR m.sponsor_id IN (
+          SELECT id FROM users WHERE created_by = $1 AND role = 'agent'
+        )
+     ORDER BY m.id DESC`,
+    [req.user.id]
+  );
+
+  res.json(r.rows);
 });
 
 export default router;
