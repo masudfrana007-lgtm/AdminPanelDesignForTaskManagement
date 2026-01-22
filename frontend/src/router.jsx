@@ -47,8 +47,14 @@ export const router = createBrowserRouter([
         <Members />
       </ProtectedRoute>
     )
-  }
+  },   
 
-  { path: "/members/create", element: <ProtectedRoute roles={["owner","agent"]}><CreateMember /></ProtectedRoute> },
-
+  {
+    path: "/members/create",
+    element: (
+      <ProtectedRoute roles={["owner","agent"]}>
+        <CreateMember />
+      </ProtectedRoute>
+    )
+  },
 ]);
