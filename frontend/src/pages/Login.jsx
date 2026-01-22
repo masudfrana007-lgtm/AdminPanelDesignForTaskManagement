@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { saveAuth } from "../auth";
 import "../styles/app.css";
-import TopMenu from "../components/TopMenu";
 
 export default function Login() {
   const nav = useNavigate();
@@ -24,8 +23,6 @@ export default function Login() {
   };
 
   return (
-     <>
-    <TopMenu />
     <div className="container" style={{ maxWidth: 480, marginTop: 70 }}>
       <div className="card">
         <h2>Login</h2>
@@ -50,6 +47,5 @@ export default function Login() {
         <div className="hr" />
       </div>
     </div>
-    </>
   );
 }

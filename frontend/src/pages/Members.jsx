@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import api from "../services/api";
 import { getUser } from "../auth";
 import "../styles/app.css";
-import TopMenu from "../components/TopMenu";
+import AppLayout from "../components/AppLayout";
 
 const RANKS = ["Trial", "V1", "V2", "V3", "V4", "V5", "V6"];
 
@@ -66,8 +66,7 @@ export default function Members() {
   };
 
   return (
-    <>
-      <TopMenu />
+    <AppLayout>
       <div className="container">
         <div className="topbar">
           <div>
@@ -200,6 +199,6 @@ export default function Members() {
           </table>
         </div>
       </div>
-    </>
+  </AppLayout>
   );
 }

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../services/api";
 import "../styles/app.css";
-import TopMenu from "../components/TopMenu";
+import AppLayout from "../components/AppLayout";
 
 export default function Sets() {
   const [sets, setSets] = useState([]);
@@ -80,8 +80,7 @@ export default function Sets() {
   const max = selectedSet?.max_tasks ?? 0;
 
   return (
-     <>
-    <TopMenu />
+    <AppLayout>
     <div className="container">
       <h2>Sets (Packages)</h2>
 
@@ -172,6 +171,6 @@ export default function Sets() {
         </div>
       </div>
     </div>
-    </>
+  </AppLayout>
   );
 }

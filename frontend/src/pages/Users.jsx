@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import api from "../services/api";
 import { getUser } from "../auth";
 import "../styles/app.css";
-import TopMenu from "../components/TopMenu";
+import AppLayout from "../components/AppLayout";
 
 export default function Users() {
   const me = getUser();
@@ -61,8 +61,7 @@ export default function Users() {
   };
 
   return (
-    <>
-      <TopMenu />
+    <AppLayout>
       <div className="container">
         <div className="topbar">
           <div>
@@ -170,6 +169,6 @@ export default function Users() {
           </div>
         </div>
       </div>
-    </>
+  </AppLayout>
   );
 }

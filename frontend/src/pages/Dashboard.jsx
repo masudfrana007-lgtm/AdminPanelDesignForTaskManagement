@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { getUser, logout } from "../auth";
 import "../styles/app.css";
-import TopMenu from "../components/TopMenu";
+import AppLayout from "../components/AppLayout";
 
 export default function Dashboard() {
   const user = getUser();
@@ -15,8 +15,7 @@ export default function Dashboard() {
   const role = user?.role;
 
   return (
-     <>
-    <TopMenu />
+    <AppLayout>
     <div className="container">
       <div className="topbar">
         <div>
@@ -64,6 +63,6 @@ export default function Dashboard() {
         </ul>
       </div>
     </div>
-     </>
+  </AppLayout>
   );
 }

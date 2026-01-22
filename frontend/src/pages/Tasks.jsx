@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../services/api";
 import "../styles/app.css";
-import TopMenu from "../components/TopMenu";
+import AppLayout from "../components/AppLayout";
 
 export default function Tasks() {
   const [list, setList] = useState([]);
@@ -31,8 +31,7 @@ export default function Tasks() {
   };
 
   return (
-     <>
-    <TopMenu />
+    <AppLayout>
     <div className="container">
       <h2>Tasks</h2>
       <div className="row">
@@ -73,6 +72,6 @@ export default function Tasks() {
         </div>
       </div>
     </div>
-    </>
+  </AppLayout>
   );
 }
