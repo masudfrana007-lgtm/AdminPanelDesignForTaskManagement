@@ -9,7 +9,7 @@ const router = express.Router();
  * Assign set to member
  * Rule: Only ONE active set per member
  */
-router.post("/", auth, allowRoles("owner", "agent"), async (req, res) => {
+router.post("/assign", auth, allowRoles("owner", "agent"), async (req, res) => {
   try {
     const { member_id, set_id } = req.body;
 
@@ -17,9 +17,9 @@ router.post("/", auth, allowRoles("owner", "agent"), async (req, res) => {
       return res.status(400).json({ message: "member_id and set_id required" });
     }
 
-    // Check if member already has active set
+    // Check active set
     const existing = await pool.query(
-      `SELECT * FROM member_sets 
+      `SELECT id FROM member_sets 
        WHERE member_id = $1 AND status = 'active'`,
       [member_id]
     );
@@ -56,12 +56,21 @@ router.get("/", auth, allowRoles("owner", "agent"), async (req, res) => {
       const r = await pool.query(
         `
         SELECT 
-          ms.*,
-          m.nickname,
-          m.email,
-          m.phone,
-          s.name as set_name,
+          ms.id,
+          ms.status,
+          ms.current_task_index,
+          ms.created_at,
+          ms.updated_at,
+
+          m.id AS member_id,
+          m.short_id AS member_short_id,
+          m.nickname AS member_nickname,
+          m.phone AS member_phone,
+
+          s.id AS set_id,
+          s.name AS set_name,
           s.max_tasks
+
         FROM member_sets ms
         JOIN members m ON m.id = ms.member_id
         JOIN sets s ON s.id = ms.set_id
@@ -78,12 +87,21 @@ router.get("/", auth, allowRoles("owner", "agent"), async (req, res) => {
     const r = await pool.query(
       `
       SELECT 
-        ms.*,
-        m.nickname,
-        m.email,
-        m.phone,
-        s.name as set_name,
+        ms.id,
+        ms.status,
+        ms.current_task_index,
+        ms.created_at,
+        ms.updated_at,
+
+        m.id AS member_id,
+        m.short_id AS member_short_id,
+        m.nickname AS member_nickname,
+        m.phone AS member_phone,
+
+        s.id AS set_id,
+        s.name AS set_name,
         s.max_tasks
+
       FROM member_sets ms
       JOIN members m ON m.id = ms.member_id
       JOIN sets s ON s.id = ms.set_id
