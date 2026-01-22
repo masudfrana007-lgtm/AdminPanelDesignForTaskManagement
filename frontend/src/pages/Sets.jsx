@@ -85,6 +85,51 @@ export default function Sets() {
   const currentCount = tasksInSet.length;
   const max = selectedSet?.max_tasks ?? 0;
 
+  const TaskCard = ({ t, actionLabel, onAction, danger }) => (
+    <div style={{
+      display: "flex",
+      gap: 12,
+      padding: 10,
+      border: "1px solid #e5e7eb",
+      borderRadius: 8,
+      marginBottom: 10,
+      alignItems: "center"
+    }}>
+      {t.image_url && (
+        <img
+          src={t.image_url}
+          alt=""
+          style={{
+            width: 80,
+            height: 80,
+            objectFit: "cover",
+            borderRadius: 6,
+            border: "1px solid #ddd"
+          }}
+        />
+      )}
+
+      <div style={{ flex: 1 }}>
+        <b>{t.title}</b>
+
+        <div className="small" style={{ marginTop: 4 }}>
+          Qty: {t.quantity} | Rate: {t.rate} | Commission: {t.commission_rate}%
+        </div>
+
+        <div className="small">
+          Price: <b>{t.price}</b>
+        </div>
+      </div>
+
+      <button
+        className={`btn small ${danger ? "danger" : ""}`}
+        onClick={onAction}
+      >
+        {actionLabel}
+      </button>
+    </div>
+  );
+
   return (
     <AppLayout>
       <div className="container">
@@ -133,9 +178,9 @@ export default function Sets() {
               <div className="small">Click “Open” to manage tasks inside set.</div>
               <div className="hr" />
 
-              <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.7 }}>
+              <ul style={{ paddingLeft: 0 }}>
                 {sets.map(s => (
-                  <li key={s.id}>
+                  <li key={s.id} style={{ marginBottom: 10, listStyle: "none" }}>
                     <button
                       className="btn small"
                       onClick={() => openSet(s.id)}
@@ -144,7 +189,6 @@ export default function Sets() {
                       Open
                     </button>
                     <b>{s.name}</b> <span className="badge">max {s.max_tasks}</span>
-                    <div className="small">created_by: {s.created_by}</div>
                   </li>
                 ))}
               </ul>
@@ -174,92 +218,37 @@ export default function Sets() {
                   <div style={{ marginBottom: 14 }}>
                     <div className="small"><b>Tasks inside set</b></div>
 
-                    <ul style={{ margin: 8, paddingLeft: 18, lineHeight: 1.7 }}>
-                      {tasksInSet.map(t => (
-                        <li key={t.id} style={{ marginBottom: 10 }}>
-                          <b>{t.title}</b>
+                    {tasksInSet.map(t => (
+                      <TaskCard
+                        key={t.id}
+                        t={t}
+                        actionLabel="Remove"
+                        danger
+                        onAction={() => removeTask(t.id)}
+                      />
+                    ))}
 
-                          {t.image_url && (
-                            <div>
-                              <img
-                                src={t.image_url}
-                                alt=""
-                                style={{
-                                  width: 90,
-                                  marginTop: 6,
-                                  borderRadius: 6,
-                                  border: "1px solid #ddd"
-                                }}
-                              />
-                            </div>
-                          )}
-
-                          <div className="small">
-                            Qty: {t.quantity} | Rate: {t.rate} | Commission: {t.commission_rate}%
-                          </div>
-
-                          <div className="small">
-                            Price: <b>{t.price}</b>
-                          </div>
-
-                          <button
-                            className="btn small danger"
-                            style={{ marginTop: 6 }}
-                            onClick={() => removeTask(t.id)}
-                          >
-                            remove
-                          </button>
-                        </li>
-                      ))}
-
-                      {!tasksInSet.length && (
-                        <li className="small">No tasks added yet.</li>
-                      )}
-                    </ul>
+                    {!tasksInSet.length && (
+                      <div className="small">No tasks added yet.</div>
+                    )}
                   </div>
 
                   {/* Add Task */}
                   <div>
                     <div className="small"><b>Add a task</b></div>
 
-                    <ul style={{ margin: 8, paddingLeft: 18, lineHeight: 1.7 }}>
-                      {availableTasks.map(t => (
-                        <li key={t.id} style={{ marginBottom: 10 }}>
-                          <b>{t.title}</b>
+                    {availableTasks.map(t => (
+                      <TaskCard
+                        key={t.id}
+                        t={t}
+                        actionLabel="Add"
+                        onAction={() => addTask(t.id)}
+                      />
+                    ))}
 
-                          {t.image_url && (
-                            <div>
-                              <img
-                                src={t.image_url}
-                                alt=""
-                                style={{
-                                  width: 70,
-                                  marginTop: 6,
-                                  borderRadius: 6,
-                                  border: "1px solid #ddd"
-                                }}
-                              />
-                            </div>
-                          )}
-
-                          <div className="small">
-                            Qty: {t.quantity} | Price: <b>{t.price}</b>
-                          </div>
-
-                          <button
-                            className="btn small"
-                            style={{ marginTop: 6 }}
-                            onClick={() => addTask(t.id)}
-                          >
-                            add
-                          </button>
-                        </li>
-                      ))}
-
-                      {!availableTasks.length && (
-                        <li className="small">All tasks are already in this set.</li>
-                      )}
-                    </ul>
+                    {!availableTasks.length && (
+                      <div className="small">All tasks are already in this set.</div>
+                    )}
                   </div>
                 </>
               )}

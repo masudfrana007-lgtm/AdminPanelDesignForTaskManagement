@@ -16,31 +16,25 @@ export default function Tasks() {
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
 
-  // --------------------
-  // Auto Price Preview
-  // --------------------
-  const pricePreview = useMemo(() => {
-    const qty = Number(form.quantity || 0);
-    const rate = Number(form.rate || 0);
-    const commission = Number(form.commission_rate || 0);
-
-    const base = qty * rate;
-    const commissionAmount = (base * commission) / 100;
-    return (base + commissionAmount).toFixed(2);
-  }, [form.quantity, form.rate, form.commission_rate]);
-
   const load = async () => {
     const { data } = await api.get("/tasks");
     setList(data);
   };
 
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
+
+  // Live price preview
+  const previewPrice = useMemo(() => {
+    const q = Number(form.quantity || 0);
+    const r = Number(form.rate || 0);
+    const c = Number(form.commission_rate || 0);
+    const base = q * r;
+    return base + (base * c) / 100;
+  }, [form.quantity, form.rate, form.commission_rate]);
 
   const create = async (e) => {
     e.preventDefault();
-    setErr("");
+    setErr(""); 
     setOk("");
 
     try {
@@ -79,23 +73,18 @@ export default function Tasks() {
         <h2>Tasks</h2>
 
         <div className="row">
-          {/* ------------------ */}
-          {/* Create Task */}
-          {/* ------------------ */}
+          {/* Create */}
           <div className="col">
             <div className="card">
               <h3>Create Task (Owner)</h3>
               <div className="hr" />
 
-              <form onSubmit={create} style={{ display: "grid", gap: 10 }}>
+              <form onSubmit={create} style={{ display: "grid", gap: 12 }}>
                 <div>
                   <div className="small">Title</div>
                   <input
                     value={form.title}
-                    onChange={(e) =>
-                      setForm(p => ({ ...p, title: e.target.value }))
-                    }
-                    required
+                    onChange={(e) => setForm(p => ({ ...p, title: e.target.value }))}
                   />
                 </div>
 
@@ -103,136 +92,128 @@ export default function Tasks() {
                   <div className="small">Description</div>
                   <textarea
                     value={form.description}
-                    onChange={(e) =>
-                      setForm(p => ({ ...p, description: e.target.value }))
-                    }
+                    onChange={(e) => setForm(p => ({ ...p, description: e.target.value }))}
                   />
                 </div>
 
-                <div>
-                  <div className="small">Quantity</div>
-                  <input
-                    type="number"
-                    min="1"
-                    value={form.quantity}
-                    onChange={(e) =>
-                      setForm(p => ({ ...p, quantity: e.target.value }))
-                    }
-                  />
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div>
+                    <div className="small">Quantity</div>
+                    <input
+                      type="number"
+                      value={form.quantity}
+                      onChange={(e) => setForm(p => ({ ...p, quantity: e.target.value }))}
+                    />
+                  </div>
+
+                  <div>
+                    <div className="small">Rate</div>
+                    <input
+                      type="number"
+                      value={form.rate}
+                      onChange={(e) => setForm(p => ({ ...p, rate: e.target.value }))}
+                    />
+                  </div>
                 </div>
 
                 <div>
                   <div className="small">Commission Rate (%)</div>
                   <input
                     type="number"
-                    min="0"
                     value={form.commission_rate}
-                    onChange={(e) =>
-                      setForm(p => ({ ...p, commission_rate: e.target.value }))
-                    }
+                    onChange={(e) => setForm(p => ({ ...p, commission_rate: e.target.value }))}
                   />
                 </div>
 
-                <div>
-                  <div className="small">Rate</div>
-                  <input
-                    type="number"
-                    min="0"
-                    value={form.rate}
-                    onChange={(e) =>
-                      setForm(p => ({ ...p, rate: e.target.value }))
-                    }
-                  />
+                {/* Live Price Preview */}
+                <div className="card" style={{ background: "#f9fafb", padding: 10 }}>
+                  <div className="small">Auto Calculated Price</div>
+                  <h3 style={{ margin: 0 }}>{previewPrice.toFixed(2)}</h3>
                 </div>
 
-                {/* ------------------ */}
-                {/* Auto Price Preview */}
-                {/* ------------------ */}
-                <div>
-                  <div className="small">Auto Price</div>
-                  <input value={pricePreview} disabled />
-                </div>
-
-                {/* ------------------ */}
-                {/* Image Upload */}
-                {/* ------------------ */}
                 <div>
                   <div className="small">Image</div>
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) =>
-                      setForm(p => ({ ...p, image: e.target.files[0] }))
-                    }
+                    onChange={(e) => setForm(p => ({ ...p, image: e.target.files[0] }))}
                   />
-
-                  {/* Image Preview */}
-                  {form.image && (
-                    <img
-                      src={URL.createObjectURL(form.image)}
-                      alt="preview"
-                      style={{
-                        width: 120,
-                        marginTop: 8,
-                        borderRadius: 8,
-                        border: "1px solid #ddd"
-                      }}
-                    />
-                  )}
                 </div>
+
+                {/* Image preview */}
+                {form.image && (
+                  <img
+                    src={URL.createObjectURL(form.image)}
+                    alt=""
+                    style={{
+                      width: 120,
+                      marginTop: 6,
+                      borderRadius: 8,
+                      border: "1px solid #ddd"
+                    }}
+                  />
+                )}
 
                 {err && <div className="error">{err}</div>}
                 {ok && <div className="ok">{ok}</div>}
 
-                <button className="btn" type="submit">
-                  Create
-                </button>
+                <button className="btn" type="submit">Create</button>
               </form>
             </div>
           </div>
 
-          {/* ------------------ */}
-          {/* Task List */}
-          {/* ------------------ */}
+          {/* List */}
           <div className="col">
             <div className="card">
               <h3>All Tasks</h3>
-              <div className="small">
-                Agents can view tasks created by their owner.
-              </div>
+              <div className="small">Agents can view tasks created by their owner.</div>
               <div className="hr" />
 
-              <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.7 }}>
-                {list.map(t => (
-                  <li key={t.id}>
+              {list.map(t => (
+                <div
+                  key={t.id}
+                  style={{
+                    display: "flex",
+                    gap: 12,
+                    border: "1px solid #e5e7eb",
+                    borderRadius: 8,
+                    padding: 10,
+                    marginBottom: 10,
+                    alignItems: "center"
+                  }}
+                >
+                  {t.image_url && (
+                    <img
+                      src={t.image_url}
+                      alt=""
+                      style={{
+                        width: 80,
+                        height: 80,
+                        objectFit: "cover",
+                        borderRadius: 6,
+                        border: "1px solid #ddd"
+                      }}
+                    />
+                  )}
+
+                  <div style={{ flex: 1 }}>
                     <b>{t.title}</b>
                     <div className="small">{t.description || ""}</div>
 
-                    {t.image_url && (
-                      <img
-                        src={t.image_url}
-                        alt=""
-                        style={{
-                          width: 90,
-                          marginTop: 6,
-                          borderRadius: 6,
-                          border: "1px solid #ddd"
-                        }}
-                      />
-                    )}
-
-                    <div className="small">
+                    <div className="small" style={{ marginTop: 4 }}>
                       Qty: {t.quantity} | Rate: {t.rate} | Commission: {t.commission_rate}%
                     </div>
 
                     <div className="small">
                       Price: <b>{t.price}</b>
                     </div>
-                  </li>
-                ))}
+                  </div>
+                </div>
+              ))}
 
-                {!list.length && <li className="small">No tasks yet.</li>}
-              </ul>
+              {!list.length && (
+                <div className="small">No tasks yet.</div>
+              )}
             </div>
           </div>
         </div>
