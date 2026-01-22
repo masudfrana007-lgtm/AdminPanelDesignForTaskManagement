@@ -1,6 +1,9 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
+import fs from "fs";
+
 dotenv.config();
 
 import authRoutes from "./routes/auth.js";
@@ -12,6 +15,16 @@ import membersRouter from "./routes/members.js";
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// ---------------------------
+// ENABLE IMAGE SERVING
+// ---------------------------
+const uploadsDir = path.join(process.cwd(), "uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+app.use("/uploads", express.static(uploadsDir));
+// ---------------------------
 
 app.get("/", (req, res) => res.json({ ok: true, service: "admin-owner-agent-backend" }));
 
