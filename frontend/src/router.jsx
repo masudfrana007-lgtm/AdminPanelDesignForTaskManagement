@@ -5,11 +5,46 @@ import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
 import Tasks from "./pages/Tasks";
 import Sets from "./pages/Sets";
+import Members from "./pages/Members"; // ← ADD THIS
 
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
+
   { path: "/", element: <ProtectedRoute><Dashboard /></ProtectedRoute> },
-  { path: "/users", element: <ProtectedRoute roles={["admin","owner"]}><Users /></ProtectedRoute> },
-  { path: "/tasks", element: <ProtectedRoute roles={["owner"]}><Tasks /></ProtectedRoute> },
-  { path: "/sets", element: <ProtectedRoute roles={["owner","agent"]}><Sets /></ProtectedRoute> }
+
+  {
+    path: "/users",
+    element: (
+      <ProtectedRoute roles={["admin","owner"]}>
+        <Users />
+      </ProtectedRoute>
+    )
+  },
+
+  {
+    path: "/tasks",
+    element: (
+      <ProtectedRoute roles={["owner"]}>
+        <Tasks />
+      </ProtectedRoute>
+    )
+  },
+
+  {
+    path: "/sets",
+    element: (
+      <ProtectedRoute roles={["owner","agent"]}>
+        <Sets />
+      </ProtectedRoute>
+    )
+  },
+
+  {
+    path: "/members",
+    element: (
+      <ProtectedRoute roles={["owner","agent"]}>
+        <Members />
+      </ProtectedRoute>
+    )
+  }
 ]);
