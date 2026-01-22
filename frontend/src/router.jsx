@@ -7,6 +7,8 @@ import Tasks from "./pages/Tasks";
 import Sets from "./pages/Sets";
 import Members from "./pages/Members"; // ← ADD THIS
 import CreateMember from "./pages/CreateMember";
+import AssignSets from "./pages/AssignSets";
+import AssignSetCreate from "./pages/AssignSetCreate"; // ✅ add
 
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
@@ -57,4 +59,23 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     )
   },
+
+  {
+    path: "/assign-sets",
+    element: (
+      <ProtectedRoute roles={["owner","agent"]}>
+        <AssignSets />
+      </ProtectedRoute>
+    )
+  },
+
+  {
+    path: "/assign-sets/create",
+    element: (
+      <ProtectedRoute roles={["owner","agent"]}>
+        <AssignSetCreate />
+      </ProtectedRoute>
+    )
+  },
+  
 ]);

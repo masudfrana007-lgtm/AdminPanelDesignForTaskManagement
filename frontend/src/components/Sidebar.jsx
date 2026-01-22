@@ -7,6 +7,7 @@ import {
   FaUserFriends,
   FaTasks,
   FaBoxOpen,
+  FaClipboardList, // ✅ add
 } from "react-icons/fa";
 
 export default function Sidebar({ collapsed, onItemClick }) {
@@ -78,6 +79,7 @@ export default function Sidebar({ collapsed, onItemClick }) {
       {(role === "owner" || role === "agent") && (
         <>
           <div className="sidebar-section">Packages</div>
+
           <NavLink
             to="/sets"
             className={linkClass}
@@ -86,6 +88,17 @@ export default function Sidebar({ collapsed, onItemClick }) {
           >
             <FaBoxOpen />
             {label("Manage Sets")}
+          </NavLink>
+
+          {/* ✅ NEW: Manage Assign Sets */}
+          <NavLink
+            to="/assign-sets"
+            className={linkClass}
+            title="Manage Assign Sets"
+            onClick={onItemClick}
+          >
+            <FaClipboardList />
+            {label("Manage Assign Sets")}
           </NavLink>
         </>
       )}
