@@ -12,6 +12,7 @@ export default function MemberDashboard() {
   const [data, setData] = useState(null);
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
+  const [showCongrats, setShowCongrats] = useState(false);
 
   const load = async () => {
     setErr(""); setOk("");
@@ -24,6 +25,14 @@ export default function MemberDashboard() {
   };
 
   useEffect(() => { load(); }, []);
+
+	useEffect(() => {
+	  if (data?.assignment?.status === "completed") {
+	    setShowCongrats(true);
+	    const t = setTimeout(() => setShowCongrats(false), 10000);
+	    return () => clearTimeout(t);
+	  }
+	}, [data?.assignment?.status]);
 
   const fmt = (d) => {
     if (!d) return "-";
@@ -126,7 +135,7 @@ export default function MemberDashboard() {
 </div>
 
 
-        
+
         <button className="btn danger" onClick={logout}>Logout</button>
       </div>
 
@@ -219,6 +228,94 @@ export default function MemberDashboard() {
         </>
       )}
     </div>
+
+{showCongrats && (
+  <>
+    <style>{`
+      .congrats-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.75);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.5s ease;
+      }
+
+      .congrats-box {
+        background: linear-gradient(135deg, #ffd700, #ff9800);
+        padding: 50px 60px;
+        border-radius: 24px;
+        text-align: center;
+        color: #1e1e1e;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+        position: relative;
+        overflow: hidden;
+        animation: popIn 0.6s ease;
+      }
+
+      .congrats-box h1 {
+        font-size: 2.6rem;
+        margin-bottom: 12px;
+      }
+
+      .congrats-box p {
+        font-size: 1.1rem;
+        font-weight: 500;
+      }
+
+      .confetti span {
+        position: absolute;
+        top: -20px;
+        width: 8px;
+        height: 14px;
+        animation: fall 3s linear infinite;
+      }
+
+      .confetti span:nth-child(4n) { background: #ff1744; }
+      .confetti span:nth-child(4n+1) { background: #00e5ff; }
+      .confetti span:nth-child(4n+2) { background: #7cff00; }
+      .confetti span:nth-child(4n+3) { background: #ffd700; }
+
+      @keyframes fall {
+        0% { transform: translateY(0) rotate(0); opacity: 1; }
+        100% { transform: translateY(120vh) rotate(720deg); opacity: 0; }
+      }
+
+      @keyframes popIn {
+        0% { transform: scale(0.6); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+    `}</style>
+
+    <div className="congrats-overlay">
+      <div className="congrats-box">
+        <h1>🎉 Congratulations! 🎉</h1>
+        <p>You have successfully completed your package</p>
+
+        <div className="confetti">
+          {Array.from({ length: 36 }).map((_, i) => (
+            <span
+              key={i}
+              style={{
+                left: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 2}s`
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  </>
+)}
+
+
     </MemberLayout>
   );
 }
