@@ -10,21 +10,14 @@ export default function AssignSetCreate() {
   const [members, setMembers] = useState([]);
   const [sets, setSets] = useState([]);
 
-  const [form, setForm] = useState({
-    member_id: "",
-    set_id: "",
-  });
-
+  const [form, setForm] = useState({ member_id: "", set_id: "" });
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
 
   const load = async () => {
     setErr("");
     try {
-      const [mRes, sRes] = await Promise.all([
-        api.get("/members"),
-        api.get("/sets"),
-      ]);
+      const [mRes, sRes] = await Promise.all([api.get("/members"), api.get("/sets")]);
       setMembers(Array.isArray(mRes.data) ? mRes.data : []);
       setSets(Array.isArray(sRes.data) ? sRes.data : []);
     } catch (e) {
@@ -45,8 +38,6 @@ export default function AssignSetCreate() {
     if (!form.set_id) return setErr("Please select a set");
 
     try {
-      // backend will be created next:
-      // POST /member-sets/assign { member_id, set_id }
       await api.post("/member-sets/assign", {
         member_id: Number(form.member_id),
         set_id: Number(form.set_id),
@@ -78,9 +69,7 @@ export default function AssignSetCreate() {
               <div className="small">Member</div>
               <select
                 value={form.member_id}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, member_id: e.target.value }))
-                }
+                onChange={(e) => setForm((p) => ({ ...p, member_id: e.target.value }))}
               >
                 <option value="">-- Select Member --</option>
                 {members.map((m) => (
@@ -90,7 +79,7 @@ export default function AssignSetCreate() {
                 ))}
               </select>
               <div className="small">
-                Agent will see only their members. Owner sees own + agent members.
+                Agent sees only their members. Owner sees own + agent members.
               </div>
             </div>
 
@@ -98,9 +87,7 @@ export default function AssignSetCreate() {
               <div className="small">Set</div>
               <select
                 value={form.set_id}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, set_id: e.target.value }))
-                }
+                onChange={(e) => setForm((p) => ({ ...p, set_id: e.target.value }))}
               >
                 <option value="">-- Select Set --</option>
                 {sets.map((s) => (
@@ -115,11 +102,7 @@ export default function AssignSetCreate() {
             {ok && <div className="ok">{ok}</div>}
 
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => nav("/assign-sets")}
-              >
+              <button type="button" className="btn" onClick={() => nav("/assign-sets")}>
                 Cancel
               </button>
               <button type="submit" className="btn">
@@ -128,7 +111,7 @@ export default function AssignSetCreate() {
             </div>
 
             <div className="small">
-              Note: Only ONE active set at a time (backend will enforce).
+              Note: Only ONE active set at a time (backend enforces).
             </div>
           </form>
         </div>

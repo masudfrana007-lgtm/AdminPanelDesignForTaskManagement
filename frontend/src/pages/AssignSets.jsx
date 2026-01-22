@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
 import AppLayout from "../components/AppLayout";
@@ -11,8 +11,6 @@ export default function AssignSets() {
   const load = async () => {
     setErr("");
     try {
-      // Backend should return assignments list
-      // If backend not ready, it will show empty
       const { data } = await api.get("/member-sets");
       setRows(Array.isArray(data) ? data : []);
     } catch (e) {
@@ -34,15 +32,20 @@ export default function AssignSets() {
     }
   };
 
+  const money = (v) => {
+    if (v === null || v === undefined) return "-";
+    const n = Number(v);
+    if (Number.isNaN(n)) return String(v);
+    return n.toFixed(2);
+  };
+
   return (
     <AppLayout>
       <div className="container">
         <div className="topbar">
           <div>
             <h2>Manage Assign Sets</h2>
-            <div className="small">
-              Assign sets to members and track completion.
-            </div>
+            <div className="small">Assign sets to members and track completion.</div>
           </div>
 
           <Link to="/assign-sets/create" className="btn">
@@ -72,58 +75,65 @@ export default function AssignSets() {
             </thead>
 
             <tbody>
-              {rows.map((r, idx) => (
-                <tr key={r.id || idx}>
-                  <td>{idx + 1}</td>
+              {rows.map((r, idx) => {
+                const isCompleted = r.status === "completed";
+                const lastCompleted = Number(r.current_task_index || 0); // your meaning: last completed #
+                const totalTasks = Number(r.total_tasks || 0);
+                const setAmount = money(r.set_amount);
+                const currentTaskAmount = totalTasks > 0 ? money(r.current_task_amount) : "-";
 
-                  <td>{fmt(r.created_at)}</td>
+                return (
+                  <tr key={r.id || idx}>
+                    <td>{idx + 1}</td>
 
-                  <td>
-                    <div className="small">
-                      <b>Member ID:</b> {r.member_short_id || r.member_id || "-"}
-                    </div>
-                    <div className="small">
-                      <b>Phone:</b> {r.member_phone || "-"}
-                    </div>
-                    <div className="small">
-                      <b>Nickname:</b> {r.member_nickname || "-"}
-                    </div>
-                  </td>
+                    <td>{fmt(r.created_at)}</td>
 
-                  <td>
-                    <div className="small">
-                      <b>Set Name:</b> {r.set_name || "-"}
-                    </div>
-                    <div className="small">
-                      <b>Total Tasks:</b> {r.total_tasks ?? "-"}
-                    </div>
-                    <div className="small">
-                      <b>Set Amount:</b> {r.set_amount ?? "-"}
-                    </div>
-                    <div className="small">
-                      <b>Last Completed Task #:</b>{" "}
-                      {r.current_task_index ?? 0}
-                    </div>
-                    <div className="small">
-                      <b>Current Task Amount:</b> {r.current_task_amount ?? "-"}
-                    </div>
-                  </td>
+                    <td>
+                      <div className="small">
+                        <b>Member ID:</b> {r.member_short_id || r.member_id || "-"}
+                      </div>
+                      <div className="small">
+                        <b>Phone:</b> {r.member_phone || "-"}
+                      </div>
+                      <div className="small">
+                        <b>Nickname:</b> {r.member_nickname || "-"}
+                      </div>
+                    </td>
 
-                  <td>
-                    <span className="badge">
-                      {r.status === "completed" ? "Completed" : "Active"}
-                    </span>
-                  </td>
+                    <td>
+                      <div className="small">
+                        <b>Set Name:</b> {r.set_name || "-"}
+                      </div>
+                      <div className="small">
+                        <b>Total Tasks:</b> {totalTasks || 0}
+                      </div>
+                      <div className="small">
+                        <b>Set Amount:</b> {setAmount}
+                      </div>
+                      <div className="small">
+                        <b>Last Completed Task #:</b> {lastCompleted}
+                      </div>
+                      <div className="small">
+                        <b>Current Task Amount:</b> {isCompleted ? "-" : currentTaskAmount}
+                      </div>
+                    </td>
 
-                  <td>{fmt(r.updated_at)}</td>
+                    <td>
+                      <span className="badge">
+                        {isCompleted ? "Completed" : "Active"}
+                      </span>
+                    </td>
 
-                  <td>
-                    <button className="btn small" disabled>
-                      Action
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                    <td>{fmt(r.updated_at)}</td>
+
+                    <td>
+                      <button className="btn small" disabled={isCompleted}>
+                        Action
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
 
               {!rows.length && (
                 <tr>
