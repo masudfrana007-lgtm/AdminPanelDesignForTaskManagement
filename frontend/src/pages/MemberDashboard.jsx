@@ -53,8 +53,95 @@ export default function MemberDashboard() {
   	<MemberLayout>
     <div className="container" style={{ marginTop: 20 }}>
       <div className="topbar">
-		<div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); color: white; text-align: center; max-width: 500px; margin: 20px auto; position: relative; overflow: hidden;"> <svg width="200" height="60" viewBox="0 0 200 60" style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 2; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));" xmlns="http://www.w3.org/2000/svg"> <!-- TK Editable SVG Logo --> <defs> <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%"> <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" /> <stop offset="50%" style="stop-color:#FFA500;stop-opacity:1" /> <stop offset="100%" style="stop-color:#DAA520;stop-opacity:1" /> </linearGradient> <linearGradient id="navyGrad" x1="0%" y1="0%" x2="100%" y2="100%"> <stop offset="0%" style="stop-color:#1E3A8A;stop-opacity:1" /> <stop offset="50%" style="stop-color:#3B82F6;stop-opacity:1" /> <stop offset="100%" style="stop-color:#1D4ED8;stop-opacity:1" /> </linearGradient> <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%"> <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.3"/> </filter> </defs> <!-- T Letter --> <path d="M10 5 L10 50 L50 50 L50 30 L70 30 L70 50 L90 50 L90 5 L10 5 Z" fill="url(#goldGrad)" stroke="#B8860B" stroke-width="1.5" filter="url(#shadow)"/> <!-- K Letter --> <path d="M110 5 L150 5 L150 27.5 L110 27.5 M110 27.5 L140 50 L150 50 L130 35 L110 35 Z" fill="url(#navyGrad)" stroke="#1E40AF" stroke-width="1.5" filter="url(#shadow)"/> <!-- Branding text small --> <text x="95" y="42" font-family="'Arial Black', sans-serif" font-size="12" font-weight="bold" fill="#E5E7EB" letter-spacing="0.5">BRANDING</text> </svg> <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 15px; position: relative; z-index: 1;"> <h2 style="margin: 0; font-size: 2.2em; font-weight: 700; background: linear-gradient(45deg, #fff 0%, #f0f0f0 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: 2px;">TK Branding</h2> </div> <div className="small" style="font-size: 0.95em; opacity: 0.95; margin: 5px 0;"> Welcome, <b style="color: #ffd700; font-weight: 600;">{me?.nickname}</b> (ID: {me?.short_id || me?.id}) </div> <div className="small" style="font-size: 0.95em; opacity: 0.95;"> Sponsor ID: <b style="color: #ffd700; font-weight: 600;">{me?.sponsor_short_id}</b> </div> </div>
+<div
+  style={{
+    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    borderRadius: 20,
+    padding: "22px 20px 18px",
+    color: "#fff",
+    textAlign: "center",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
+  }}
+>
+  {/* Logo + Brand */}
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 14,
+      marginBottom: 12,
+    }}
+  >
+    {/* TK Logo */}
+    <svg
+      width="52"
+      height="52"
+      viewBox="0 0 100 100"
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.35))" }}
+    >
+      <defs>
+        <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FFD700" />
+          <stop offset="50%" stopColor="#FFA500" />
+          <stop offset="100%" stopColor="#DAA520" />
+        </linearGradient>
 
+        <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#1E3A8A" />
+          <stop offset="100%" stopColor="#3B82F6" />
+        </linearGradient>
+      </defs>
+
+      {/* T */}
+      <path
+        d="M10 15 H90 V30 H60 V85 H40 V30 H10 Z"
+        fill="url(#goldGrad)"
+      />
+
+      {/* K */}
+      <path
+        d="M60 15 V85 H75 V55 L90 85 H110 L85 50 L110 15 H90 L75 40 V15 Z"
+        fill="url(#blueGrad)"
+        transform="scale(0.7) translate(35 20)"
+      />
+    </svg>
+
+    {/* Brand Text */}
+    <h2
+      style={{
+        margin: 0,
+        fontSize: "1.9rem",
+        fontWeight: 800,
+        letterSpacing: "1.5px",
+        background: "linear-gradient(90deg, #ffffff, #e5e7eb)",
+        WebkitBackgroundClip: "text",
+        WebkitTextFillColor: "transparent",
+      }}
+    >
+      TK Branding
+    </h2>
+  </div>
+
+  {/* User Info */}
+  <div className="small" style={{ opacity: 0.95 }}>
+    Welcome,{" "}
+    <b style={{ color: "#FFD700", fontWeight: 600 }}>
+      {me?.nickname}
+    </b>{" "}
+    (ID: {me?.short_id || me?.id})
+  </div>
+
+  <div className="small" style={{ marginTop: 4, opacity: 0.95 }}>
+    Sponsor ID:{" "}
+    <b style={{ color: "#FFD700", fontWeight: 600 }}>
+      {me?.sponsor_short_id}
+    </b>
+  </div>
+</div>
+
+        
         <button className="btn danger" onClick={logout}>Logout</button>
       </div>
 
