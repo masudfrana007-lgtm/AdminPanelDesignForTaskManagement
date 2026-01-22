@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import "../styles/app.css";
 import memberApi from "../services/memberApi";
 import { getMember, memberLogout } from "../memberAuth";
@@ -12,10 +12,6 @@ export default function MemberDashboard() {
   const [data, setData] = useState(null);
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
-  const [celebrate, setCelebrate] = useState(false);
-
-  const confettiCanvasRef = useRef(null);
-  const confettiIntervalRef = useRef(null);
 
   const load = async () => {
     setErr(""); setOk("");
@@ -34,84 +30,13 @@ export default function MemberDashboard() {
     try { return new Date(d).toLocaleString(); } catch { return d; }
   };
 
-  /* ===============================
-     CONFETTI ENGINE (NO LIB)
-     =============================== */
-  const startConfetti = () => {
-    const canvas = confettiCanvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    const particles = Array.from({ length: 180 }).map(() => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height - canvas.height,
-      r: Math.random() * 6 + 4,
-      d: Math.random() * 30,
-      color: `hsl(${Math.random() * 360}, 90%, 60%)`,
-      tilt: Math.random() * 10 - 10,
-      tiltAngle: 0,
-      tiltAngleIncrement: Math.random() * 0.07 + 0.05
-    }));
-
-    let angle = 0;
-
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      angle += 0.01;
-
-      particles.forEach(p => {
-        p.tiltAngle += p.tiltAngleIncrement;
-        p.y += (Math.cos(angle + p.d) + 3 + p.r / 2) / 2;
-        p.x += Math.sin(angle);
-        p.tilt = Math.sin(p.tiltAngle) * 15;
-
-        ctx.beginPath();
-        ctx.lineWidth = p.r;
-        ctx.strokeStyle = p.color;
-        ctx.moveTo(p.x + p.tilt, p.y);
-        ctx.lineTo(p.x, p.y + p.tilt);
-        ctx.stroke();
-
-        if (p.y > canvas.height) {
-          p.y = -10;
-          p.x = Math.random() * canvas.width;
-        }
-      });
-    };
-
-    confettiIntervalRef.current = setInterval(draw, 16);
-
-    setTimeout(() => {
-      clearInterval(confettiIntervalRef.current);
-      setCelebrate(false);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }, 10000); // 10 seconds
-  };
-
-  /* ===============================
-     COMPLETE TASK
-     =============================== */
   const completeTask = async () => {
     setErr(""); setOk("");
     try {
       await memberApi.post("/member/complete-task");
-      await load();
-
       setOk("Task completed");
-
+      await load();
       setTimeout(() => setOk(""), 1200);
-
-      // If set is completed → celebrate
-      setTimeout(() => {
-        if (data?.assignment?.status !== "completed") {
-          setCelebrate(true);
-          startConfetti();
-        }
-      }, 400);
-
     } catch (e) {
       setErr(e?.response?.data?.message || "Failed");
     }
@@ -125,127 +50,175 @@ export default function MemberDashboard() {
   const active = data?.active;
 
   return (
-    <MemberLayout>
-      {/* ===============================
-         CELEBRATION OVERLAY
-         =============================== */}
-      {celebrate && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 9999,
-            background: "rgba(0,0,0,0.65)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexDirection: "column",
-            color: "#fff",
-            textAlign: "center",
-            animation: "fadeIn 0.4s ease"
-          }}
-        >
-          <canvas
-            ref={confettiCanvasRef}
-            style={{ position: "absolute", inset: 0 }}
-          />
+  	<MemberLayout>
+    <div className="container" style={{ marginTop: 20 }}>
+      <div className="topbar">
+<div
+  style={{
+    background: "linear-gradient(135deg, #6d7bf3, #7b4da8)",
+    borderRadius: 22,
+    padding: "26px 30px",
+    color: "#fff",
+    boxShadow: "0 15px 40px rgba(0,0,0,0.25)",
+    marginBottom: 28,
+    position: "relative",
+  }}
+>
+  {/* Brand Row */}
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: 14,
+      marginBottom: 12,
+    }}
+  >
+    {/* Logo */}
+    <div
+      style={{
+        width: 46,
+        height: 46,
+        borderRadius: 12,
+        background: "linear-gradient(135deg, #FFD700, #FFB300)",
+        color: "#1e1e1e",
+        fontWeight: 900,
+        fontSize: 22,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        boxShadow: "0 6px 15px rgba(0,0,0,0.3)",
+      }}
+    >
+      TK
+    </div>
 
-          <div
-            style={{
-              zIndex: 2,
-              background: "linear-gradient(135deg, #6d7bf3, #7b4da8)",
-              padding: "40px 50px",
-              borderRadius: 24,
-              boxShadow: "0 20px 50px rgba(0,0,0,0.4)",
-              animation: "popIn 0.6s ease"
-            }}
-          >
-            <h1 style={{ margin: 0, fontSize: 36 }}>🎉 Congratulations!</h1>
-            <p style={{ fontSize: 18, marginTop: 12 }}>
-              You have successfully completed your package
-            </p>
-            <p style={{ fontSize: 14, opacity: 0.85 }}>
-              Keep going — more rewards await 🚀
-            </p>
-          </div>
-        </div>
-      )}
+    <h2
+      style={{
+        margin: 0,
+        fontSize: "1.9rem",
+        fontWeight: 800,
+        letterSpacing: "1px",
+      }}
+    >
+      TK Branding
+    </h2>
+  </div>
 
-      {/* ===============================
-         ORIGINAL UI (UNCHANGED)
-         =============================== */}
-      <div className="container" style={{ marginTop: 20 }}>
-        <div className="topbar">
-          <div
-            style={{
-              background: "linear-gradient(135deg, #6d7bf3, #7b4da8)",
-              borderRadius: 22,
-              padding: "26px 30px",
-              color: "#fff",
-              boxShadow: "0 15px 40px rgba(0,0,0,0.25)",
-              marginBottom: 28,
-              position: "relative",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 12 }}>
-              <div
-                style={{
-                  width: 46,
-                  height: 46,
-                  borderRadius: 12,
-                  background: "linear-gradient(135deg, #FFD700, #FFB300)",
-                  color: "#1e1e1e",
-                  fontWeight: 900,
-                  fontSize: 22,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  boxShadow: "0 6px 15px rgba(0,0,0,0.3)",
-                }}
-              >
-                TK
-              </div>
-              <h2 style={{ margin: 0, fontSize: "1.9rem", fontWeight: 800 }}>
-                TK Branding
-              </h2>
-            </div>
+  {/* User Info */}
+  <div style={{ fontSize: 14, opacity: 0.95 }}>
+    Welcome,&nbsp;
+    <b style={{ color: "#FFD700" }}>{me?.nickname}</b>
+  </div>
 
-            <div style={{ fontSize: 14 }}>
-              Welcome, <b style={{ color: "#FFD700" }}>{me?.nickname}</b>
-            </div>
+  <div style={{ fontSize: 13, opacity: 0.85, marginTop: 4 }}>
+    ID: {me?.short_id || me?.id} · Sponsor:{" "}
+    <b style={{ color: "#FFD700" }}>{me?.sponsor_short_id}</b>
+  </div>
 
-            <div style={{ fontSize: 13, opacity: 0.85, marginTop: 4 }}>
-              ID: {me?.short_id || me?.id} · Sponsor:{" "}
-              <b style={{ color: "#FFD700" }}>{me?.sponsor_short_id}</b>
-            </div>
-          </div>
+  {/* Divider */}
+  <div
+    style={{
+      height: 1,
+      background: "rgba(255,255,255,0.25)",
+      marginTop: 14,
+    }}
+  />
+</div>
 
-          <button className="btn danger" onClick={logout}>Logout</button>
-        </div>
 
-        {err && <div className="error">{err}</div>}
-        {ok && <div className="ok">{ok}</div>}
-
-        {!active ? (
-          <div className="card">
-            <h3>No Active Set</h3>
-            <div className="small">{data?.message}</div>
-          </div>
-        ) : (
-          <>
-            <div className="card">
-              <h3>Current Task</h3>
-              <button
-                className="btn"
-                onClick={completeTask}
-                disabled={data?.assignment?.status === "completed"}
-              >
-                Complete
-              </button>
-            </div>
-          </>
-        )}
+        
+        <button className="btn danger" onClick={logout}>Logout</button>
       </div>
+
+      {err && <div className="error" style={{ marginBottom: 10 }}>{err}</div>}
+      {ok && <div className="ok" style={{ marginBottom: 10 }}>{ok}</div>}
+
+      {!active ? (
+        <div className="card">
+          <h3>No Active Set</h3>
+          <div className="small">{data?.message || "Please contact your sponsor to assign a set."}</div>
+        </div>
+      ) : (
+        <>
+          <div className="card" style={{ marginBottom: 12 }}>
+            <h3 style={{ marginTop: 0 }}>Active Package</h3>
+            <div className="hr" />
+
+            <div className="row" style={{ alignItems: "stretch" }}>
+              <div className="col">
+                <div className="small"><b>Set Name:</b> {data?.set?.name}</div>
+                <div className="small"><b>Total Tasks:</b> {data?.total_tasks}</div>
+                <div className="small"><b>Set Amount:</b> {data?.set_amount}</div>
+                <div className="small"><b>Status:</b> <span className="badge">{data?.assignment?.status}</span></div>
+              </div>
+
+              <div className="col">
+                <div className="small"><b>Assigned At:</b> {fmt(data?.assignment?.created_at)}</div>
+                <div className="small"><b>Last Activity:</b> {fmt(data?.assignment?.updated_at)}</div>
+                <div className="small"><b>Completed Tasks:</b> {data?.assignment?.current_task_index}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="card">
+            <h3 style={{ marginTop: 0 }}>Current Task</h3>
+            <div className="small">You can complete tasks one by one.</div>
+            <div className="hr" />
+
+            {!data?.current_task ? (
+              <div className="small">No current task found.</div>
+            ) : (
+              <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                {data.current_task.image_url && (
+                  <img
+                    src={`${import.meta.env.VITE_API_URL}${data.current_task.image_url}`}
+                    alt=""
+                    style={{
+                      width: 110,
+                      height: 110,
+                      borderRadius: 10,
+                      objectFit: "cover",
+                      border: "1px solid #ddd"
+                    }}
+                  />
+                )}
+
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 16 }}>
+                    <b>{data.current_task.title}</b>
+                  </div>
+                  <div className="small">{data.current_task.description || ""}</div>
+
+                  <div className="small" style={{ marginTop: 6 }}>
+                    Qty: {data.current_task.quantity} | Rate: {data.current_task.rate} | Commission: {data.current_task.commission_rate}%
+                  </div>
+
+                  <div className="small">
+                    Amount: <b>{data.current_task.price}</b>
+                  </div>
+                </div>
+
+                <div style={{ minWidth: 180, textAlign: "right" }}>
+                  <button
+                    className="btn"
+                    onClick={completeTask}
+                    disabled={data?.assignment?.status === "completed"}
+                    title={data?.assignment?.status === "completed" ? "Completed" : "Complete current task"}
+                  >
+                    Complete
+                  </button>
+                  {data?.assignment?.status === "completed" && (
+                    <div className="small" style={{ marginTop: 6 }}>
+                      Package completed ✅
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
     </MemberLayout>
   );
 }
