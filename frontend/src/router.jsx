@@ -9,12 +9,17 @@ import Members from "./pages/Members"; // ← ADD THIS
 import CreateMember from "./pages/CreateMember";
 import AssignSets from "./pages/AssignSets";
 import AssignSetCreate from "./pages/AssignSetCreate"; // ✅ add
+import MemberLogin from "./pages/MemberLogin";
+import MemberDashboard from "./pages/MemberDashboard";
+import MemberProtectedRoute from "./components/MemberProtectedRoute";
 
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
+  
+  { path: "/member/login", element: <MemberLogin /> },
 
   { path: "/", element: <ProtectedRoute><Dashboard /></ProtectedRoute> },
-
+  
   {
     path: "/users",
     element: (
@@ -77,5 +82,14 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     )
   },
-  
+
+  {
+    path: "/member/dashboard",
+    element: (
+      <MemberProtectedRoute>
+        <MemberDashboard />
+      </MemberProtectedRoute>
+    )
+  },
+
 ]);
