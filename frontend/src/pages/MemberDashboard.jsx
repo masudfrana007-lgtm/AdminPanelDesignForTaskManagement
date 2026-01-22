@@ -13,6 +13,9 @@ export default function MemberDashboard() {
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
 
+  // ✅ ADD
+  const [celebrate, setCelebrate] = useState(false);
+
   const load = async () => {
     setErr(""); setOk("");
     try {
@@ -34,6 +37,11 @@ export default function MemberDashboard() {
     setErr(""); setOk("");
     try {
       await memberApi.post("/member/complete-task");
+
+      // ✅ ADD — trigger animation
+      setCelebrate(true);
+      setTimeout(() => setCelebrate(false), 2200);
+
       setOk("Task completed");
       await load();
       setTimeout(() => setOk(""), 1200);
@@ -65,15 +73,7 @@ export default function MemberDashboard() {
   }}
 >
   {/* Brand Row */}
-  <div
-    style={{
-      display: "flex",
-      alignItems: "center",
-      gap: 14,
-      marginBottom: 12,
-    }}
-  >
-    {/* Logo */}
+  <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 12 }}>
     <div
       style={{
         width: 46,
@@ -92,132 +92,112 @@ export default function MemberDashboard() {
       TK
     </div>
 
-    <h2
-      style={{
-        margin: 0,
-        fontSize: "1.9rem",
-        fontWeight: 800,
-        letterSpacing: "1px",
-      }}
-    >
+    <h2 style={{ margin: 0, fontSize: "1.9rem", fontWeight: 800 }}>
       TK Branding
     </h2>
   </div>
 
-  {/* User Info */}
-  <div style={{ fontSize: 14, opacity: 0.95 }}>
-    Welcome,&nbsp;
-    <b style={{ color: "#FFD700" }}>{me?.nickname}</b>
+  <div style={{ fontSize: 14 }}>
+    Welcome,&nbsp;<b style={{ color: "#FFD700" }}>{me?.nickname}</b>
   </div>
 
-  <div style={{ fontSize: 13, opacity: 0.85, marginTop: 4 }}>
-    ID: {me?.short_id || me?.id} · Sponsor:{" "}
-    <b style={{ color: "#FFD700" }}>{me?.sponsor_short_id}</b>
+  <div style={{ fontSize: 13, marginTop: 4 }}>
+    ID: {me?.short_id || me?.id}
   </div>
-
-  {/* Divider */}
-  <div
-    style={{
-      height: 1,
-      background: "rgba(255,255,255,0.25)",
-      marginTop: 14,
-    }}
-  />
 </div>
-
 
         <button className="btn danger" onClick={logout}>Logout</button>
       </div>
 
-      {err && <div className="error" style={{ marginBottom: 10 }}>{err}</div>}
-      {ok && <div className="ok" style={{ marginBottom: 10 }}>{ok}</div>}
+      {err && <div className="error">{err}</div>}
+      {ok && <div className="ok">{ok}</div>}
 
       {!active ? (
         <div className="card">
           <h3>No Active Set</h3>
-          <div className="small">{data?.message || "Please contact your sponsor to assign a set."}</div>
         </div>
       ) : (
         <>
-          <div className="card" style={{ marginBottom: 12 }}>
-            <h3 style={{ marginTop: 0 }}>Active Package</h3>
-            <div className="hr" />
-
-            <div className="row" style={{ alignItems: "stretch" }}>
-              <div className="col">
-                <div className="small"><b>Set Name:</b> {data?.set?.name}</div>
-                <div className="small"><b>Total Tasks:</b> {data?.total_tasks}</div>
-                <div className="small"><b>Set Amount:</b> {data?.set_amount}</div>
-                <div className="small"><b>Status:</b> <span className="badge">{data?.assignment?.status}</span></div>
-              </div>
-
-              <div className="col">
-                <div className="small"><b>Assigned At:</b> {fmt(data?.assignment?.created_at)}</div>
-                <div className="small"><b>Last Activity:</b> {fmt(data?.assignment?.updated_at)}</div>
-                <div className="small"><b>Completed Tasks:</b> {data?.assignment?.current_task_index}</div>
-              </div>
-            </div>
+          <div className="card">
+            <h3>Active Package</h3>
+            <div className="small"><b>Set:</b> {data?.set?.name}</div>
+            <div className="small"><b>Completed:</b> {data?.assignment?.current_task_index}</div>
           </div>
 
           <div className="card">
-            <h3 style={{ marginTop: 0 }}>Current Task</h3>
-            <div className="small">You can complete tasks one by one.</div>
-            <div className="hr" />
+            <h3>Current Task</h3>
 
-            {!data?.current_task ? (
-              <div className="small">No current task found.</div>
-            ) : (
-              <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-                {data.current_task.image_url && (
-                  <img
-                    src={`${import.meta.env.VITE_API_URL}${data.current_task.image_url}`}
-                    alt=""
-                    style={{
-                      width: 110,
-                      height: 110,
-                      borderRadius: 10,
-                      objectFit: "cover",
-                      border: "1px solid #ddd"
-                    }}
-                  />
-                )}
+            <b>{data.current_task?.title}</b>
+            <div className="small">{data.current_task?.description}</div>
 
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 16 }}>
-                    <b>{data.current_task.title}</b>
-                  </div>
-                  <div className="small">{data.current_task.description || ""}</div>
-
-                  <div className="small" style={{ marginTop: 6 }}>
-                    Qty: {data.current_task.quantity} | Rate: {data.current_task.rate} | Commission: {data.current_task.commission_rate}%
-                  </div>
-
-                  <div className="small">
-                    Amount: <b>{data.current_task.price}</b>
-                  </div>
-                </div>
-
-                <div style={{ minWidth: 180, textAlign: "right" }}>
-                  <button
-                    className="btn"
-                    onClick={completeTask}
-                    disabled={data?.assignment?.status === "completed"}
-                    title={data?.assignment?.status === "completed" ? "Completed" : "Complete current task"}
-                  >
-                    Complete
-                  </button>
-                  {data?.assignment?.status === "completed" && (
-                    <div className="small" style={{ marginTop: 6 }}>
-                      Package completed ✅
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+            <button
+              className="btn"
+              onClick={completeTask}
+              disabled={data?.assignment?.status === "completed"}
+              style={{ marginTop: 10 }}
+            >
+              Complete
+            </button>
           </div>
         </>
       )}
     </div>
+
+    {/* 🎉 ADD — COMPLETION ANIMATION */}
+    {celebrate && (
+      <div className="celebrate-overlay">
+        <div className="confetti">
+          {[...Array(50)].map((_, i) => <span key={i} />)}
+        </div>
+
+        <div className="celebrate-box">
+          🎉 Task Completed!
+        </div>
+      </div>
+    )}
+
+    {/* ✅ ADD — INLINE CSS (SAFE) */}
+    <style>{`
+      .celebrate-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.85);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+      }
+
+      .celebrate-box {
+        background: #fff;
+        padding: 30px 50px;
+        border-radius: 18px;
+        font-size: 22px;
+        font-weight: 800;
+        animation: pop 0.5s ease;
+        z-index: 2;
+      }
+
+      .confetti span {
+        position: absolute;
+        width: 8px;
+        height: 14px;
+        background: hsl(${Math.random()*360}, 80%, 60%);
+        top: -20px;
+        left: ${Math.random()*100}%;
+        animation: fall 2s linear infinite;
+      }
+
+      @keyframes fall {
+        to { transform: translateY(110vh) rotate(360deg); }
+      }
+
+      @keyframes pop {
+        from { transform: scale(0.5); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+      }
+    `}</style>
+
     </MemberLayout>
   );
 }
