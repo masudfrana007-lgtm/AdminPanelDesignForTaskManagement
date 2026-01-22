@@ -6,6 +6,7 @@ import Users from "./pages/Users";
 import Tasks from "./pages/Tasks";
 import Sets from "./pages/Sets";
 import Members from "./pages/Members"; // ← ADD THIS
+import CreateMember from "./pages/CreateMember";
 
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
@@ -47,4 +48,7 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     )
   }
+
+  { path: "/members/create", element: <ProtectedRoute roles={["owner","agent"]}><CreateMember /></ProtectedRoute> },
+
 ]);
