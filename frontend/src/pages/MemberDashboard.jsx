@@ -3,6 +3,7 @@ import "../styles/app.css";
 import memberApi from "../services/memberApi";
 import { getMember, memberLogout } from "../memberAuth";
 import { useNavigate } from "react-router-dom";
+import MemberLayout from "../components/MemberLayout";
 
 export default function MemberDashboard() {
   const nav = useNavigate();
@@ -49,6 +50,7 @@ export default function MemberDashboard() {
   const active = data?.active;
 
   return (
+  	<MemberLayout>
     <div className="container" style={{ marginTop: 20 }}>
       <div className="topbar">
         <div>
@@ -58,7 +60,7 @@ export default function MemberDashboard() {
           </div>
 
 			<div className="small">
-				Sponsor ID: <b>{me?.sponsor_id}</b>
+				Sponsor ID: <b>{me?.sponsor_short_id}</b>
 			</div>
 
         </div>
@@ -154,5 +156,6 @@ export default function MemberDashboard() {
         </>
       )}
     </div>
+    </MemberLayout>
   );
 }

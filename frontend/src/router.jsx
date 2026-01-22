@@ -12,6 +12,7 @@ import AssignSetCreate from "./pages/AssignSetCreate"; // ✅ add
 import MemberLogin from "./pages/MemberLogin";
 import MemberDashboard from "./pages/MemberDashboard";
 import MemberProtectedRoute from "./components/MemberProtectedRoute";
+import MemberHistory from "./pages/MemberHistory";
 
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
@@ -88,6 +89,15 @@ export const router = createBrowserRouter([
     element: (
       <MemberProtectedRoute>
         <MemberDashboard />
+      </MemberProtectedRoute>
+    )
+  },
+
+  {
+  path: "/member/history",
+    element: (
+      <MemberProtectedRoute>
+        <MemberHistory />
       </MemberProtectedRoute>
     )
   },
