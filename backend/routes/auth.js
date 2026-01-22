@@ -8,11 +8,17 @@ const router = express.Router();
 
 router.post("/login", async (req, res) => {
   const parsed = loginSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ message: "Invalid input", errors: parsed.error.flatten() });
+  if (!parsed.success) {
+    return res.status(400).json({ message: "Invalid input", errors: parsed.error.flatten() });
+  }
 
   const { email, password } = parsed.data;
 
-  const r = await pool.query("SELECT id, name, email, password, role FROM users WHERE email = $1", [email]);
+  const r = await pool.query(
+    "SELECT id, short_id, name, email, password, role FROM users WHERE email = $1",
+    [email]
+  );
+
   const user = r.rows[0];
   if (!user) return res.status(401).json({ message: "Invalid credentials" });
 
@@ -20,14 +26,26 @@ router.post("/login", async (req, res) => {
   if (!ok) return res.status(401).json({ message: "Invalid credentials" });
 
   const token = jwt.sign(
-    { id: user.id, role: user.role, email: user.email, name: user.name },
+    {
+      id: user.id,
+      short_id: user.short_id,
+      role: user.role,
+      email: user.email,
+      name: user.name
+    },
     process.env.JWT_SECRET,
     { expiresIn: "7d" }
   );
 
   res.json({
     token,
-    user: { id: user.id, name: user.name, email: user.email, role: user.role }
+    user: {
+      id: user.id,
+      short_id: user.short_id,
+      name: user.name,
+      email: user.email,
+      role: user.role
+    }
   });
 });
 
