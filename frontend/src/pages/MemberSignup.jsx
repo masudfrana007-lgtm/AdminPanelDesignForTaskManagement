@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/memberLogin.css";
+import api from "../services/api"; // add at top
 
 export default function MemberSignup() {
   const nav = useNavigate();
@@ -42,11 +43,35 @@ export default function MemberSignup() {
 
   const [showPass, setShowPass] = useState(false);
 
-  const submit = (e) => {
-    e.preventDefault();
-    // UI only - later API integration
-    console.log("signup", form);
-  };
+const submit = async (e) => {
+  e.preventDefault();
+
+  if (!form.accept_terms) {
+    alert("You must accept Terms and Conditions");
+    return;
+  }
+
+  if (form.password !== form.confirm_password) {
+    alert("Passwords do not match");
+    return;
+  }
+
+  try {
+    await api.post("/members", {
+      nickname: form.username,
+      phone: `${form.country_code}${form.phone}`,
+      country: form.country_code,
+      password: form.password,
+      gender: form.gender || null,
+      referral_code: form.referral_code || null,
+    });
+
+    alert("Signup successful. Await admin approval.");
+    nav("/member/login");
+  } catch (e) {
+    alert(e?.response?.data?.message || "Signup failed");
+  }
+};
 
   return (
     <div className="auth-page">
