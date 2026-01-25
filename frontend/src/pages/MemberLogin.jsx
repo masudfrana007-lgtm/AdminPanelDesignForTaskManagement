@@ -1,9 +1,3 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import "../styles/app.css";
-import memberApi from "../services/memberApi";
-import { setMemberAuth } from "../memberAuth";
-
 export default function MemberLogin() {
   const nav = useNavigate();
   const [form, setForm] = useState({ email: "", security_pin: "" });
@@ -25,37 +19,60 @@ export default function MemberLogin() {
   };
 
   return (
-    <div className="container" style={{ maxWidth: 520, marginTop: 40 }}>
-      <div className="card">
-        <h2 style={{ marginTop: 0 }}>Member Login</h2>
-        <div className="small">Login with email + security PIN</div>
-        <div className="hr" />
+    <div className="auth-page">
+      <div className="card auth-card">
+
+        {/* Back */}
+        <div style={{ textAlign: "left", marginBottom: 12 }}>
+          <a className="small" onClick={() => nav("/")}>
+            ← Back to Home
+          </a>
+        </div>
+
+        {/* Icon */}
+        <div className="auth-icon">→</div>
+
+        {/* Title */}
+        <div className="auth-title">Welcome Back</div>
+        <div className="auth-sub">
+          Sign in to your Iconic Digital account
+        </div>
 
         <form onSubmit={login} style={{ display: "grid", gap: 12 }}>
-          <div>
+          <div style={{ textAlign: "left" }}>
             <div className="small">Email</div>
             <input
               value={form.email}
-              onChange={(e) => setForm(p => ({ ...p, email: e.target.value }))}
-              placeholder="user@email.com"
+              onChange={(e) =>
+                setForm(p => ({ ...p, email: e.target.value }))
+              }
+              placeholder="Enter your email"
             />
           </div>
 
-          <div>
-            <div className="small">Security PIN</div>
+          <div style={{ textAlign: "left" }}>
+            <div className="small">Password</div>
             <input
               type="password"
               value={form.security_pin}
-              onChange={(e) => setForm(p => ({ ...p, security_pin: e.target.value }))}
-              placeholder="****"
+              onChange={(e) =>
+                setForm(p => ({ ...p, security_pin: e.target.value }))
+              }
+              placeholder="Enter your password"
             />
           </div>
 
           {err && <div className="error">{err}</div>}
           {ok && <div className="ok">{ok}</div>}
 
-          <button className="btn" type="submit">Login</button>
+          <button className="btn" type="submit">
+            Login
+          </button>
         </form>
+
+        <div className="auth-footer">
+          Don’t have an account? <a onClick={() => nav("/signup")}>Sign Up</a>
+        </div>
       </div>
     </div>
   );

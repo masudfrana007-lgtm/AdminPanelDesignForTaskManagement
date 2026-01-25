@@ -1,0 +1,51 @@
+auth.css/* auth pages */
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #f8fafc, #eef2ff);
+  padding: 16px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+}
+
+.auth-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #0ea5a4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+  color: white;
+  font-size: 24px;
+}
+
+.auth-title {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.auth-sub {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+.auth-footer {
+  margin-top: 14px;
+  font-size: 14px;
+}
+
+.auth-footer a {
+  color: #0ea5a4;
+  font-weight: 500;
+}
