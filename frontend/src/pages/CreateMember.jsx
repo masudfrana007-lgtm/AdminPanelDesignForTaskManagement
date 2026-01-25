@@ -17,10 +17,8 @@ export default function Members() {
   const [form, setForm] = useState({
     country: "United States of America (+1)",
     phone: "",
-    email: "",
     nickname: "",
     password: "",
-    security_pin: "",
     ranking: "Trial",
     withdraw_privilege: "Enabled",
   });
@@ -48,10 +46,8 @@ export default function Members() {
       setForm({
         country: "United States of America (+1)",
         phone: "",
-        email: "",
         nickname: "",
         password: "",
-        security_pin: "",
         ranking: "Trial",
         withdraw_privilege: "Enabled",
       });
@@ -96,12 +92,6 @@ export default function Members() {
                 {fieldErrors.phone && <div className="error">{fieldErrors.phone[0]}</div>}
               </div>
 
-              <div>
-                <div className="small">Email</div>
-                <input value={form.email} onChange={(e) => onChange("email", e.target.value)} placeholder="Please Enter Email" />
-                {fieldErrors.email && <div className="error">{fieldErrors.email[0]}</div>}
-              </div>
-            </div>
 
             {/* Row 2 */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
@@ -143,13 +133,6 @@ export default function Members() {
                 {fieldErrors.password && <div className="error">{fieldErrors.password[0]}</div>}
               </div>
 
-              <div>
-                <div className="small">Security PIN *</div>
-                <input type="password" value={form.security_pin} onChange={(e) => onChange("security_pin", e.target.value)} placeholder="Please Enter Security PIN" />
-                {fieldErrors.security_pin && <div className="error">{fieldErrors.security_pin[0]}</div>}
-              </div>
-            </div>
-
             {err && <div className="error">{err}</div>}
             {ok && <div className="ok">{ok}</div>}
 
@@ -184,7 +167,6 @@ export default function Members() {
                   <td>{m.short_id}</td>
                   <td>{m.nickname}</td>
                   <td>{m.phone}</td>
-                  <td>{m.email || "-"}</td>
                   <td><span className="badge">{m.ranking}</span></td>
                   <td><span className="badge">{m.withdraw_privilege ? "Enabled" : "Disabled"}</span></td>
                   <td>{m.sponsor_short_id}</td>
