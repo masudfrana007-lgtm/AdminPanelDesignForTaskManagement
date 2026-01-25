@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import memberApi from "../services/memberApi";
-import MemberLayout from "../components/MemberLayout";
-import "../styles/app.css";
+import MemberBottomNav from "../components/MemberBottomNav";
+import "../styles/memberHistory.css";
 
 export default function MemberHistory() {
   const [rows, setRows] = useState([]);
@@ -11,7 +11,7 @@ export default function MemberHistory() {
     try {
       const res = await memberApi.get("/member/history");
       setRows(res.data || []);
-    } catch (e) {
+    } catch {
       setErr("Failed to load history");
     }
   };
@@ -22,48 +22,64 @@ export default function MemberHistory() {
 
   const fmt = (d) => {
     if (!d) return "-";
-    try { return new Date(d).toLocaleString(); } catch { return d; }
+    try {
+      return new Date(d).toLocaleString();
+    } catch {
+      return d;
+    }
   };
 
   return (
-    <MemberLayout>
-      <div className="container" style={{ marginTop: 20 }}>
-        <h2>Completed Sets</h2>
-        <div className="small">Your finished packages</div>
-
-        {err && <div className="error">{err}</div>}
-
-        <div className="card">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>No.</th>
-                <th>Set Name</th>
-                <th>Total Tasks</th>
-                <th>Set Amount</th>
-                <th>Completed At</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r, i) => (
-                <tr key={r.id}>
-                  <td>{i + 1}</td>
-                  <td>{r.set_name}</td>
-                  <td>{r.total_tasks}</td>
-                  <td>{r.set_amount}</td>
-                  <td>{fmt(r.updated_at)}</td>
-                </tr>
-              ))}
-
-              {!rows.length && (
-                <tr>
-                  <td colSpan="5" className="small">No completed sets yet.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+    <div className="historyPage">
+      <div className="historyContent">
+        <div className="historyHeader">
+          <div>
+            <h2 className="historyTitle">Completed Packages</h2>
+            <div className="historySub">Your finished sets & earnings</div>
+          </div>
         </div>
+
+        {err && <div className="historyAlert error">{err}</div>}
+
+        {!rows.length ? (
+          <div className="historyCard">
+            <div className="historyEmpty">
+              No completed packages yet.
+            </div>
+          </div>
+        ) : (
+          rows.map((r, i) => (
+            <div key={r.id} className="historyCard glass">
+              <div className="historyTop">
+                <div className="historyIndex">#{i + 1}</div>
+                <div className="historyBadge">COMPLETED</div>
+              </div>
+
+              <div className="historyName">{r.set_name}</div>
+
+              <div className="historyGrid">
+                <div>
+                  <div className="historyLabel">Total Tasks</div>
+                  <div className="historyValue">{r.total_tasks}</div>
+                </div>
+
+                <div>
+                  <div className="historyLabel">Set Amount</div>
+                  <div className="historyValue strong">{r.set_amount}</div>
+                </div>
+
+                <div>
+                  <div className="historyLabel">Completed At</div>
+                  <div className="historyValue">{fmt(r.updated_at)}</div>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
-    </MemberLayout>
+
+      {/* Bottom Navigation */}
+      <MemberBottomNav active="record" />
+    </div>
   );
 }
