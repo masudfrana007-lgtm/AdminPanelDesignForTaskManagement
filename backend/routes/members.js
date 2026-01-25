@@ -13,10 +13,44 @@ const router = express.Router();
 router.post("/", async (req, res) => {
   const isAdmin = req.user && ["owner", "agent"].includes(req.user.role);
 
-  const { nickname, phone, country, password, gender, referral_code } = req.body;
+  const nickname = String(req.body.nickname || "").trim();
+  const phone = String(req.body.phone || "").trim();
+  const country = String(req.body.country || "").trim();
+  const password = String(req.body.password || "").trim();
+  const gender = String(req.body.gender || "").trim();
+  const referral_code = String(req.body.referral_code || "").trim();
 
-  if (!nickname || !phone || !password) {
-    return res.status(400).json({ message: "Missing required fields" });
+  // Nothing can be blank
+  if (!nickname || !phone || !country || !password || !gender) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
+  let sponsor_id = null;
+
+  // ✅ Admin create: sponsor_id = admin id
+  if (isAdmin) {
+    sponsor_id = req.user.id;
+  } else {
+    // ✅ Public signup MUST have referral_code
+    if (!referral_code) {
+      return res.status(400).json({ message: "Referral code is required" });
+    }
+
+    // ✅ referral_code must match a users.short_id of owner/agent
+    const ref = await pool.query(
+      `SELECT id
+       FROM users
+       WHERE short_id = $1
+         AND role IN ('owner','agent')
+       LIMIT 1`,
+      [referral_code]
+    );
+
+    if (!ref.rowCount) {
+      return res.status(400).json({ message: "Invalid referral code" });
+    }
+
+    sponsor_id = ref.rows[0].id; // ✅ sponsor is referrer (owner/agent)
   }
 
   const passHash = await bcrypt.hash(password, 10);
@@ -29,19 +63,21 @@ router.post("/", async (req, res) => {
       const r = await pool.query(
         `INSERT INTO members
          (short_id, nickname, phone, country, password,
-          sponsor_id, ranking, withdraw_privilege, approval_status, created_by)
+          sponsor_id, ranking, withdraw_privilege, approval_status, created_by, gender)
          VALUES
-         ($1,$2,$3,$4,$5,$6,'Trial',true,$7,$8)
-         RETURNING id, short_id, nickname, phone, country, sponsor_id, ranking, withdraw_privilege, approval_status, created_by, created_at`,
+         ($1,$2,$3,$4,$5,$6,'Trial',true,$7,$8,$9)
+         RETURNING id, short_id, nickname, phone, country, sponsor_id,
+                  ranking, withdraw_privilege, approval_status, created_by, created_at, gender`,
         [
           short_id,
           nickname,
           phone,
           country,
           passHash,
-          isAdmin ? req.user.id : null,
+          sponsor_id,
           approval_status,
           isAdmin ? req.user.id : null,
+          gender,
         ]
       );
 
@@ -111,18 +147,16 @@ router.get("/", auth, allowRoles("owner", "agent"), async (req, res) => {
  * APPROVE / REJECT (owner only)
  */
 router.patch("/:id/approve", auth, allowRoles("owner"), async (req, res) => {
-  await pool.query(
-    `UPDATE members SET approval_status='approved' WHERE id=$1`,
-    [req.params.id]
-  );
+  await pool.query(`UPDATE members SET approval_status='approved' WHERE id=$1`, [
+    req.params.id,
+  ]);
   res.json({ ok: true });
 });
 
 router.patch("/:id/reject", auth, allowRoles("owner"), async (req, res) => {
-  await pool.query(
-    `UPDATE members SET approval_status='rejected' WHERE id=$1`,
-    [req.params.id]
-  );
+  await pool.query(`UPDATE members SET approval_status='rejected' WHERE id=$1`, [
+    req.params.id,
+  ]);
   res.json({ ok: true });
 });
 
