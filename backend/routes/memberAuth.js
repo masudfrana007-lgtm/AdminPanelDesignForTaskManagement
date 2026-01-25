@@ -11,24 +11,31 @@ const router = express.Router();
  */
 router.post("/login", async (req, res) => {
   try {
-    const { email, security_pin } = req.body;
+    const identifier = String(req.body.identifier || "").trim();
+    const password = String(req.body.password || "").trim();
 
-    if (!email || !security_pin) {
-      return res.status(400).json({ message: "email and security_pin required" });
+    if (!identifier || !password) {
+      return res.status(400).json({ message: "identifier and password required" });
     }
 
     const r = await pool.query(
-      `SELECT id, short_id, nickname, email, security_pin, sponsor_id
+      `SELECT id, short_id, nickname, phone, password, sponsor_id, approval_status
        FROM members
-       WHERE lower(email) = lower($1)
+       WHERE lower(nickname) = lower($1)
+          OR phone = $1
        LIMIT 1`,
-      [email]
+      [identifier]
     );
 
     const m = r.rows[0];
     if (!m) return res.status(401).json({ message: "Invalid credentials" });
 
-    const ok = await bcrypt.compare(String(security_pin), m.security_pin);
+    // optional: block if not approved
+    if (m.approval_status !== "approved") {
+      return res.status(403).json({ message: "Account not approved yet" });
+    }
+
+    const ok = await bcrypt.compare(password, m.password);
     if (!ok) return res.status(401).json({ message: "Invalid credentials" });
 
     const token = jwt.sign(
@@ -43,7 +50,7 @@ router.post("/login", async (req, res) => {
         id: m.id,
         short_id: m.short_id,
         nickname: m.nickname,
-        email: m.email,
+        phone: m.phone,
         sponsor_id: m.sponsor_id,
       },
     });

@@ -6,16 +6,24 @@ import "../styles/memberLogin.css";
 
 export default function MemberLogin() {
   const nav = useNavigate();
-  const [form, setForm] = useState({ email: "", security_pin: "" });
+  const [form, setForm] = useState({ identifier: "", password: "" });
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
 
   const login = async (e) => {
     e.preventDefault();
-    setErr(""); setOk("");
+    setErr("");
+    setOk("");
+
+    if (!form.identifier.trim()) return setErr("Username or phone is required");
+    if (!form.password.trim()) return setErr("Password is required");
 
     try {
-      const { data } = await memberApi.post("/member-auth/login", form);
+      const { data } = await memberApi.post("/member-auth/login", {
+        identifier: form.identifier.trim(),
+        password: form.password,
+      });
+
       setMemberAuth(data.token, data.member);
       setOk("Login success");
       setTimeout(() => nav("/member/dashboard"), 300);
@@ -27,32 +35,22 @@ export default function MemberLogin() {
   return (
     <div className="auth-page">
       <div className="card auth-card">
-
-        {/* Back */}
         <div style={{ textAlign: "left", marginBottom: 12 }}>
-          <a className="small" onClick={() => nav("/")}>
-            ← Back to Home
-          </a>
+          <a className="small" onClick={() => nav("/")}>← Back to Home</a>
         </div>
 
-        {/* Icon */}
         <div className="auth-icon">→</div>
 
-        {/* Title */}
         <div className="auth-title">Welcome Back</div>
-        <div className="auth-sub">
-          Sign in to your TK Branding account
-        </div>
+        <div className="auth-sub">Sign in to your TK Branding account</div>
 
         <form onSubmit={login} style={{ display: "grid", gap: 12 }}>
           <div style={{ textAlign: "left" }}>
-            <div className="small">Email</div>
+            <div className="small">Username or Phone</div>
             <input
-              value={form.email}
-              onChange={(e) =>
-                setForm(p => ({ ...p, email: e.target.value }))
-              }
-              placeholder="Enter your email"
+              value={form.identifier}
+              onChange={(e) => setForm((p) => ({ ...p, identifier: e.target.value }))}
+              placeholder="Enter username or phone"
             />
           </div>
 
@@ -60,10 +58,8 @@ export default function MemberLogin() {
             <div className="small">Password</div>
             <input
               type="password"
-              value={form.security_pin}
-              onChange={(e) =>
-                setForm(p => ({ ...p, security_pin: e.target.value }))
-              }
+              value={form.password}
+              onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
               placeholder="Enter your password"
             />
           </div>
@@ -71,9 +67,7 @@ export default function MemberLogin() {
           {err && <div className="error">{err}</div>}
           {ok && <div className="ok">{ok}</div>}
 
-          <button className="btn" type="submit">
-            Login
-          </button>
+          <button className="btn" type="submit">Login</button>
         </form>
 
         <div className="auth-footer">
