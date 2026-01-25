@@ -77,14 +77,13 @@ export default function MemberDashboard() {
   const goHome = () => nav("/member/dashboard");
   const goService = () => nav("/member/service");
   const goMenu = () => nav("/member/menu");
-  const goRecord = () => nav("/member/record"); // ✅ history here
+  const goRecord = () => nav("/member/history"); // ✅ history here
   const goMine = () => nav("/member/mine");
 
   // If you want to show “active package” small info somewhere:
   const active = data?.active;
 
   return (
-    <MemberLayout>
       <div className="vipPage">
         {/* Top Area */}
         <div className="vipTop">
@@ -190,6 +189,5 @@ export default function MemberDashboard() {
         {/* Spacer so content doesn't hide behind bottom nav */}
         <div className="vipNavSpacer" />
       </div>
-    </MemberLayout>
   );
 }
