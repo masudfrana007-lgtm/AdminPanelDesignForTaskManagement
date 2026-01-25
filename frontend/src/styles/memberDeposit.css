@@ -1,0 +1,427 @@
+.depositPage {
+  min-height: 100vh;
+  background: url('../assets/background.png') no-repeat center center fixed;
+  background-size: cover;
+  color: white;
+  padding: 20px;
+  padding-bottom: 100px;
+  position: relative;
+  overflow: hidden;
+}
+
+.depositPage::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('data:image/svg+xml,<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="40" r="0.5" fill="rgba(255,255,255,0.08)"/><circle cx="40" cy="80" r="0.8" fill="rgba(255,255,255,0.06)"/><circle cx="70" cy="10" r="0.3" fill="rgba(255,255,255,0.1)"/><circle cx="10" cy="70" r="0.6" fill="rgba(255,255,255,0.05)"/></svg>') repeat;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.depositContainer {
+  max-width: 800px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+  padding: 0 20px;
+}
+
+/* Desktop Layout Improvements */
+@media (min-width: 768px) {
+  .depositContainer {
+    max-width: 1000px;
+    padding: 0 40px;
+  }
+  
+  .walletCard {
+    max-width: 500px;
+    margin: 0 auto 40px;
+  }
+  
+  .depositMethods {
+    max-width: 700px;
+    margin: 0 auto 40px;
+  }
+  
+  .methodCard {
+    transition: all 0.3s ease;
+  }
+  
+  .methodCard:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  }
+  
+  .recentActivity {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+}
+
+.backButton {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: white;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  cursor: pointer;
+  margin-bottom: 24px;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+}
+
+.backButton:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateX(-2px);
+}
+
+/* Wallet Balance Card */
+.walletCard {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 24px;
+  padding: 32px;
+  margin-bottom: 40px;
+  box-shadow: 
+    0 25px 50px rgba(0, 0, 0, 0.1),
+    0 10px 20px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  color: #1a1a1a;
+  transition: all 0.3s ease;
+}
+
+.walletCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 30px 60px rgba(0, 0, 0, 0.15),
+    0 15px 25px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.balanceLabel {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.balanceAmount {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.amount {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.currency {
+  font-size: 18px;
+  font-weight: 600;
+  color: #666;
+}
+
+.balanceDetails {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.balanceText {
+  font-size: 14px;
+  color: #888;
+}
+
+.statusIndicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10ac84;
+}
+
+.statusText {
+  font-size: 12px;
+  color: #10ac84;
+  font-weight: 500;
+}
+
+.activeText {
+  font-size: 12px;
+  color: #666;
+}
+
+/* Deposit Methods */
+.depositMethods {
+  margin-bottom: 40px;
+}
+
+.methodsTitle {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  color: white;
+  text-align: center;
+}
+
+.methodCard {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(15px);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.methodCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 0%, rgba(255, 255, 255, 0.02) 50%, transparent 100%);
+  pointer-events: none;
+}
+
+.methodCard.crypto {
+  border-left: 4px solid #3742fa;
+}
+
+.methodCard.bank {
+  border-left: 4px solid #ffa502;
+}
+
+.methodCard:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+}
+
+.methodHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.methodIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.methodIcon.crypto {
+  background: linear-gradient(135deg, #3742fa, #2f3542);
+}
+
+.methodIcon.bank {
+  background: linear-gradient(135deg, #ffa502, #ff6348);
+}
+
+.methodInfo {
+  flex: 1;
+}
+
+.methodTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.methodTitle > span:first-child {
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+}
+
+.methodBadge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.methodBadge.fast {
+  background: #10ac84;
+  color: white;
+}
+
+.methodBadge.recommended {
+  background: #3742fa;
+  color: white;
+}
+
+.methodBadge.manual {
+  background: #ffa502;
+  color: white;
+}
+
+.methodBadge.time {
+  background: #576574;
+  color: white;
+}
+
+.methodSubtitle {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 8px;
+}
+
+.methodDetails {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.methodArrow {
+  font-size: 24px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Security Note */
+.securityNote {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  background: rgba(16, 172, 132, 0.1);
+  border: 1px solid rgba(16, 172, 132, 0.2);
+  border-radius: 12px;
+  margin-bottom: 32px;
+}
+
+.securityIcon {
+  font-size: 16px;
+}
+
+.securityText {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+}
+
+/* Recent Activity */
+.recentActivity {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 20px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.activityTitle {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: white;
+}
+
+.activityItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.activityItem:last-child {
+  border-bottom: none;
+}
+
+.activityInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.activityAmount {
+  font-size: 16px;
+  font-weight: 600;
+  color: #10ac84;
+}
+
+.activityMethod {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.activityMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.activityTime {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.pendingBadge {
+  background: #ffa502;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+  .depositPage {
+    padding: 16px;
+  }
+  
+  .walletCard {
+    padding: 20px;
+  }
+  
+  .amount {
+    font-size: 28px;
+  }
+  
+  .methodCard {
+    padding: 16px;
+  }
+  
+  .methodIcon {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .methodTitle > span:first-child {
+    font-size: 15px;
+  }
+  
+  .methodBadge {
+    font-size: 9px;
+  }
+}
