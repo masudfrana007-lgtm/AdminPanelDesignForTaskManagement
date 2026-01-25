@@ -82,8 +82,10 @@ export default function Members() {
         phone: form.phone.trim(),
         country: form.country,
         password: form.password,
-        gender: form.gender, // ✅ required by backend
-        // NOTE: referral_code is NOT required for admin create in backend
+        gender: form.gender,
+
+        // ✅ sponsor id = referral code (users.short_id)
+        referral_code: me.short_id || String(me.id),
       });
 
       setForm({
