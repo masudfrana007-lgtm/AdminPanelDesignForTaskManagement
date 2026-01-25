@@ -175,92 +175,75 @@ export default function MemberMenu() {
       <MemberBottomNav active="menu" />
 
       {/* Congrats Overlay (same as your dashboard) */}
-      {showCongrats && (
-        <>
-          <style>{`
-            .congrats-overlay {
-              position: fixed;
-              inset: 0;
-              background: rgba(0,0,0,0.75);
-              z-index: 9999;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              animation: fadeIn 0.5s ease;
-            }
+{showCongrats && (
+  <div className="fxOverlay" role="dialog" aria-modal="true">
+    {/* Confetti layer */}
+    <div className="fxConfetti" aria-hidden="true">
+      {Array.from({ length: 70 }).map((_, i) => (
+        <span
+          key={i}
+          className="fxConfettiPiece"
+          style={{
+            left: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 1.2}s`,
+            animationDuration: `${3.8 + Math.random() * 2.2}s`,
+            transform: `rotate(${Math.random() * 360}deg)`,
+            opacity: 0.9,
+          }}
+        />
+      ))}
+    </div>
 
-            .congrats-box {
-              background: linear-gradient(135deg, #ffd700, #ff9800);
-              padding: 50px 60px;
-              border-radius: 24px;
-              text-align: center;
-              color: #1e1e1e;
-              box-shadow: 0 30px 80px rgba(0,0,0,0.5);
-              position: relative;
-              overflow: hidden;
-              animation: popIn 0.6s ease;
-              max-width: 92vw;
-            }
+    {/* Spotlight glow */}
+    <div className="fxGlow" aria-hidden="true" />
 
-            .congrats-box h1 {
-              font-size: 2.2rem;
-              margin-bottom: 12px;
-            }
+    {/* Modal */}
+    <div className="fxModal">
+      <div className="fxTopRow">
+        <div className="fxBadge">PACKAGE COMPLETED</div>
 
-            .congrats-box p {
-              font-size: 1.05rem;
-              font-weight: 500;
-            }
+        {/* optional close */}
+        <button
+          className="fxClose"
+          onClick={() => setShowCongrats(false)}
+          aria-label="Close"
+          type="button"
+        >
+          ✕
+        </button>
+      </div>
 
-            .confetti span {
-              position: absolute;
-              top: -20px;
-              width: 8px;
-              height: 14px;
-              animation: fall 3s linear infinite;
-            }
+      <div className="fxIconWrap" aria-hidden="true">
+        <div className="fxRing" />
+        <div className="fxTrophy">🏆</div>
+      </div>
 
-            .confetti span:nth-child(4n) { background: #ff1744; }
-            .confetti span:nth-child(4n+1) { background: #00e5ff; }
-            .confetti span:nth-child(4n+2) { background: #7cff00; }
-            .confetti span:nth-child(4n+3) { background: #ffd700; }
+      <h2 className="fxTitle">
+        Congratulations <span className="fxSpark">✨</span>
+      </h2>
 
-            @keyframes fall {
-              0% { transform: translateY(0) rotate(0); opacity: 1; }
-              100% { transform: translateY(120vh) rotate(720deg); opacity: 0; }
-            }
+      <p className="fxText">
+        You have successfully completed your package.
+      </p>
 
-            @keyframes popIn {
-              0% { transform: scale(0.6); opacity: 0; }
-              100% { transform: scale(1); opacity: 1; }
-            }
+      <div className="fxFooter">
+        <div className="fxMiniPill">+ Bonus Eligible</div>
+        <div className="fxMiniPill">Status: Completed ✅</div>
+      </div>
 
-            @keyframes fadeIn {
-              from { opacity: 0; }
-              to { opacity: 1; }
-            }
-          `}</style>
-
-          <div className="congrats-overlay">
-            <div className="congrats-box">
-              <h1>🎉 Congratulations! 🎉</h1>
-              <p>You have successfully completed your package</p>
-
-              <div className="confetti">
-                {Array.from({ length: 36 }).map((_, i) => (
-                  <span
-                    key={i}
-                    style={{
-                      left: `${Math.random() * 100}%`,
-                      animationDelay: `${Math.random() * 2}s`,
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+      <div className="fxActions">
+        <button
+          className="fxPrimary"
+          type="button"
+          onClick={() => setShowCongrats(false)}
+        >
+          Awesome!
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+      
     </div>
   );
 }
