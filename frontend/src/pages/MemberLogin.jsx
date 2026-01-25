@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "../styles/app.css";
 import memberApi from "../services/memberApi";
 import { setMemberAuth } from "../memberAuth";
+import "../styles/memberLogin.css";
 
 export default function MemberLogin() {
   const nav = useNavigate();

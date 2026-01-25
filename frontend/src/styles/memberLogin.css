@@ -1,0 +1,136 @@
+/* =========================
+   Member Login Page Only
+   ========================= */
+
+/* page wrapper — FORCE full viewport */
+.auth-page {
+  width: 100vw;
+  height: 100vh;
+  min-height: 100vh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: linear-gradient(180deg, #f8fafc, #eef2ff);
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+/* kill any inherited card margin */
+.auth-page .auth-card {
+  margin: 0 !important;
+}
+
+/* card */
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 28px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+}
+
+/* back link */
+.auth-card .small {
+  color: #000;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* icon */
+.auth-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #0ea5a4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+  color: #ffffff;
+  font-size: 24px;
+}
+
+/* title */
+.auth-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #020617;
+}
+
+.auth-sub {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 16px;
+}
+
+/* inputs */
+.auth-card input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  font-size: 15px;
+  color: #000;
+  font-weight: 500;
+  outline: none;
+}
+
+.auth-card input::placeholder {
+  color: #9ca3af;
+}
+
+.auth-card input:focus {
+  border-color: #0ea5a4;
+}
+
+/* button */
+.auth-card .btn {
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.auth-card .btn:hover {
+  background: #1e4fd8;
+}
+
+/* messages */
+.error {
+  color: #dc2626;
+  font-size: 13px;
+}
+
+.ok {
+  color: #16a34a;
+  font-size: 13px;
+}
+
+/* footer */
+.auth-footer {
+  margin-top: 14px;
+  font-size: 14px;
+}
+
+.auth-footer a {
+  color: #0ea5a4;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* mobile safety */
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 22px;
+  }
+}
