@@ -83,9 +83,24 @@ router.post("/", async (req, res) => {
 
       return res.status(201).json(r.rows[0]);
     } catch (e) {
-      if (String(e).includes("members_short_id_key")) continue;
+      const msg = String(e);
+
+      // retry only if short_id collision
+      if (msg.includes("members_short_id_key")) continue;
+
+      // ❌ duplicate username
+      if (msg.includes("members_nickname_key")) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+
+      // ❌ duplicate phone
+      if (msg.includes("members_phone_key")) {
+        return res.status(400).json({ message: "Phone number already exists" });
+      }
+
+      console.error(e);
       return res.status(500).json({ message: "Server error" });
-    }
+    }    
   }
 });
 
