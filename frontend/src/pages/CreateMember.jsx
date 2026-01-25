@@ -4,20 +4,25 @@ import { getUser } from "../auth";
 import "../styles/app.css";
 import AppLayout from "../components/AppLayout";
 
+const RANKS = ["Trial", "V1", "V2", "V3", "V4", "V5", "V6"];
+
 export default function Members() {
   const me = getUser();
 
   const [list, setList] = useState([]);
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const [form, setForm] = useState({
     country: "United States of America (+1)",
     phone: "",
+    email: "",
     nickname: "",
-    gender: "",            // ✅ added (backend requires)
-    referral_code: "",     // ✅ added (you said needed for saving, no checking)
     password: "",
+    security_pin: "",
+    ranking: "Trial",
+    withdraw_privilege: "Enabled",
   });
 
   const load = async () => {
@@ -25,52 +30,38 @@ export default function Members() {
     setList(data);
   };
 
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
 
   const onChange = (key, value) => {
-    setForm((p) => ({ ...p, [key]: value }));
+    setForm(p => ({ ...p, [key]: value }));
+    setFieldErrors(p => ({ ...p, [key]: null }));
   };
 
   const create = async (e) => {
     e.preventDefault();
     setErr("");
     setOk("");
-
-    // ✅ match backend required fields
-    if (!form.country.trim()) return setErr("Country is required");
-    if (!form.phone.trim()) return setErr("Phone number is required");
-    if (!form.nickname.trim()) return setErr("Nickname is required");
-    if (!form.gender.trim()) return setErr("Gender is required");
-    if (!form.referral_code.trim()) return setErr("Referral code is required");
-    if (!form.password.trim()) return setErr("Password is required");
+    setFieldErrors({});
 
     try {
-      await api.post("/members", {
-        nickname: form.nickname.trim(),
-        phone: form.phone.trim(),
-        country: form.country.trim(),
-        password: form.password,
-        gender: form.gender, // ✅ required by backend
-        referral_code: form.referral_code.trim(), // ✅ stored, NOT checked in admin UI
-      });
-
+      await api.post("/members", form);
       setForm({
         country: "United States of America (+1)",
         phone: "",
+        email: "",
         nickname: "",
-        gender: "",
-        referral_code: "",
         password: "",
+        security_pin: "",
+        ranking: "Trial",
+        withdraw_privilege: "Enabled",
       });
-
       setOk("Member created");
       await load();
       setTimeout(() => setOk(""), 1500);
     } catch (e2) {
-      // ✅ backend already returns "Username already exists" / "Phone number already exists"
-      setErr(e2?.response?.data?.message || "Failed");
+      const data = e2?.response?.data;
+      if (data?.fieldErrors) setFieldErrors(data.fieldErrors);
+      else setErr(data?.message || "Failed");
     }
   };
 
@@ -80,48 +71,44 @@ export default function Members() {
         <div className="topbar">
           <div>
             <h2>Create Member</h2>
-            <div className="small">
-              You are <span className="badge">{me.role}</span>{" "}
-              (owner/agent can create members)
-            </div>
+            <div className="small">You are <span className="badge">{me.role}</span> (owner/agent can create members)</div>
           </div>
         </div>
 
-        {/* CREATE MEMBER */}
         <div className="card" style={{ marginBottom: 14 }}>
           <form onSubmit={create} style={{ display: "grid", gap: 12 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            {/* Row 1 */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
               <div>
                 <div className="small">Country *</div>
-                <select
-                  value={form.country}
-                  onChange={(e) => onChange("country", e.target.value)}
-                >
+                <select value={form.country} onChange={(e) => onChange("country", e.target.value)}>
                   <option>United States of America (+1)</option>
                   <option>Bangladesh (+880)</option>
                   <option>India (+91)</option>
                   <option>United Kingdom (+44)</option>
                 </select>
+                {fieldErrors.country && <div className="error">{fieldErrors.country[0]}</div>}
               </div>
 
               <div>
                 <div className="small">Phone Number *</div>
-                <input
-                  value={form.phone}
-                  onChange={(e) => onChange("phone", e.target.value)}
-                  placeholder="Please Enter Phone Number"
-                />
+                <input value={form.phone} onChange={(e) => onChange("phone", e.target.value)} placeholder="Please Enter Phone Number" />
+                {fieldErrors.phone && <div className="error">{fieldErrors.phone[0]}</div>}
+              </div>
+
+              <div>
+                <div className="small">Email</div>
+                <input value={form.email} onChange={(e) => onChange("email", e.target.value)} placeholder="Please Enter Email" />
+                {fieldErrors.email && <div className="error">{fieldErrors.email[0]}</div>}
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            {/* Row 2 */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
               <div>
                 <div className="small">Nickname *</div>
-                <input
-                  value={form.nickname}
-                  onChange={(e) => onChange("nickname", e.target.value)}
-                  placeholder="Please Enter Nickname"
-                />
+                <input value={form.nickname} onChange={(e) => onChange("nickname", e.target.value)} placeholder="Please Enter Nickname" />
+                {fieldErrors.nickname && <div className="error">{fieldErrors.nickname[0]}</div>}
               </div>
 
               <div>
@@ -129,67 +116,49 @@ export default function Members() {
                 <input value={me.short_id || me.id} disabled />
                 <div className="small">Auto: owner/agent who creates the member</div>
               </div>
-            </div>
 
-            {/* ✅ Add Gender (UI only) */}
-            <div style={{ textAlign: "left" }}>
-              <div className="small">Gender *</div>
-              <select
-                value={form.gender}
-                onChange={(e) => onChange("gender", e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "12px 14px",
-                  borderRadius: 10,
-                  border: "1px solid #d1d5db",
-                  fontSize: 15,
-                  color: "#000",
-                  fontWeight: 500,
-                  outline: "none",
-                  background: "#fff",
-                }}
-              >
-                <option value="">Select your gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Prefer not to say</option>
-              </select>
-            </div>
-
-            {/* ✅ Add Referral Code (no checking, just stored) */}
-            <div>
-              <div className="small">Referral Code *</div>
-              <input
-                value={form.referral_code}
-                onChange={(e) => onChange("referral_code", e.target.value)}
-                placeholder="Enter referral code"
-              />
-              <div className="small">
-                Stored only. No validation here.
+              <div>
+                <div className="small">Ranking *</div>
+                <select value={form.ranking} onChange={(e) => onChange("ranking", e.target.value)}>
+                  {RANKS.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+                {fieldErrors.ranking && <div className="error">{fieldErrors.ranking[0]}</div>}
               </div>
             </div>
 
-            <div>
-              <div className="small">Password *</div>
-              <input
-                type="password"
-                value={form.password}
-                onChange={(e) => onChange("password", e.target.value)}
-              />
+            {/* Row 3 */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+              <div>
+                <div className="small">Withdraw Privilege *</div>
+                <select value={form.withdraw_privilege} onChange={(e) => onChange("withdraw_privilege", e.target.value)}>
+                  <option value="Enabled">Enabled</option>
+                  <option value="Disabled">Disabled</option>
+                </select>
+                {fieldErrors.withdraw_privilege && <div className="error">{fieldErrors.withdraw_privilege[0]}</div>}
+              </div>
+
+              <div>
+                <div className="small">Password *</div>
+                <input type="password" value={form.password} onChange={(e) => onChange("password", e.target.value)} />
+                {fieldErrors.password && <div className="error">{fieldErrors.password[0]}</div>}
+              </div>
+
+              <div>
+                <div className="small">Security PIN *</div>
+                <input type="password" value={form.security_pin} onChange={(e) => onChange("security_pin", e.target.value)} placeholder="Please Enter Security PIN" />
+                {fieldErrors.security_pin && <div className="error">{fieldErrors.security_pin[0]}</div>}
+              </div>
             </div>
 
             {err && <div className="error">{err}</div>}
             {ok && <div className="ok">{ok}</div>}
 
-            <div style={{ display: "flex", justifyContent: "flex-end" }}>
-              <button className="btn" type="submit">
-                Save & Create
-              </button>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+              <button className="btn" type="submit">Save & Create</button>
             </div>
           </form>
         </div>
 
-        {/* MEMBERS LIST */}
         <div className="card">
           <h3>Members List</h3>
           <div className="small">
@@ -203,38 +172,33 @@ export default function Members() {
                 <th>Member ID</th>
                 <th>Nickname</th>
                 <th>Phone</th>
+                <th>Email</th>
                 <th>Ranking</th>
-                <th>Status</th>
+                <th>Withdraw</th>
                 <th>Sponsor</th>
               </tr>
             </thead>
             <tbody>
-              {list.map((m) => (
+              {list.map(m => (
                 <tr key={m.short_id || m.id}>
                   <td>{m.short_id}</td>
                   <td>{m.nickname}</td>
                   <td>{m.phone}</td>
-                  <td>
-                    <span className="badge">{m.ranking}</span>
-                  </td>
-                  <td>
-                    <span className="badge">{m.approval_status}</span>
-                  </td>
+                  <td>{m.email || "-"}</td>
+                  <td><span className="badge">{m.ranking}</span></td>
+                  <td><span className="badge">{m.withdraw_privilege ? "Enabled" : "Disabled"}</span></td>
                   <td>{m.sponsor_short_id}</td>
                 </tr>
               ))}
-
               {!list.length && (
                 <tr>
-                  <td colSpan="6" className="small">
-                    No members yet.
-                  </td>
+                  <td colSpan="7" className="small">No members yet.</td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
       </div>
-    </AppLayout>
+  </AppLayout>
   );
 }
