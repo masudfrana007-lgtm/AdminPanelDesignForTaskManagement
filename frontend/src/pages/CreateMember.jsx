@@ -6,6 +6,43 @@ import AppLayout from "../components/AppLayout";
 
 const RANKS = ["Trial", "V1", "V2", "V3", "V4", "V5", "V6"];
 
+function extractDialCode(countryLabel) {
+  // e.g. "United States of America (+1)" -> "+1"
+  const m = String(countryLabel || "").match(/\(\s*(\+\d+)\s*\)/);
+  return m ? m[1] : "";
+}
+
+function digitsOnly(v) {
+  return String(v || "").replace(/[^\d]/g, "");
+}
+
+// Build a canonical phone string: +<countrycode><numberdigits>
+// Example: country "+1", phone "1235656" => "+11235656"
+function buildFullPhone(countryLabel, phoneInput) {
+  const dial = extractDialCode(countryLabel);
+  const num = digitsOnly(phoneInput);
+
+  if (!dial || !num) return "";
+
+  // dial includes "+", remove plus for concatenation
+  const dialDigits = digitsOnly(dial);
+  return `+${dialDigits}${num}`;
+}
+
+// Normalize existing stored phone to canonical format using selected country code if missing
+function normalizeStoredPhone(storedPhone, selectedCountryLabel) {
+  const raw = String(storedPhone || "").trim();
+  if (!raw) return "";
+
+  // If it already starts with +, just canonicalize digits
+  if (raw.startsWith("+")) {
+    return `+${digitsOnly(raw)}`;
+  }
+
+  // If it doesn't start with +, assume it's a local number and prefix selected dial code
+  return buildFullPhone(selectedCountryLabel, raw);
+}
+
 export default function Members() {
   const me = getUser();
 
@@ -18,7 +55,7 @@ export default function Members() {
     country: "United States of America (+1)",
     phone: "",
     nickname: "",
-    gender: "", // ✅ backend requires
+    gender: "",
     password: "",
     ranking: "Trial",
     withdraw_privilege: "Enabled",
@@ -39,25 +76,33 @@ export default function Members() {
     setErr("");
   };
 
-  // ✅ client-side duplicate checks based on currently loaded list
   const normalizedNickname = useMemo(
     () => form.nickname.trim().toLowerCase(),
     [form.nickname]
   );
-  const normalizedPhone = useMemo(
-    () => form.phone.trim(),
-    [form.phone]
-  );
 
   const nicknameDuplicate = useMemo(() => {
     if (!normalizedNickname) return false;
-    return list.some((m) => String(m.nickname || "").trim().toLowerCase() === normalizedNickname);
+    return list.some(
+      (m) => String(m.nickname || "").trim().toLowerCase() === normalizedNickname
+    );
   }, [list, normalizedNickname]);
 
+  // ✅ canonical full phone for what user is entering
+  const normalizedFullPhone = useMemo(
+    () => buildFullPhone(form.country, form.phone),
+    [form.country, form.phone]
+  );
+
+  // ✅ compare canonical full phone against canonicalized stored phones
   const phoneDuplicate = useMemo(() => {
-    if (!normalizedPhone) return false;
-    return list.some((m) => String(m.phone || "").trim() === normalizedPhone);
-  }, [list, normalizedPhone]);
+    if (!normalizedFullPhone) return false;
+
+    return list.some((m) => {
+      const existing = normalizeStoredPhone(m.phone, form.country);
+      return existing && existing === normalizedFullPhone;
+    });
+  }, [list, normalizedFullPhone, form.country]);
 
   const create = async (e) => {
     e.preventDefault();
@@ -65,26 +110,25 @@ export default function Members() {
     setOk("");
     setFieldErrors({});
 
-    // required fields (match backend: nickname, phone, country, password, gender)
     if (!form.country.trim()) return setErr("Country is required");
     if (!form.phone.trim()) return setErr("Phone number is required");
     if (!form.nickname.trim()) return setErr("Nickname is required");
     if (!form.gender.trim()) return setErr("Gender is required");
     if (!form.password.trim()) return setErr("Password is required");
 
-    // ✅ block submit if duplicates detected
     if (nicknameDuplicate) return setErr("Username already exists");
     if (phoneDuplicate) return setErr("Phone number already exists");
+
+    const fullPhone = buildFullPhone(form.country, form.phone);
+    if (!fullPhone) return setErr("Invalid phone/country");
 
     try {
       await api.post("/members", {
         nickname: form.nickname.trim(),
-        phone: form.phone.trim(),
+        phone: fullPhone,              // ✅ send full phone to backend
         country: form.country,
         password: form.password,
         gender: form.gender,
-
-        // ✅ sponsor id = referral code (users.short_id)
         referral_code: me.short_id || String(me.id),
       });
 
@@ -106,7 +150,6 @@ export default function Members() {
       setErr(data?.message || "Failed");
     }
   };
-
   return (
     <AppLayout>
       <div className="container">
