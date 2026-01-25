@@ -17,6 +17,29 @@ export default function MemberSignup() {
     accept_terms: false,
   });
 
+	const COUNTRY_CODES = [
+	  { code: "+880", label: "BD (+880)" },
+	  { code: "+91", label: "IN (+91)" },
+	  { code: "+1", label: "US/CA (+1)" },
+	  { code: "+44", label: "UK (+44)" },
+	  { code: "+971", label: "UAE (+971)" },
+	  { code: "+966", label: "SA (+966)" },
+	  { code: "+965", label: "KW (+965)" },
+	  { code: "+974", label: "QA (+974)" },
+	  { code: "+968", label: "OM (+968)" },
+	  { code: "+973", label: "BH (+973)" },
+	  { code: "+60", label: "MY (+60)" },
+	  { code: "+65", label: "SG (+65)" },
+	  { code: "+62", label: "ID (+62)" },
+	  { code: "+66", label: "TH (+66)" },
+	  { code: "+81", label: "JP (+81)" },
+	  { code: "+82", label: "KR (+82)" },
+	  { code: "+49", label: "DE (+49)" },
+	  { code: "+33", label: "FR (+33)" },
+	  { code: "+39", label: "IT (+39)" },
+	  { code: "+7", label: "RU/KZ (+7)" },
+	];
+
   const [showPass, setShowPass] = useState(false);
 
   const submit = (e) => {
@@ -41,7 +64,7 @@ export default function MemberSignup() {
         {/* Title */}
         <div className="auth-title">Sign Up</div>
         <div className="auth-sub">
-          Join Iconic Digital and start earning
+          Join TK Branding and start earning
         </div>
 
         <form onSubmit={submit} style={{ display: "grid", gap: 12 }}>
@@ -56,23 +79,35 @@ export default function MemberSignup() {
           </div>
 
           {/* Phone */}
-          <div style={{ textAlign: "left" }}>
-            <div className="small">Phone Number</div>
+			<div style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: 10 }}>
+			  <select
+			    value={form.country_code}
+			    onChange={(e) => setForm((p) => ({ ...p, country_code: e.target.value }))}
+			    style={{
+			      width: "100%",
+			      padding: "12px 14px",
+			      borderRadius: 10,
+			      border: "1px solid #d1d5db",
+			      fontSize: 15,
+			      color: "#000",
+			      fontWeight: 500,
+			      outline: "none",
+			      background: "#fff",
+			    }}
+			  >
+			    {COUNTRY_CODES.map((c) => (
+			      <option key={c.code} value={c.code}>
+			        {c.label}
+			      </option>
+			    ))}
+			  </select>
 
-            <div style={{ display: "grid", gridTemplateColumns: "90px 1fr", gap: 10 }}>
-              <input
-                value={form.country_code}
-                onChange={(e) => setForm((p) => ({ ...p, country_code: e.target.value }))}
-                placeholder="+880"
-                style={{ textAlign: "center" }}
-              />
-              <input
-                value={form.phone}
-                onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
-                placeholder="Enter your phone number"
-              />
-            </div>
-          </div>
+			  <input
+			    value={form.phone}
+			    onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
+			    placeholder="Enter your phone number"
+			  />
+			</div>
 
           {/* Gender */}
           <div style={{ textAlign: "left" }}>
@@ -95,7 +130,7 @@ export default function MemberSignup() {
               <option value="">Select your gender</option>
               <option value="male">Male</option>
               <option value="female">Female</option>
-              <option value="other">Other</option>
+              <option value="other">Prefer not to say</option>
             </select>
           </div>
 
@@ -153,23 +188,22 @@ export default function MemberSignup() {
           </div>
 
           {/* Terms */}
-          <label style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 13 }}>
-            <input
-              type="checkbox"
-              checked={form.accept_terms}
-              onChange={(e) => setForm((p) => ({ ...p, accept_terms: e.target.checked }))}
-              style={{ marginTop: 3 }}
-            />
-            <span style={{ color: "#374151" }}>
-              I accept the{" "}
-              <a
-                onClick={() => alert("Terms page later")}
-                style={{ color: "#0ea5a4", fontWeight: 600, cursor: "pointer" }}
-              >
-                Terms and Conditions
-              </a>
-            </span>
-          </label>
+		<label className="terms-row">
+		  <input
+		    type="checkbox"
+		    checked={form.accept_terms}
+		    onChange={(e) => setForm((p) => ({ ...p, accept_terms: e.target.checked }))}
+		  />
+		  <span className="terms-text">
+		    I accept the{" "}
+		    <span
+		      className="terms-link"
+		      onClick={() => alert("Terms page later")}
+		    >
+		      Terms and Conditions
+		    </span>
+		  </span>
+		</label>
 
           <button className="btn" type="submit" style={{ background: "#0ea5a4" }}>
             Sign Up

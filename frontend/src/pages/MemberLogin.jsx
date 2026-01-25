@@ -41,7 +41,7 @@ export default function MemberLogin() {
         {/* Title */}
         <div className="auth-title">Welcome Back</div>
         <div className="auth-sub">
-          Sign in to your Iconic Digital account
+          Sign in to your TK Branding account
         </div>
 
         <form onSubmit={login} style={{ display: "grid", gap: 12 }}>
