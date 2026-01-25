@@ -19,6 +19,7 @@ export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
   
   { path: "/member/login", element: <MemberLogin /> },
+  { path: "/member/signup", element: <MemberSignup /> },
 
   { path: "/", element: <ProtectedRoute><Dashboard /></ProtectedRoute> },
   
@@ -99,15 +100,6 @@ export const router = createBrowserRouter([
     element: (
       <MemberProtectedRoute>
         <MemberHistory />
-      </MemberProtectedRoute>
-    )
-  },
-
-  {
-  path: "/member/signup",
-    element: (
-      <MemberProtectedRoute>
-        <MemberSignup />
       </MemberProtectedRoute>
     )
   },
