@@ -1,7 +1,7 @@
 auth.css/* auth pages */
 
 .auth-page {
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -9,10 +9,34 @@ auth.css/* auth pages */
   padding: 16px;
 }
 
+.auth-page .auth-card {
+  margin: 0 !important;   /* kills any margin from .card */
+}
+
 .auth-card {
   width: 100%;
   max-width: 420px;
   text-align: center;
+}
+
+.auth-card input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  font-size: 15px;
+  color: #000;        /* black text */
+  font-weight: 500;
+  outline: none;
+}
+
+.auth-card input::placeholder {
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.auth-card input:focus {
+  border-color: #0ea5a4;
 }
 
 .auth-icon {
