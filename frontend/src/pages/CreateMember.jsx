@@ -4,23 +4,20 @@ import { getUser } from "../auth";
 import "../styles/app.css";
 import AppLayout from "../components/AppLayout";
 
-const RANKS = ["Trial", "V1", "V2", "V3", "V4", "V5", "V6"];
-
 export default function Members() {
   const me = getUser();
 
   const [list, setList] = useState([]);
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
-  const [fieldErrors, setFieldErrors] = useState({});
 
   const [form, setForm] = useState({
     country: "United States of America (+1)",
     phone: "",
     nickname: "",
+    gender: "",            // ✅ added (backend requires)
+    referral_code: "",     // ✅ added (you said needed for saving, no checking)
     password: "",
-    ranking: "Trial",
-    withdraw_privilege: "Enabled",
   });
 
   const load = async () => {
@@ -34,36 +31,45 @@ export default function Members() {
 
   const onChange = (key, value) => {
     setForm((p) => ({ ...p, [key]: value }));
-    setFieldErrors((p) => ({ ...p, [key]: null }));
   };
 
   const create = async (e) => {
     e.preventDefault();
     setErr("");
     setOk("");
-    setFieldErrors({});
+
+    // ✅ match backend required fields
+    if (!form.country.trim()) return setErr("Country is required");
+    if (!form.phone.trim()) return setErr("Phone number is required");
+    if (!form.nickname.trim()) return setErr("Nickname is required");
+    if (!form.gender.trim()) return setErr("Gender is required");
+    if (!form.referral_code.trim()) return setErr("Referral code is required");
+    if (!form.password.trim()) return setErr("Password is required");
 
     try {
       await api.post("/members", {
-        nickname: form.nickname,
-        phone: form.phone,
-        country: form.country,
+        nickname: form.nickname.trim(),
+        phone: form.phone.trim(),
+        country: form.country.trim(),
         password: form.password,
+        gender: form.gender, // ✅ required by backend
+        referral_code: form.referral_code.trim(), // ✅ stored, NOT checked in admin UI
       });
 
       setForm({
         country: "United States of America (+1)",
         phone: "",
         nickname: "",
+        gender: "",
+        referral_code: "",
         password: "",
-        ranking: "Trial",
-        withdraw_privilege: "Enabled",
       });
 
       setOk("Member created");
       await load();
       setTimeout(() => setOk(""), 1500);
     } catch (e2) {
+      // ✅ backend already returns "Username already exists" / "Phone number already exists"
       setErr(e2?.response?.data?.message || "Failed");
     }
   };
@@ -122,6 +128,44 @@ export default function Members() {
                 <div className="small">Sponsor ID</div>
                 <input value={me.short_id || me.id} disabled />
                 <div className="small">Auto: owner/agent who creates the member</div>
+              </div>
+            </div>
+
+            {/* ✅ Add Gender (UI only) */}
+            <div style={{ textAlign: "left" }}>
+              <div className="small">Gender *</div>
+              <select
+                value={form.gender}
+                onChange={(e) => onChange("gender", e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "12px 14px",
+                  borderRadius: 10,
+                  border: "1px solid #d1d5db",
+                  fontSize: 15,
+                  color: "#000",
+                  fontWeight: 500,
+                  outline: "none",
+                  background: "#fff",
+                }}
+              >
+                <option value="">Select your gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Prefer not to say</option>
+              </select>
+            </div>
+
+            {/* ✅ Add Referral Code (no checking, just stored) */}
+            <div>
+              <div className="small">Referral Code *</div>
+              <input
+                value={form.referral_code}
+                onChange={(e) => onChange("referral_code", e.target.value)}
+                placeholder="Enter referral code"
+              />
+              <div className="small">
+                Stored only. No validation here.
               </div>
             </div>
 
