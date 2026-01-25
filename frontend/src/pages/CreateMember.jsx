@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import api from "../services/api";
 import { getUser } from "../auth";
 import "../styles/app.css";
@@ -17,10 +17,9 @@ export default function Members() {
   const [form, setForm] = useState({
     country: "United States of America (+1)",
     phone: "",
-    email: "",
     nickname: "",
+    gender: "", // ✅ backend requires
     password: "",
-    security_pin: "",
     ranking: "Trial",
     withdraw_privilege: "Enabled",
   });
@@ -30,12 +29,35 @@ export default function Members() {
     setList(data);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const onChange = (key, value) => {
-    setForm(p => ({ ...p, [key]: value }));
-    setFieldErrors(p => ({ ...p, [key]: null }));
+    setForm((p) => ({ ...p, [key]: value }));
+    setFieldErrors((p) => ({ ...p, [key]: null }));
+    setErr("");
   };
+
+  // ✅ client-side duplicate checks based on currently loaded list
+  const normalizedNickname = useMemo(
+    () => form.nickname.trim().toLowerCase(),
+    [form.nickname]
+  );
+  const normalizedPhone = useMemo(
+    () => form.phone.trim(),
+    [form.phone]
+  );
+
+  const nicknameDuplicate = useMemo(() => {
+    if (!normalizedNickname) return false;
+    return list.some((m) => String(m.nickname || "").trim().toLowerCase() === normalizedNickname);
+  }, [list, normalizedNickname]);
+
+  const phoneDuplicate = useMemo(() => {
+    if (!normalizedPhone) return false;
+    return list.some((m) => String(m.phone || "").trim() === normalizedPhone);
+  }, [list, normalizedPhone]);
 
   const create = async (e) => {
     e.preventDefault();
@@ -43,25 +65,43 @@ export default function Members() {
     setOk("");
     setFieldErrors({});
 
+    // required fields (match backend: nickname, phone, country, password, gender)
+    if (!form.country.trim()) return setErr("Country is required");
+    if (!form.phone.trim()) return setErr("Phone number is required");
+    if (!form.nickname.trim()) return setErr("Nickname is required");
+    if (!form.gender.trim()) return setErr("Gender is required");
+    if (!form.password.trim()) return setErr("Password is required");
+
+    // ✅ block submit if duplicates detected
+    if (nicknameDuplicate) return setErr("Username already exists");
+    if (phoneDuplicate) return setErr("Phone number already exists");
+
     try {
-      await api.post("/members", form);
+      await api.post("/members", {
+        nickname: form.nickname.trim(),
+        phone: form.phone.trim(),
+        country: form.country,
+        password: form.password,
+        gender: form.gender, // ✅ required by backend
+        // NOTE: referral_code is NOT required for admin create in backend
+      });
+
       setForm({
         country: "United States of America (+1)",
         phone: "",
-        email: "",
         nickname: "",
+        gender: "",
         password: "",
-        security_pin: "",
         ranking: "Trial",
         withdraw_privilege: "Enabled",
       });
+
       setOk("Member created");
       await load();
       setTimeout(() => setOk(""), 1500);
     } catch (e2) {
       const data = e2?.response?.data;
-      if (data?.fieldErrors) setFieldErrors(data.fieldErrors);
-      else setErr(data?.message || "Failed");
+      setErr(data?.message || "Failed");
     }
   };
 
@@ -71,7 +111,9 @@ export default function Members() {
         <div className="topbar">
           <div>
             <h2>Create Member</h2>
-            <div className="small">You are <span className="badge">{me.role}</span> (owner/agent can create members)</div>
+            <div className="small">
+              You are <span className="badge">{me.role}</span> (owner/agent can create members)
+            </div>
           </div>
         </div>
 
@@ -92,14 +134,28 @@ export default function Members() {
 
               <div>
                 <div className="small">Phone Number *</div>
-                <input value={form.phone} onChange={(e) => onChange("phone", e.target.value)} placeholder="Please Enter Phone Number" />
+                <input
+                  value={form.phone}
+                  onChange={(e) => onChange("phone", e.target.value)}
+                  placeholder="Please Enter Phone Number"
+                />
+                {/* ✅ live duplicate hint */}
+                {form.phone.trim() && phoneDuplicate && (
+                  <div className="error">Phone number already exists</div>
+                )}
                 {fieldErrors.phone && <div className="error">{fieldErrors.phone[0]}</div>}
               </div>
 
+              {/* ✅ Gender added (backend requires) */}
               <div>
-                <div className="small">Email</div>
-                <input value={form.email} onChange={(e) => onChange("email", e.target.value)} placeholder="Please Enter Email" />
-                {fieldErrors.email && <div className="error">{fieldErrors.email[0]}</div>}
+                <div className="small">Gender *</div>
+                <select value={form.gender} onChange={(e) => onChange("gender", e.target.value)}>
+                  <option value="">Select your gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Prefer not to say</option>
+                </select>
+                {fieldErrors.gender && <div className="error">{fieldErrors.gender[0]}</div>}
               </div>
             </div>
 
@@ -107,7 +163,15 @@ export default function Members() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
               <div>
                 <div className="small">Nickname *</div>
-                <input value={form.nickname} onChange={(e) => onChange("nickname", e.target.value)} placeholder="Please Enter Nickname" />
+                <input
+                  value={form.nickname}
+                  onChange={(e) => onChange("nickname", e.target.value)}
+                  placeholder="Please Enter Nickname"
+                />
+                {/* ✅ live duplicate hint */}
+                {form.nickname.trim() && nicknameDuplicate && (
+                  <div className="error">Username already exists</div>
+                )}
                 {fieldErrors.nickname && <div className="error">{fieldErrors.nickname[0]}</div>}
               </div>
 
@@ -120,7 +184,11 @@ export default function Members() {
               <div>
                 <div className="small">Ranking *</div>
                 <select value={form.ranking} onChange={(e) => onChange("ranking", e.target.value)}>
-                  {RANKS.map(r => <option key={r} value={r}>{r}</option>)}
+                  {RANKS.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
                 </select>
                 {fieldErrors.ranking && <div className="error">{fieldErrors.ranking[0]}</div>}
               </div>
@@ -130,31 +198,43 @@ export default function Members() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
               <div>
                 <div className="small">Withdraw Privilege *</div>
-                <select value={form.withdraw_privilege} onChange={(e) => onChange("withdraw_privilege", e.target.value)}>
+                <select
+                  value={form.withdraw_privilege}
+                  onChange={(e) => onChange("withdraw_privilege", e.target.value)}
+                >
                   <option value="Enabled">Enabled</option>
                   <option value="Disabled">Disabled</option>
                 </select>
-                {fieldErrors.withdraw_privilege && <div className="error">{fieldErrors.withdraw_privilege[0]}</div>}
+                {fieldErrors.withdraw_privilege && (
+                  <div className="error">{fieldErrors.withdraw_privilege[0]}</div>
+                )}
               </div>
 
               <div>
                 <div className="small">Password *</div>
-                <input type="password" value={form.password} onChange={(e) => onChange("password", e.target.value)} />
+                <input
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => onChange("password", e.target.value)}
+                />
                 {fieldErrors.password && <div className="error">{fieldErrors.password[0]}</div>}
               </div>
 
-              <div>
-                <div className="small">Security PIN *</div>
-                <input type="password" value={form.security_pin} onChange={(e) => onChange("security_pin", e.target.value)} placeholder="Please Enter Security PIN" />
-                {fieldErrors.security_pin && <div className="error">{fieldErrors.security_pin[0]}</div>}
-              </div>
+              <div />
             </div>
 
             {err && <div className="error">{err}</div>}
             {ok && <div className="ok">{ok}</div>}
 
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-              <button className="btn" type="submit">Save & Create</button>
+              <button
+                className="btn"
+                type="submit"
+                disabled={nicknameDuplicate || phoneDuplicate}
+                title={nicknameDuplicate || phoneDuplicate ? "Fix duplicate fields first" : ""}
+              >
+                Save & Create
+              </button>
             </div>
           </form>
         </div>
@@ -172,33 +252,37 @@ export default function Members() {
                 <th>Member ID</th>
                 <th>Nickname</th>
                 <th>Phone</th>
-                <th>Email</th>
                 <th>Ranking</th>
-                <th>Withdraw</th>
+                <th>Status</th>
                 <th>Sponsor</th>
               </tr>
             </thead>
             <tbody>
-              {list.map(m => (
+              {list.map((m) => (
                 <tr key={m.short_id || m.id}>
                   <td>{m.short_id}</td>
                   <td>{m.nickname}</td>
                   <td>{m.phone}</td>
-                  <td>{m.email || "-"}</td>
-                  <td><span className="badge">{m.ranking}</span></td>
-                  <td><span className="badge">{m.withdraw_privilege ? "Enabled" : "Disabled"}</span></td>
+                  <td>
+                    <span className="badge">{m.ranking}</span>
+                  </td>
+                  <td>
+                    <span className="badge">{m.approval_status}</span>
+                  </td>
                   <td>{m.sponsor_short_id}</td>
                 </tr>
               ))}
               {!list.length && (
                 <tr>
-                  <td colSpan="7" className="small">No members yet.</td>
+                  <td colSpan="6" className="small">
+                    No members yet.
+                  </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
       </div>
-  </AppLayout>
+    </AppLayout>
   );
 }
