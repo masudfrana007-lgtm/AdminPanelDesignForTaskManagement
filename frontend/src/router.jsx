@@ -13,6 +13,7 @@ import MemberLogin from "./pages/MemberLogin";
 import MemberDashboard from "./pages/MemberDashboard";
 import MemberProtectedRoute from "./components/MemberProtectedRoute";
 import MemberHistory from "./pages/MemberHistory";
+import MemberSignup from "./pages/MemberSignup";
 
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
@@ -98,6 +99,15 @@ export const router = createBrowserRouter([
     element: (
       <MemberProtectedRoute>
         <MemberHistory />
+      </MemberProtectedRoute>
+    )
+  },
+
+  {
+  path: "/member/signup",
+    element: (
+      <MemberProtectedRoute>
+        <MemberSignup />
       </MemberProtectedRoute>
     )
   },

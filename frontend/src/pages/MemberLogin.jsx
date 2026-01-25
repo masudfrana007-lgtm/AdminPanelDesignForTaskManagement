@@ -77,7 +77,7 @@ export default function MemberLogin() {
         </form>
 
         <div className="auth-footer">
-          Don’t have an account? <a onClick={() => nav("/signup")}>Sign Up</a>
+          Don’t have an account? <a onClick={() => nav("/member/signup")}>Sign Up</a>
         </div>
       </div>
     </div>
