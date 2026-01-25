@@ -8,6 +8,7 @@ export default function MemberHistory() {
   const [err, setErr] = useState("");
 
   const load = async () => {
+    setErr("");
     try {
       const res = await memberApi.get("/member/history");
       setRows(res.data || []);
@@ -33,23 +34,19 @@ export default function MemberHistory() {
     <div className="historyPage">
       <div className="historyContent">
         <div className="historyHeader">
-          <div>
-            <h2 className="historyTitle">Completed Packages</h2>
-            <div className="historySub">Your finished sets & earnings</div>
-          </div>
+          <h2 className="historyTitle">Completed Packages</h2>
+          <div className="historySub">Your finished sets & earnings</div>
         </div>
 
         {err && <div className="historyAlert error">{err}</div>}
 
         {!rows.length ? (
           <div className="historyCard">
-            <div className="historyEmpty">
-              No completed packages yet.
-            </div>
+            <div className="historyEmpty">No completed packages yet.</div>
           </div>
         ) : (
           rows.map((r, i) => (
-            <div key={r.id} className="historyCard glass">
+            <div key={r.id} className="historyCard">
               <div className="historyTop">
                 <div className="historyIndex">#{i + 1}</div>
                 <div className="historyBadge">COMPLETED</div>
