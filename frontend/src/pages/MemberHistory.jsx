@@ -5,13 +5,19 @@ import "../styles/memberHistory.css";
 
 export default function MemberHistory() {
   const [rows, setRows] = useState([]);
+  const [summary, setSummary] = useState(null);
   const [err, setErr] = useState("");
 
   const load = async () => {
     setErr("");
     try {
-      const res = await memberApi.get("/member/history");
-      setRows(res.data || []);
+      const [hist, sum] = await Promise.all([
+        memberApi.get("/member/history"),
+        memberApi.get("/member/history-summary"),
+      ]);
+
+      setRows(hist.data || []);
+      setSummary(sum.data);
     } catch {
       setErr("Failed to load history");
     }
@@ -34,12 +40,64 @@ export default function MemberHistory() {
     <div className="historyPage">
       <div className="historyContent">
         <div className="historyHeader">
-          <h2 className="historyTitle">Completed Packages</h2>
-          <div className="historySub">Your finished sets & earnings</div>
+          <h2 className="historyTitle">History & Earnings</h2>
+          <div className="historySub">
+            Daily · Weekly · Lifetime performance
+          </div>
         </div>
 
         {err && <div className="historyAlert error">{err}</div>}
 
+        {/* ================= SUMMARY GLASS CARDS ================= */}
+        {summary && (
+          <div className="historySummary">
+            {[
+              {
+                title: "Today",
+                sets: summary.today_sets,
+                tasks: summary.today_tasks,
+                amount: summary.today_commission,
+              },
+              {
+                title: "This Week",
+                sets: summary.week_sets,
+                tasks: summary.week_tasks,
+                amount: summary.week_commission,
+              },
+              {
+                title: "Lifetime",
+                sets: summary.lifetime_sets,
+                tasks: summary.lifetime_tasks,
+                amount: summary.lifetime_commission,
+              },
+            ].map((s) => (
+              <div key={s.title} className="summaryCard">
+                <div className="summaryTitle">{s.title}</div>
+
+                <div className="summaryGrid">
+                  <div>
+                    <div className="summaryLabel">Sets</div>
+                    <div className="summaryValue">{s.sets}</div>
+                  </div>
+
+                  <div>
+                    <div className="summaryLabel">Tasks</div>
+                    <div className="summaryValue">{s.tasks}</div>
+                  </div>
+
+                  <div>
+                    <div className="summaryLabel">Commission</div>
+                    <div className="summaryValue strong">
+                      {Number(s.amount).toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ================= COMPLETED SETS ================= */}
         {!rows.length ? (
           <div className="historyCard">
             <div className="historyEmpty">No completed packages yet.</div>
@@ -75,7 +133,6 @@ export default function MemberHistory() {
         )}
       </div>
 
-      {/* Bottom Navigation */}
       <MemberBottomNav active="record" />
     </div>
   );

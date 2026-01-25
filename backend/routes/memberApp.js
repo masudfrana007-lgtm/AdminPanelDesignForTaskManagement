@@ -158,12 +158,52 @@ router.post("/complete-task", memberAuth, async (req, res) => {
     );
 
     const totalTasks = totalsRes.rows[0]?.total_tasks || 0;
-    const nextIndex = Number(ms.current_task_index || 0) + 1;
 
     if (totalTasks === 0) {
       return res.status(400).json({ message: "This set has no tasks" });
     }
 
+    // ✅ current task index BEFORE increment
+    const currentIndex = Number(ms.current_task_index || 0);
+
+    // ✅ guard: already beyond last task
+    if (currentIndex >= totalTasks) {
+      return res.status(400).json({ message: "Set already completed" });
+    }
+
+    // ✅ fetch the task that is being completed right now
+    const taskRes = await pool.query(
+      `
+      SELECT t.id, t.price, t.commission_rate
+      FROM set_tasks st
+      JOIN tasks t ON t.id = st.task_id
+      WHERE st.set_id = $1
+      ORDER BY st.id ASC
+      OFFSET $2
+      LIMIT 1
+      `,
+      [ms.set_id, currentIndex]
+    );
+
+    const t = taskRes.rows[0];
+    if (!t) return res.status(400).json({ message: "No current task" });
+
+    const commissionAmount =
+      Number(t.price) * (Number(t.commission_rate) / 100);
+
+    // ✅ log this task completion (must have member_task_history table)
+    await pool.query(
+      `
+      INSERT INTO member_task_history (member_id, member_set_id, set_id, task_id, commission_amount)
+      VALUES ($1, $2, $3, $4, $5)
+      `,
+      [memberId, ms.id, ms.set_id, t.id, commissionAmount]
+    );
+
+    // ✅ now move progress forward
+    const nextIndex = currentIndex + 1;
+
+    // if finishing last task => mark set completed
     if (nextIndex >= totalTasks) {
       const done = await pool.query(
         `
@@ -177,7 +217,12 @@ router.post("/complete-task", memberAuth, async (req, res) => {
         [ms.id, totalTasks]
       );
 
-      return res.json({ message: "Set completed", assignment: done.rows[0] });
+      return res.json({
+        message: "Set completed",
+        assignment: done.rows[0],
+        logged_task_id: t.id,
+        commission_amount: commissionAmount,
+      });
     }
 
     const upd = await pool.query(
@@ -191,7 +236,12 @@ router.post("/complete-task", memberAuth, async (req, res) => {
       [ms.id, nextIndex]
     );
 
-    res.json({ message: "Task completed", assignment: upd.rows[0] });
+    res.json({
+      message: "Task completed",
+      assignment: upd.rows[0],
+      logged_task_id: t.id,
+      commission_amount: commissionAmount,
+    });
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: "Server error" });
@@ -233,5 +283,61 @@ router.get("/history", memberAuth, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+/**
+ * GET /member/history-summary
+ * Returns today / week / lifetime stats
+ */
+router.get("/history-summary", memberAuth, async (req, res) => {
+  try {
+    const memberId = req.member.member_id;
+
+    const q = `
+      SELECT
+        COUNT(DISTINCT CASE
+          WHEN created_at::date = CURRENT_DATE
+          THEN member_set_id END
+        ) AS today_sets,
+
+        COUNT(CASE
+          WHEN created_at::date = CURRENT_DATE
+          THEN id END
+        ) AS today_tasks,
+
+        COALESCE(SUM(CASE
+          WHEN created_at::date = CURRENT_DATE
+          THEN commission_amount END
+        ), 0) AS today_commission,
+
+        COUNT(DISTINCT CASE
+          WHEN created_at >= date_trunc('week', now())
+          THEN member_set_id END
+        ) AS week_sets,
+
+        COUNT(CASE
+          WHEN created_at >= date_trunc('week', now())
+          THEN id END
+        ) AS week_tasks,
+
+        COALESCE(SUM(CASE
+          WHEN created_at >= date_trunc('week', now())
+          THEN commission_amount END
+        ), 0) AS week_commission,
+
+        COUNT(DISTINCT member_set_id) AS lifetime_sets,
+        COUNT(id) AS lifetime_tasks,
+        COALESCE(SUM(commission_amount), 0) AS lifetime_commission
+      FROM member_task_history
+      WHERE member_id = $1
+    `;
+
+    const r = await pool.query(q, [memberId]);
+    res.json(r.rows[0]);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 
 export default router;
