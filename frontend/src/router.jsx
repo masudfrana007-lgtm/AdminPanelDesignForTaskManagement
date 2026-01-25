@@ -15,6 +15,10 @@ import MemberProtectedRoute from "./components/MemberProtectedRoute";
 import MemberHistory from "./pages/MemberHistory";
 import MemberSignup from "./pages/MemberSignup";
 
+import MemberService from "./pages/MemberService";
+import MemberMenu from "./pages/MemberMenu";
+import MemberMine from "./pages/MemberMine";
+
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
   
@@ -104,4 +108,31 @@ export const router = createBrowserRouter([
     )
   },
 
+  {
+    path: "/member/service",
+    element: (
+      <MemberProtectedRoute>
+        <MemberService />
+      </MemberProtectedRoute>
+    ),
+  },
+
+  {
+    path: "/member/menu",
+    element: (
+      <MemberProtectedRoute>
+        <MemberMenu />
+      </MemberProtectedRoute>
+    ),
+  },
+
+  {
+    path: "/member/mine",
+    element: (
+      <MemberProtectedRoute>
+        <MemberMine />
+      </MemberProtectedRoute>
+    ),
+  },
+  
 ]);
