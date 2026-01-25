@@ -1,0 +1,314 @@
+/* Full page background like the screenshot */
+.vipPage {
+  min-height: 100vh;
+  background:
+    radial-gradient(1200px 700px at 20% 20%, rgba(90, 180, 255, 0.22), transparent 55%),
+    radial-gradient(900px 600px at 80% 30%, rgba(255, 180, 60, 0.18), transparent 60%),
+    radial-gradient(900px 700px at 70% 80%, rgba(255, 80, 140, 0.14), transparent 65%),
+    linear-gradient(180deg, #061529 0%, #071c35 45%, #061529 100%);
+  padding: 18px 18px 0;
+  color: #eaf2ff;
+}
+
+/* Header */
+.vipTop {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.vipHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.vipBrand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vipBrandLogo {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  color: #0b1020;
+  background: linear-gradient(135deg, #ffd25a, #ffb300);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.35);
+}
+
+.vipBrandTitle {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.vipBrandSub {
+  opacity: 0.9;
+  font-size: 12.5px;
+  margin-top: 2px;
+}
+
+.vipLogout {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 14px;
+  cursor: pointer;
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  backdrop-filter: blur(10px);
+}
+
+.vipHint {
+  margin-top: 12px;
+  font-size: 12.5px;
+  opacity: 0.95;
+}
+
+.vipPill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.14);
+  border: 1px solid rgba(255,255,255,0.18);
+  margin-left: 6px;
+  font-size: 12px;
+}
+
+.vipError {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 0, 80, 0.16);
+  border: 1px solid rgba(255, 0, 80, 0.25);
+}
+
+/* Tabs */
+.vipTabs {
+  margin-top: 18px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.vipTab {
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(255,255,255,0.10);
+  color: rgba(255,255,255,0.9);
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  min-width: 84px;
+}
+
+.vipTab.active {
+  background: linear-gradient(180deg, rgba(110,170,255,0.85), rgba(50,110,220,0.65));
+  border-color: rgba(160,210,255,0.35);
+  box-shadow: 0 12px 30px rgba(20,80,200,0.25);
+}
+
+/* Cards container */
+.vipCardsWrap {
+  max-width: 1100px;
+  margin: 18px auto 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+/* Card base (glass) */
+.vipCard {
+  position: relative;
+  border-radius: 18px;
+  padding: 16px 16px 14px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 40px rgba(0,0,0,0.35);
+  overflow: hidden;
+  min-height: 240px;
+}
+
+/* Colored glow per tier */
+.vipCard.vip1::before,
+.vipCard.vip2::before,
+.vipCard.vip3::before {
+  content: "";
+  position: absolute;
+  inset: -60px -40px auto -40px;
+  height: 220px;
+  transform: rotate(-7deg);
+  opacity: 0.7;
+  filter: blur(0px);
+}
+
+.vipCard.vip1::before {
+  background: radial-gradient(circle at 30% 30%, rgba(60,160,255,0.65), transparent 60%);
+}
+.vipCard.vip2::before {
+  background: radial-gradient(circle at 30% 30%, rgba(255,170,80,0.68), transparent 60%);
+}
+.vipCard.vip3::before {
+  background: radial-gradient(circle at 30% 30%, rgba(255,80,140,0.65), transparent 60%);
+}
+
+/* Top badge */
+.vipBadge {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  background: linear-gradient(180deg, #ffcc54, #ff9f1a);
+  color: #151a2e;
+  font-weight: 800;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+/* Icon + title row */
+.vipCardTop {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-top: 34px;
+  position: relative;
+  z-index: 1;
+}
+
+.vipIcon {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.14);
+  border: 1px solid rgba(255,255,255,0.20);
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  box-shadow: 0 12px 26px rgba(0,0,0,0.25);
+}
+
+/* Simple “logo” shapes (no external images) */
+.vipIcon.amazon::after { content: "a"; font-size: 30px; }
+.vipIcon.alibaba::after { content: "e"; font-size: 30px; }
+.vipIcon.aliexpress::after { content: "U"; font-size: 30px; }
+
+.vipTitleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vipStore {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+.vipMini {
+  font-size: 12.5px;
+  opacity: 0.85;
+}
+
+.vipDivider {
+  height: 1px;
+  background: rgba(255,255,255,0.18);
+  margin: 14px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.vipLine {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  opacity: 0.95;
+  margin-top: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.vipLabel {
+  opacity: 0.85;
+}
+
+.vipValue {
+  font-weight: 700;
+}
+
+.vipValue.strong {
+  font-size: 15px;
+}
+
+/* Bottom nav */
+.vipBottomNav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 74px;
+  background: rgba(8, 18, 40, 0.78);
+  border-top: 1px solid rgba(255,255,255,0.12);
+  backdrop-filter: blur(12px);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  z-index: 999;
+}
+
+.navItem {
+  border: 0;
+  background: transparent;
+  color: rgba(230,240,255,0.8);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+}
+
+.navIcon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.navText {
+  font-size: 12px;
+}
+
+.navItem.active {
+  color: rgba(110, 200, 255, 1);
+}
+
+.navItem.mine {
+  color: rgba(255, 190, 60, 0.95);
+}
+
+/* Spacer so content not hidden behind bottom nav */
+.vipNavSpacer {
+  height: 84px;
+}
+
+/* ✅ Responsive */
+@media (max-width: 980px) {
+  .vipCardsWrap {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .vipPage {
+    padding: 14px 12px 0;
+  }
+  .vipCardsWrap {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .vipCard {
+    min-height: 220px;
+  }
+}
