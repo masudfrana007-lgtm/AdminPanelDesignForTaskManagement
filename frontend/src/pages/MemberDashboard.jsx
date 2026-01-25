@@ -3,7 +3,7 @@ import "../styles/memberDashboard.css";
 import memberApi from "../services/memberApi";
 import { getMember, memberLogout } from "../memberAuth";
 import { useNavigate } from "react-router-dom";
-import MemberLayout from "../components/MemberLayout";
+import MemberBottomNav from "../components/MemberBottomNav";
 
 const TABS = ["All", "VIP 1", "VIP 2", "VIP 3"];
 
@@ -15,7 +15,6 @@ export default function MemberDashboard() {
   const [err, setErr] = useState("");
   const [activeTab, setActiveTab] = useState("All");
 
-  // You can replace these with API-driven values later if you add an endpoint.
   const VIP_CARDS = useMemo(
     () => [
       {
@@ -73,121 +72,84 @@ export default function MemberDashboard() {
     nav("/member/login");
   };
 
-  // Bottom nav routes (adjust if your routes differ)
-  const goHome = () => nav("/member/dashboard");
-  const goService = () => nav("/member/service");
-  const goMenu = () => nav("/member/menu");
-  const goRecord = () => nav("/member/history"); // ✅ history here
-  const goMine = () => nav("/member/mine");
-
-  // If you want to show “active package” small info somewhere:
   const active = data?.active;
 
   return (
-      <div className="vipPage">
-        {/* Top Area */}
-        <div className="vipTop">
-          <div className="vipHeaderRow">
-            <div className="vipBrand">
-              <div className="vipBrandLogo">TK</div>
-              <div>
-                <div className="vipBrandTitle">TK Branding</div>
-                <div className="vipBrandSub">
-                  Welcome, <b>{me?.nickname || "Member"}</b>
-                </div>
+    <div className="vipPage">
+      {/* Top Area */}
+      <div className="vipTop">
+        <div className="vipHeaderRow">
+          <div className="vipBrand">
+            <div className="vipBrandLogo">TK</div>
+            <div>
+              <div className="vipBrandTitle">TK Branding</div>
+              <div className="vipBrandSub">
+                Welcome, <b>{me?.nickname || "Member"}</b>
               </div>
             </div>
-
-            <button className="vipLogout" onClick={logout}>
-              Logout
-            </button>
           </div>
 
-          {/* Optional: active set small line (won't break UI) */}
-          {active && (
-            <div className="vipHint">
-              Active Package: <b>{data?.set?.name}</b> · Status{" "}
-              <span className="vipPill">{data?.assignment?.status}</span>
-            </div>
-          )}
-
-          {err && <div className="vipError">{err}</div>}
-
-          {/* Tabs */}
-          <div className="vipTabs">
-            {TABS.map((t) => (
-              <button
-                key={t}
-                className={`vipTab ${activeTab === t ? "active" : ""}`}
-                onClick={() => setActiveTab(t)}
-                type="button"
-              >
-                {t}
-              </button>
-            ))}
-          </div>
+          <button className="vipLogout" onClick={logout}>
+            Logout
+          </button>
         </div>
 
-        {/* Cards */}
-        <div className="vipCardsWrap">
-          {visibleCards.map((c) => (
-            <div key={c.tier} className={`vipCard ${c.theme}`}>
-              <div className="vipBadge">{c.tier}</div>
+        {active && (
+          <div className="vipHint">
+            Active Package: <b>{data?.set?.name}</b> · Status{" "}
+            <span className="vipPill">{data?.assignment?.status}</span>
+          </div>
+        )}
 
-              <div className="vipCardTop">
-                <div className={`vipIcon ${c.logoType}`} aria-hidden="true" />
-                <div className="vipTitleBlock">
-                  <div className="vipStore">{c.brand}</div>
-                  <div className="vipMini">{c.balanceTop}</div>
-                  <div className="vipMini">{c.balanceRange}</div>
-                </div>
-              </div>
+        {err && <div className="vipError">{err}</div>}
 
-              <div className="vipDivider" />
-
-              <div className="vipLine">
-                <div className="vipLabel">Available Balance</div>
-                <div className="vipValue">{c.balanceRange}</div>
-              </div>
-
-              <div className="vipLine">
-                <div className="vipLabel">Commissions:</div>
-                <div className="vipValue strong">{c.commission}</div>
-              </div>
-            </div>
+        {/* Tabs */}
+        <div className="vipTabs">
+          {TABS.map((t) => (
+            <button
+              key={t}
+              className={`vipTab ${activeTab === t ? "active" : ""}`}
+              onClick={() => setActiveTab(t)}
+              type="button"
+            >
+              {t}
+            </button>
           ))}
         </div>
-
-        {/* Bottom Nav */}
-        <div className="vipBottomNav">
-          <button className="navItem active" onClick={goHome} type="button">
-            <span className="navIcon">⌂</span>
-            <span className="navText">Home</span>
-          </button>
-
-          <button className="navItem" onClick={goService} type="button">
-            <span className="navIcon">⟲</span>
-            <span className="navText">Service</span>
-          </button>
-
-          <button className="navItem" onClick={goMenu} type="button">
-            <span className="navIcon">▦</span>
-            <span className="navText">Menu</span>
-          </button>
-
-          <button className="navItem" onClick={goRecord} type="button">
-            <span className="navIcon">▤</span>
-            <span className="navText">Record</span>
-          </button>
-
-          <button className="navItem mine" onClick={goMine} type="button">
-            <span className="navIcon">●</span>
-            <span className="navText">Mine</span>
-          </button>
-        </div>
-
-        {/* Spacer so content doesn't hide behind bottom nav */}
-        <div className="vipNavSpacer" />
       </div>
+
+      {/* Cards */}
+      <div className="vipCardsWrap">
+        {visibleCards.map((c) => (
+          <div key={c.tier} className={`vipCard ${c.theme}`}>
+            <div className="vipBadge">{c.tier}</div>
+
+            <div className="vipCardTop">
+              <div className={`vipIcon ${c.logoType}`} />
+              <div className="vipTitleBlock">
+                <div className="vipStore">{c.brand}</div>
+                <div className="vipMini">{c.balanceTop}</div>
+                <div className="vipMini">{c.balanceRange}</div>
+              </div>
+            </div>
+
+            <div className="vipDivider" />
+
+            <div className="vipLine">
+              <div className="vipLabel">Available Balance</div>
+              <div className="vipValue">{c.balanceRange}</div>
+            </div>
+
+            <div className="vipLine">
+              <div className="vipLabel">Commissions:</div>
+              <div className="vipValue strong">{c.commission}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ✅ REUSABLE BOTTOM NAV */}
+      <MemberBottomNav active="home" />
+    </div>
   );
 }

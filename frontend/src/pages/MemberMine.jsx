@@ -1,12 +1,16 @@
-import MemberLayout from "../components/MemberLayout";
+import MemberBottomNav from "../components/MemberBottomNav";
+import "../styles/memberMine.css";
 
 export default function MemberMine() {
   return (
-    <MemberLayout>
-      <div style={{ padding: 20 }}>
-        <h2>Mine</h2>
-        <p>Profile page coming soon.</p>
+    <div className="minePage">
+      <div className="mineContent">
+        <h2 className="mineTitle">My Profile</h2>
+        <p className="mineSub">Profile page coming soon.</p>
       </div>
-    </MemberLayout>
+
+      {/* Reusable Bottom Navigation */}
+      <MemberBottomNav active="mine" />
+    </div>
   );
 }

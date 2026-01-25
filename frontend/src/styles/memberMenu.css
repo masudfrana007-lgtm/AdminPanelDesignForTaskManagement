@@ -1,0 +1,20 @@
+.menuPage {
+  min-height: 100vh;
+  background: #f5f7fb;
+  padding-bottom: 84px; /* space for bottom nav */
+}
+
+.menuContent {
+  padding: 28px 18px;
+}
+
+.menuTitle {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.menuSub {
+  color: #666;
+  font-size: 14px;
+}

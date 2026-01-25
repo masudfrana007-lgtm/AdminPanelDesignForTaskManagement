@@ -1,62 +1,36 @@
-import { useNavigate } from "react-router-dom";
-import MemberLayout from "../components/MemberLayout";
-import "../styles/memberService.css";
 import serviceLady from "../assets/customer-service-lady.png";
+import "../styles/memberService.css";
+import MemberBottomNav from "../components/MemberBottomNav";
 
 export default function MemberService() {
-  const nav = useNavigate();
+  // Replace later with real support link
+  const openSupport = () => {
+    alert("Support link later");
+  };
 
   return (
-    <MemberLayout>
-      <div className="svcPage">
-        <div className="svcContent">
-          <h1 className="svcTitle">Customer Service Center</h1>
-          <div className="svcSub">
-            Online customer service time 07:00-25:00 (UK)
-          </div>
+    <div className="svcPage">
+      <div className="svcContent">
+        <h1 className="svcTitle">Customer Service Center</h1>
+        <div className="svcSub">Online customer service time 07:00-25:00 (UK)</div>
 
-          {/* 👩‍💼 Lady Illustration */}
-          <div className="svcIllustration">
-            <img src={serviceLady} alt="Customer Service" />
-          </div>
-
-          {/* Button */}
-          <button className="svcPill">
-            <span className="svcPillIcon">🎧</span>
-            Online customer service
-          </button>
+        {/* 👩‍💼 Lady Illustration */}
+        <div className="svcIllustration">
+          <img src={serviceLady} alt="Customer Service" />
         </div>
 
-        {/* Bottom Nav */}
-        <div className="svcBottomNav">
-          <button onClick={() => nav("/member/dashboard")} className="svcNavItem">
-            <span className="svcNavIcon">⌂</span>
-            <span className="svcNavText">Home</span>
-          </button>
-
-          <button className="svcNavItem active">
-            <span className="svcNavIcon">⟲</span>
-            <span className="svcNavText">Service</span>
-          </button>
-
-          <button onClick={() => nav("/member/menu")} className="svcNavItem">
-            <span className="svcNavIcon">▦</span>
-            <span className="svcNavText">Menu</span>
-          </button>
-
-          <button onClick={() => nav("/member/record")} className="svcNavItem">
-            <span className="svcNavIcon">▤</span>
-            <span className="svcNavText">Record</span>
-          </button>
-
-          <button onClick={() => nav("/member/mine")} className="svcNavItem mine">
-            <span className="svcNavIcon">●</span>
-            <span className="svcNavText">Mine</span>
-          </button>
-        </div>
-
-        <div className="svcNavSpacer" />
+        {/* Button */}
+        <button className="svcPill" type="button" onClick={openSupport}>
+          <span className="svcPillIcon">🎧</span>
+          Online customer service
+        </button>
       </div>
-    </MemberLayout>
+
+      {/* Reusable Bottom Nav */}
+      <MemberBottomNav active="service" />
+
+      {/* Spacer so content doesn't hide behind bottom nav */}
+      <div className="svcNavSpacer" />
+    </div>
   );
 }

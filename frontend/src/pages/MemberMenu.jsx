@@ -1,12 +1,16 @@
-import MemberLayout from "../components/MemberLayout";
+import MemberBottomNav from "../components/MemberBottomNav";
+import "../styles/memberMenu.css";
 
 export default function MemberMenu() {
   return (
-    <MemberLayout>
-      <div style={{ padding: 20 }}>
-        <h2>Menu</h2>
-        <p>Menu page coming soon.</p>
+    <div className="menuPage">
+      <div className="menuContent">
+        <h2 className="menuTitle">Menu</h2>
+        <p className="menuSub">More features coming soon.</p>
       </div>
-    </MemberLayout>
+
+      {/* Reusable Bottom Navigation */}
+      <MemberBottomNav active="menu" />
+    </div>
   );
 }

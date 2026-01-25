@@ -1,0 +1,20 @@
+.minePage {
+  min-height: 100vh;
+  background: #f5f7fb;
+  padding-bottom: 84px; /* space for bottom nav */
+}
+
+.mineContent {
+  padding: 28px 18px;
+}
+
+.mineTitle {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.mineSub {
+  font-size: 14px;
+  color: #666;
+}
