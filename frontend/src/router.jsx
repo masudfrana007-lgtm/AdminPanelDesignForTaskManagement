@@ -34,10 +34,11 @@ export const router = createBrowserRouter([
 
   { path: "/", element: <ProtectedRoute><Dashboard /></ProtectedRoute> },
 
-   {
-  path: "/member/depositCrypto",
-  element: <DepositCrypto />,
-}
+  /* ✅ PUBLIC / TEST ROUTE */
+  {
+    path: "/member/depositCrypto",
+    element: <DepositCrypto />,
+  },
 
   
   {
