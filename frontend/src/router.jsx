@@ -24,6 +24,8 @@ import MemberDepositBank from "./pages/MemberDepositBank";
 import MemberDepositCrypto from "./pages/MemberDepositCrypto";
 import MemberDepositUSDT from "./pages/MemberDepositUSDT";
 
+import DepositCrypto from "./pages/DepositCrypto";
+
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
   
@@ -31,6 +33,12 @@ export const router = createBrowserRouter([
   { path: "/member/signup", element: <MemberSignup /> },
 
   { path: "/", element: <ProtectedRoute><Dashboard /></ProtectedRoute> },
+
+   {
+  path: "/member/depositCrypto",
+  element: <DepositCrypto />,
+}
+
   
   {
     path: "/users",

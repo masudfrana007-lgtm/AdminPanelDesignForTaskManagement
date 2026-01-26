@@ -1,0 +1,43 @@
+/* ===============================
+   FULL PAGE BACKGROUND (FIXED)
+   =============================== */
+
+.dc-page {
+  min-height: 100vh;
+  position: relative;
+  padding: 22px;
+  color: #eaf2ff;
+
+  /* 🔥 REAL BACKGROUND IMAGE */
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(5, 12, 30, 0.65),
+      rgba(5, 12, 30, 0.85)
+    ),
+    url("../assets/background.png"); /* <-- your 4K image */
+
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  overflow-x: hidden;
+}
+
+/* Soft glow + depth overlay */
+.dc-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+
+  background:
+    radial-gradient(circle at 20% 20%, rgba(70,150,255,0.18), transparent 45%),
+    radial-gradient(circle at 80% 70%, rgba(255,180,80,0.12), transparent 50%);
+}
+
+/* Make sure content stays above background */
+.dc-page > * {
+  position: relative;
+  z-index: 1;
+}
