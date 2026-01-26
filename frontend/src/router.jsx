@@ -19,6 +19,11 @@ import MemberService from "./pages/MemberService";
 import MemberMenu from "./pages/MemberMenu";
 import MemberMine from "./pages/MemberMine";
 
+import MemberDeposit from "./pages/MemberDeposit";
+import MemberDepositBank from "./pages/MemberDepositBank";
+import MemberDepositCrypto from "./pages/MemberDepositCrypto";
+import MemberDepositUSDT from "./pages/MemberDepositUSDT";
+
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
   
@@ -134,5 +139,41 @@ export const router = createBrowserRouter([
       </MemberProtectedRoute>
     ),
   },
+
+{
+  path: "/member/deposit",
+  element: (
+    <MemberProtectedRoute>
+      <MemberDeposit />
+    </MemberProtectedRoute>
+  ),
+},
+
+{
+  path: "/member/deposit/bank",
+  element: (
+    <MemberProtectedRoute>
+      <MemberDepositBank />
+    </MemberProtectedRoute>
+  ),
+},
+
+{
+  path: "/member/deposit/crypto",
+  element: (
+    <MemberProtectedRoute>
+      <MemberDepositCrypto />
+    </MemberProtectedRoute>
+  ),
+},
+
+{
+  path: "/member/deposit/usdt",
+  element: (
+    <MemberProtectedRoute>
+      <MemberDepositUSDT />
+    </MemberProtectedRoute>
+  ),
+},
   
 ]);
