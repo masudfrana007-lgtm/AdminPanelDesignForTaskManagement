@@ -286,53 +286,55 @@ router.get("/history", memberAuth, async (req, res) => {
 
 /**
  * GET /member/history-summary
- * Returns today / week / lifetime stats
+ * Today = last 24 hours
+ * Week  = last 7 days
  */
 router.get("/history-summary", memberAuth, async (req, res) => {
   try {
     const memberId = req.member.member_id;
 
     const q = `
+      WITH w AS (
+        SELECT
+          now() - interval '24 hours' AS since_24h,
+          now() - interval '7 days'  AS since_7d
+      )
       SELECT
-        COUNT(DISTINCT CASE
-          WHEN created_at::date = CURRENT_DATE
-          THEN member_set_id END
-        ) AS today_sets,
+        /* LAST 24 HOURS */
+        COUNT(DISTINCT CASE WHEN mth.created_at >= w.since_24h THEN mth.member_set_id END)::int AS today_sets,
+        COUNT(CASE WHEN mth.created_at >= w.since_24h THEN mth.id END)::int AS today_tasks,
+        COALESCE(SUM(CASE WHEN mth.created_at >= w.since_24h THEN mth.commission_amount END), 0)::numeric(12,2) AS today_commission,
 
-        COUNT(CASE
-          WHEN created_at::date = CURRENT_DATE
-          THEN id END
-        ) AS today_tasks,
+        /* LAST 7 DAYS */
+        COUNT(DISTINCT CASE WHEN mth.created_at >= w.since_7d THEN mth.member_set_id END)::int AS week_sets,
+        COUNT(CASE WHEN mth.created_at >= w.since_7d THEN mth.id END)::int AS week_tasks,
+        COALESCE(SUM(CASE WHEN mth.created_at >= w.since_7d THEN mth.commission_amount END), 0)::numeric(12,2) AS week_commission,
 
-        COALESCE(SUM(CASE
-          WHEN created_at::date = CURRENT_DATE
-          THEN commission_amount END
-        ), 0) AS today_commission,
-
-        COUNT(DISTINCT CASE
-          WHEN created_at >= date_trunc('week', now())
-          THEN member_set_id END
-        ) AS week_sets,
-
-        COUNT(CASE
-          WHEN created_at >= date_trunc('week', now())
-          THEN id END
-        ) AS week_tasks,
-
-        COALESCE(SUM(CASE
-          WHEN created_at >= date_trunc('week', now())
-          THEN commission_amount END
-        ), 0) AS week_commission,
-
-        COUNT(DISTINCT member_set_id) AS lifetime_sets,
-        COUNT(id) AS lifetime_tasks,
-        COALESCE(SUM(commission_amount), 0) AS lifetime_commission
-      FROM member_task_history
-      WHERE member_id = $1
+        /* LIFETIME */
+        COUNT(DISTINCT mth.member_set_id)::int AS lifetime_sets,
+        COUNT(mth.id)::int AS lifetime_tasks,
+        COALESCE(SUM(mth.commission_amount), 0)::numeric(12,2) AS lifetime_commission
+      FROM member_task_history mth
+      CROSS JOIN w
+      WHERE mth.member_id = $1
     `;
 
     const r = await pool.query(q, [memberId]);
-    res.json(r.rows[0]);
+
+    // In case there are no rows at all yet
+    res.json(
+      r.rows[0] || {
+        today_sets: 0,
+        today_tasks: 0,
+        today_commission: "0.00",
+        week_sets: 0,
+        week_tasks: 0,
+        week_commission: "0.00",
+        lifetime_sets: 0,
+        lifetime_tasks: 0,
+        lifetime_commission: "0.00",
+      }
+    );
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: "Server error" });
