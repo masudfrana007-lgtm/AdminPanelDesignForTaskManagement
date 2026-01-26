@@ -74,50 +74,52 @@ export default function MemberMine() {
 
         {/* Menu Items */}
         <div className="menuSection">
-          <div className="menuColumn">
-            <div className="menuItem">
-              <div className="menuIcon profile">
-                <span>👤</span>
+          <div className="menuSubSection">
+            <div className="menuColumn">
+              <div className="menuItem">
+                <div className="menuIcon profile">
+                  <span>👤</span>
+                </div>
+                <span className="menuLabel">Profile</span>
+                <span className="menuArrow">›</span>
               </div>
-              <span className="menuLabel">Profile</span>
-              <span className="menuArrow">›</span>
-            </div>
-            <div className="menuItem" onClick={handleDepositClick}>
-              <div className="menuIcon deposit">
-                <span>📊</span>
+              <div className="menuItem" onClick={handleDepositClick}>
+                <div className="menuIcon deposit">
+                  <span>📊</span>
+                </div>
+                <span className="menuLabel">Deposit</span>
+                <span className="menuArrow">›</span>
               </div>
-              <span className="menuLabel">Deposit</span>
-              <span className="menuArrow">›</span>
-            </div>
-            <div className="menuItem">
-              <div className="menuIcon settings">
-              <span>💳</span>
-              </div>
-              <span className="menuLabel">Deposit records</span>
-              <span className="menuArrow">›</span>
-            </div>
-          </div>
-          <div className="menuColumn">
-            <div className="menuItem">
-              <div className="menuIcon deposit">
+              <div className="menuItem">
+                <div className="menuIcon settings">
                 <span>💳</span>
+                </div>
+                <span className="menuLabel">Deposit records</span>
+                <span className="menuArrow">›</span>
               </div>
-              <span className="menuLabel">Wallet</span>
-              <span className="menuArrow">›</span>
             </div>
-            <div className="menuItem">
-              <div className="menuIcon withdraw">
-                <span>📤</span>
+            <div className="menuColumn">
+              <div className="menuItem">
+                <div className="menuIcon deposit">
+                  <span>💳</span>
+                </div>
+                <span className="menuLabel">Wallet</span>
+                <span className="menuArrow">›</span>
               </div>
-              <span className="menuLabel">Withdrawal</span>
-              <span className="menuArrow">›</span>
-            </div>
-            <div className="menuItem">
-              <div className="menuIcon settings">
-                <span>⚙️</span>
+              <div className="menuItem">
+                <div className="menuIcon withdraw">
+                  <span>📤</span>
+                </div>
+                <span className="menuLabel">Withdrawal</span>
+                <span className="menuArrow">›</span>
               </div>
-              <span className="menuLabel">Setting</span>
-              <span className="menuArrow">›</span>
+              <div className="menuItem">
+                <div className="menuIcon settings">
+                  <span>⚙️</span>
+                </div>
+                <span className="menuLabel">Setting</span>
+                <span className="menuArrow">›</span>
+              </div>
             </div>
           </div>
         </div>

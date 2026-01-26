@@ -179,12 +179,11 @@
 }
 
 .methodCard {
-  background: rgba(255, 255, 255, 0.08);
   border-radius: 20px;
   padding: 24px;
   margin-bottom: 20px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(15px);
+  /* backdrop-filter: blur(15px); */
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
@@ -204,14 +203,23 @@
 
 .methodCard.crypto {
   border-left: 4px solid #3742fa;
+  background: linear-gradient(135deg, #5aa7ff, rgba(255, 120, 80, 0.15));
 }
 
 .methodCard.bank {
   border-left: 4px solid #ffa502;
+  background: linear-gradient(135deg, #ca5f49d4, rgba(255, 120, 80, 0.15));
 }
 
-.methodCard:hover {
-  background: rgba(255, 255, 255, 0.12);
+.methodCard.crypto:hover {
+  background: rgba(55, 66, 250, 0.381);
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+}
+
+.methodCard.bank:hover {
+  background: rgba(196, 26, 26, 0.381);
   transform: translateY(-3px);
   border-color: rgba(255, 255, 255, 0.2);
   box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
@@ -332,7 +340,7 @@
   background: rgba(255, 255, 255, 0.06);
   border-radius: 16px;
   padding: 20px;
-  backdrop-filter: blur(10px);
+  /* backdrop-filter: blur(10px); */
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 

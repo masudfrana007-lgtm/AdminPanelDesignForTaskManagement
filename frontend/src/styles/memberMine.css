@@ -59,8 +59,8 @@
 
 .vipBadge {
   position: absolute;
-  top: -5px;
-  right: -5px;
+  /* top: -5px;
+  right: -5px; */
   background: #ffa500;
   color: white;
   padding: 2px 8px;
@@ -109,28 +109,16 @@
   color: #fff;
 }
 
-.currency {
-  font-size: 16px;
-  font-weight: 600;
-  color: #ffffff !important;
-}
-
-.amount {
-  font-size: 32px;
-  font-weight: 700;
-  color: #ffffff !important;
-}
-
 /* Quick Actions */
 .quickActions {
   display: flex;
   justify-content: center;
-  padding: 30px 20px;
+  padding: 6px 15px;
   margin: 0 auto;
   /* max-width: 700px; */
   background: rgba(255, 255, 255, 0.03);
   border-radius: 20px;
-  backdrop-filter: blur(25px);
+  /* backdrop-filter: blur(25px); */
   border: 1px solid rgba(255, 255, 255, 0.05);
   box-shadow: 
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
@@ -172,6 +160,7 @@
   width: 70px;
   height: 70px;
   border-radius: 50%;
+  border: 1px solid #fff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -218,11 +207,20 @@
 
 /* Menu Section */
 .menuSection {
+  padding: 10px;
+  margin: 25px 0;
+  background: rgba(255, 255, 255, 0.612);
+  border-radius: 25px;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.menuSubSection {
   display: flex;
   gap: 20px;
-  padding: 25px;
-  margin: 20px 0;
-  background: rgba(255, 255, 255, 0.811);
+  padding: 10px;
+  /* margin: 20px 0; */
+  background: rgba(255, 255, 255, 0.557);
   border-radius: 25px;
   backdrop-filter: blur(20px);
   box-shadow: 
@@ -251,8 +249,9 @@
 }
 
 .menuItem:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.849);
   transform: translateY(-1px);
+  box-shadow: #000000;
 }
 
 .menuItem:last-child {

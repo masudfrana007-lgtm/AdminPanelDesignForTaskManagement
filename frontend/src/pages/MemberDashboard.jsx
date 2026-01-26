@@ -26,6 +26,7 @@ export default function MemberDashboard() {
         theme: "vip1",
         logoType: "amazon",
       },
+      
       {
         tier: "VIP 2",
         brand: "Alibaba",
@@ -125,7 +126,11 @@ export default function MemberDashboard() {
             <div className="vipBadge">{c.tier}</div>
 
             <div className="vipCardTop">
-              <div className={`vipIcon ${c.logoType}`} />
+              <img 
+                src={`/src/assets/img/${c.logoType}.png`} 
+                alt={c.brand} 
+                className={`vipIcon ${c.logoType}`} 
+              />
               <div className="vipTitleBlock">
                 <div className="vipStore">{c.brand}</div>
                 <div className="vipMini">{c.balanceTop}</div>
