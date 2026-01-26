@@ -1,0 +1,446 @@
+.depositBankPage {
+  min-height: 100vh !important;
+  background: url('../assets/background.png') no-repeat center center fixed !important;
+  background-size: cover !important;
+  color: white !important;
+  padding: 20px;
+  padding-bottom: 120px;
+  position: relative;
+  overflow: hidden;
+}
+
+.depositBankPage::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 70%),
+    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.03) 0%, transparent 60%);
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.depositBankContainer {
+  max-width: 420px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.backButton {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: white;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  cursor: pointer;
+  margin-bottom: 24px;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+}
+
+.backButton:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateX(-2px);
+}
+
+.pageTitle {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 32px;
+  color: white;
+}
+
+/* Wallet Balance Card */
+.walletBalanceCard {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 40px;
+  backdrop-filter: blur(20px);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  color: #1a1a1a;
+}
+
+.balanceHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.walletIcon {
+  width: 32px;
+  height: 32px;
+  background: rgba(139, 115, 85, 0.1);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.walletLabel {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+}
+
+.balanceAmount {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.amount {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.currency {
+  font-size: 18px;
+  font-weight: 600;
+  color: #666;
+}
+
+.balanceDetails {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.balanceEquivalent {
+  font-size: 14px;
+  color: #888;
+}
+
+.statusIndicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10ac84;
+}
+
+.statusText {
+  font-size: 12px;
+  color: #10ac84;
+  font-weight: 500;
+}
+
+.activeText {
+  font-size: 12px;
+  color: #666;
+}
+
+/* Select Country Section */
+.selectCountrySection {
+  margin-bottom: 32px;
+}
+
+.selectCountryTitle {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: white;
+}
+
+.countryOption {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 16px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(15px);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.countryOption:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+.countryFlag {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.countryInfo {
+  flex: 1;
+}
+
+.countryName {
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+}
+
+.countryArrow {
+  font-size: 20px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Select Bank Section */
+.selectBankSection {
+  margin-bottom: 32px;
+}
+
+.selectBankTitle {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: white;
+}
+
+.bankGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.bankOption {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(15px);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-height: 100px;
+}
+
+.bankOption::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 0%, rgba(255, 255, 255, 0.02) 50%, transparent 100%);
+  pointer-events: none;
+}
+
+.bankOption:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.bankOption.selected {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+}
+
+.recommendedBadge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #3742fa;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.bankLogo {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.bankInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.bankName {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+}
+
+.bankDetails {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.bankArrow {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.3);
+  transition: all 0.2s ease;
+}
+
+.bankOption:hover .bankArrow {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Security Note */
+.securityNote {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  background: rgba(16, 172, 132, 0.1);
+  border: 1px solid rgba(16, 172, 132, 0.2);
+  border-radius: 12px;
+  margin-bottom: 60px;
+}
+
+.securityIcon {
+  font-size: 16px;
+}
+
+.securityText {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+}
+
+/* Next Button */
+.nextButton {
+  width: 100%;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #4a90e2, #357abd);
+  border: none;
+  border-radius: 16px;
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 20px rgba(74, 144, 226, 0.3);
+  backdrop-filter: blur(10px);
+  position: fixed;
+  bottom: 100px;
+  left: 20px;
+  right: 20px;
+  max-width: 380px;
+  margin: 0 auto;
+}
+
+.nextButton:hover {
+  background: linear-gradient(135deg, #357abd, #2e5a87);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(74, 144, 226, 0.4);
+}
+
+.nextButton:active {
+  transform: translateY(0);
+}
+
+/* Desktop Responsive */
+@media (min-width: 768px) {
+  .depositBankContainer {
+    max-width: 600px;
+    padding: 0 20px;
+  }
+  
+  .walletBalanceCard {
+    padding: 32px;
+  }
+  
+  .bankGrid {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+  }
+  
+  .bankOption {
+    padding: 20px;
+    min-height: 120px;
+  }
+  
+  .bankLogo {
+    width: 56px;
+    height: 56px;
+  }
+  
+  .nextButton {
+    position: static;
+    margin-top: 40px;
+  }
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+  .depositBankPage {
+    padding: 16px;
+  }
+  
+  .walletBalanceCard {
+    padding: 20px;
+  }
+  
+  .amount {
+    font-size: 28px;
+  }
+  
+  .bankGrid {
+    gap: 12px;
+  }
+  
+  .bankOption {
+    padding: 12px;
+    min-height: 80px;
+  }
+  
+  .bankLogo {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .bankName {
+    font-size: 12px;
+  }
+  
+  .bankDetails {
+    font-size: 10px;
+  }
+  
+  .recommendedBadge {
+    font-size: 8px;
+    padding: 1px 4px;
+  }
+}
