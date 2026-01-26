@@ -10,9 +10,11 @@
   grid-template-columns: repeat(5, 1fr);
   align-items: center;
 
-  background: linear-gradient(180deg, rgba(10, 28, 66, 0.55), rgba(5, 14, 35, 0.92));
-  border-top: 1px solid rgba(255,255,255,0.08);
-  backdrop-filter: blur(10px);
+  /* background: linear-gradient(180deg, rgba(10, 28, 66, 0.75), rgba(5, 14, 35, 0.95)); */
+  border-top: 1px solid rgba(255,255,255,0.15);
+  /* backdrop-filter: blur(20px); */
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.25);
+  /* opacity: 0.98; */
 }
 
 .mNavItem {
@@ -20,6 +22,9 @@
   background: transparent;
   border: none;
   cursor: pointer;
+  border-radius: 12px;
+  margin: 8px 6px;
+  transition: all 0.3s ease;
 
   color: rgba(255,255,255,0.75);
   display: flex;
@@ -29,19 +34,40 @@
   gap: 6px;
 }
 
+.mNavItem:hover {
+  transform: translateY(-1px);
+}
+
+.mNavItem:hover .mNavIcon {
+  color: #F7A707;
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+.mNavItem:hover .mNavText {
+  color: #ffffff;
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+.mNavItem.active .mNavIcon {
+  color: #F7A707;
+}
+
+.mNavItem.active .mNavText {
+  color: #ffffff;
+}
+
 .mNavIcon {
-  font-size: 22px;
+  font-size: 42px;
   line-height: 1;
   opacity: 0.95;
+  transition: all 0.3s ease;
 }
 
 .mNavText {
-  font-size: 12px;
-}
-
-.mNavItem.active {
-  color: rgba(255,255,255,0.95);
-  text-shadow: 0 0 18px rgba(120, 200, 255, 0.35);
+  font-size: 15px;
+  transition: all 0.3s ease;
 }
 
 .mNavItem.mine .mNavIcon {
@@ -54,6 +80,16 @@
   background: radial-gradient(circle at 30% 30%, #ffd27a, #ff9f2f);
   color: rgba(10, 20, 40, 0.9);
   box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  transition: all 0.3s ease;
+}
+
+.mNavItem.mine:hover .mNavIcon {
+  box-shadow: 0 12px 28px rgba(0,0,0,0.45);
+  transform: scale(1.1);
+}
+
+.mNavItem.mine.active .mNavIcon {
+  box-shadow: 0 12px 28px rgba(247, 167, 7, 0.4);
 }
 
 .mNavSpacer {

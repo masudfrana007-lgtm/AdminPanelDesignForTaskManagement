@@ -1,4 +1,4 @@
-import serviceLady from "../assets/customer-service-lady.png";
+import serviceLady from "../assets/img/service.png";
 import "../styles/memberService.css";
 import MemberBottomNav from "../components/MemberBottomNav";
 
