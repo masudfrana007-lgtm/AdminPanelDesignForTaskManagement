@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import "../styles/memberDeposit.css";
+import MemberBottomNav from "../components/MemberBottomNav";
 
 const user = {
   name: "User",
