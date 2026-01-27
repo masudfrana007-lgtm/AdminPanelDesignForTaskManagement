@@ -1,55 +1,54 @@
-/* OLD BG (KEEP) */
-.depositPage {
+.deposit-method {
+  --wrap: min(1060px, 94vw);
+  --gap: 18px;
+  --bybit-yellow: #f7d34a;
+  --glass: rgba(14, 70, 115, 0.42);
+  --line: rgba(255, 255, 255, 0.16);
+
   min-height: 100vh;
-  background: url("../assets/background.png") no-repeat center center fixed;
-  background-size: cover;
   color: #fff;
-  padding: 20px;
-  padding-bottom: 110px; /* space for bottom nav */
+
+  /* ✅ important: space for OLD bottom bar */
+  padding: 14px 0 110px;
+
   position: relative;
   overflow: hidden;
+
+  background:
+    linear-gradient(135deg, rgba(6, 30, 50, 0.78), rgba(10, 70, 95, 0.55)),
+    url("/bg/deposit.png") center / cover no-repeat;
 }
 
-.depositPage::before {
+/* soft glow */
+.deposit-method::before {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: -30%;
   background:
     radial-gradient(circle at 18% 18%, rgba(160, 230, 255, 0.22), transparent 55%),
     radial-gradient(circle at 85% 25%, rgba(120, 205, 255, 0.16), transparent 60%),
     linear-gradient(25deg, transparent 35%, rgba(255,255,255,0.10) 48%, transparent 65%);
+  transform: rotate(-8deg);
   pointer-events: none;
 }
 
-/* container */
-.depositContainer {
-  max-width: 1000px;
+.dm-wrap {
+  width: var(--wrap);
   margin: 0 auto;
   position: relative;
-  z-index: 2;
-}
-
-/* =====================
-   NEW DepositMethod UI
-   ===================== */
-
-.depositPage .dm-wrap {
-  width: min(1060px, 94vw);
-  margin: 0 auto;
-  position: relative;
-  z-index: 2;
+  z-index: 1;
 }
 
 /* Topbar */
 .dm-topbar {
-  width: min(1060px, 94vw);
+  width: var(--wrap);
   margin: 0 auto 14px;
   display: grid;
   grid-template-columns: 48px 1fr 48px;
   align-items: center;
   gap: 10px;
   position: relative;
-  z-index: 2;
+  z-index: 1;
 }
 
 .dm-back {
@@ -125,8 +124,8 @@
 .dm-options {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 18px;
-  margin-top: 18px;
+  gap: var(--gap);
+  margin-top: var(--gap);
 }
 
 .dm-card {
@@ -134,8 +133,8 @@
   padding: 16px;
   cursor: pointer;
 
-  background: rgba(14, 70, 115, 0.42);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: var(--glass);
+  border: 1px solid var(--line);
   backdrop-filter: blur(18px);
 
   box-shadow: 0 18px 40px rgba(0,0,0,0.24);
@@ -210,20 +209,20 @@
   border: none;
   font-weight: 900;
   letter-spacing: 0.2px;
-  background: #f7d34a;
+  background: var(--bybit-yellow);
   color: #0b2d49;
   cursor: pointer;
 }
 
 .dm-btn.outline {
   background: transparent;
-  color: #f7d34a;
-  border: 1px solid #f7d34a;
+  color: var(--bybit-yellow);
+  border: 1px solid var(--bybit-yellow);
 }
 
 /* Instructions */
 .dm-info {
-  margin-top: 18px;
+  margin-top: var(--gap);
   border-radius: 18px;
   padding: 16px 16px;
 
@@ -252,7 +251,7 @@
   border-radius: 999px;
   background: rgba(247, 211, 74, 0.16);
   border: 1px solid rgba(247, 211, 74, 0.35);
-  color: #f7d34a;
+  color: var(--bybit-yellow);
 }
 
 .dm-info ul {
@@ -263,31 +262,46 @@
   opacity: 0.92;
 }
 
-/* responsive */
+/* Mobile responsive */
 @media (max-width: 820px) {
-  .dm-options { grid-template-columns: 1fr; }
+  .dm-options {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 520px) {
   .dm-topbar {
+    width: 94vw;
     grid-template-columns: 44px 1fr 20px;
   }
 
-  .dm-topbar-title h2 { font-size: 18px; }
-  .dm-topbar-title p { font-size: 12px; }
+  .dm-topbar-title h2 {
+    font-size: 18px;
+  }
 
-  .dm-balance { padding: 14px 14px; }
-  .dm-balance-val { font-size: 20px; }
+  .dm-topbar-title p {
+    font-size: 12px;
+  }
 
-  .dm-card { padding: 14px; }
-  .dm-icon { width: 50px; height: 50px; border-radius: 14px; }
-}
+  .dm-wrap {
+    width: 94vw;
+  }
 
-/* Button reset */
-.dm-back,
-.dm-btn,
-.dm-card {
-  appearance: none;
-  -webkit-appearance: none;
-  outline: none;
+  .dm-balance {
+    padding: 14px 14px;
+  }
+
+  .dm-balance-val {
+    font-size: 20px;
+  }
+
+  .dm-card {
+    padding: 14px;
+  }
+
+  .dm-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+  }
 }
