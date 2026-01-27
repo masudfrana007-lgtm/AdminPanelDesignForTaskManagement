@@ -1,132 +1,175 @@
-import MemberBottomNav from "../components/MemberBottomNav";
+// src/pages/MemberMine.jsx
 import { useNavigate } from "react-router-dom";
+import { FaUserFriends } from "react-icons/fa";
 import "../styles/memberMine.css";
+
+/* ✅ Import ALL your custom icons */
+import teamIcon from "../assets/icons/Team.jpg";
+import depositIcon from "../assets/icons/Deposit.png";
+import withdrawalIcon from "../assets/icons/withdrawal.png";
+
+import profileIcon from "../assets/icons/profile.png";
+import securityIcon from "../assets/icons/Security.png";
+import settingsIcon from "../assets/icons/settings.png";
+import depositRec1Icon from "../assets/icons/DepositR.png";
+import depositRec2Icon from "../assets/icons/DepositRR.png";
+
+const user = {
+  vip: 3,
+  balance: 97280.12,
+  referenceCode: "ABCD-1234",
+};
+
+function money(n) {
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n);
+}
+
+function CardButton({ icon, label, onClick }) {
+  return (
+    <button className="mine-action" onClick={onClick} type="button">
+      <div className="mine-action-icon">{icon}</div>
+      <div className="mine-action-label">{label}</div>
+    </button>
+  );
+}
+
+function ListItem({ icon, label, onClick }) {
+  return (
+    <button className="mine-item" onClick={onClick} type="button">
+      <div className="mine-item-left">
+        <span className="mine-item-ico">{icon}</span>
+        <span className="mine-item-label">{label}</span>
+      </div>
+      <span className="mine-item-arrow">›</span>
+    </button>
+  );
+}
 
 export default function MemberMine() {
   const nav = useNavigate();
 
-  const handleDepositClick = () => {
-    nav("/member/deposit");
-  };
   return (
-    <div className="minePage">
-      <div className="mineContainer">
-        {/* Header Section */}
-        <div className="mineHeader">
-          <div className="profileIcon">
-            <div className="avatarCircle"></div>
-            <span className="vipBadge">VIP</span>
-          </div>
-          <div className="invitationCode">
-            <span className="inviteLabel">Invitation code:</span>
-            <span className="inviteCode">●●●●●●●</span>
+    <div className="page mine">
+      {/* Header */}
+      <div className="mine-hero">
+        <div className="mine-hero-top">
+          <div className="mine-avatar" />
+          <div className="mine-meta">
+            <div className="mine-vip">
+              <span className="mine-vip-pill">VIP {user.vip}</span>
+            </div>
+
+            <div className="mine-ref">
+              <span className="mine-ref-label">Reference code:</span>
+              <span className="mine-ref-code">{user.referenceCode}</span>
+            </div>
           </div>
         </div>
 
-        {/* Account Balance Section */}
-        <div className="accountSection">
-          <h2 className="accountTitle">My Account</h2>
-          <div className="balanceDisplay">
-            <span className="currency">USDT</span>
-            <span className="amount">97,280.12</span>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="quickActions">
-          <div className="actionItem">
-            <div className="actionIcon teams">
-              <svg viewBox="0 0 24 24" fill="white" width="28" height="28">
-                <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 8H17c-.8 0-1.54.37-2 1l-3 4-3-4c-.46-.63-1.2-1-2-1H5.46c-.8 0-1.54.37-2 1L1 15.5h2.5V22h3v-6h2v6h3zm-11-8c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
-              </svg>
-            </div>
-            <span className="actionLabel">Teams</span>
-          </div>
-          <div className="actionItem">
-            <div className="actionIcon record">
-              <svg viewBox="0 0 24 24" fill="white" width="28" height="28">
-                <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
-                <path d="M15,14L16,15L19,12L20,13L16,17L14,15L15,14Z"/>
-              </svg>
-            </div>
-            <span className="actionLabel">Record</span>
-          </div>
-          <div className="actionItem">
-            <div className="actionIcon wallet">
-              <svg viewBox="0 0 24 24" fill="white" width="28" height="28">
-                <path d="M12,1L21,5V11C21,16.55 17.16,21.74 12,23C6.84,21.74 3,16.55 3,11V5L12,1M12,3.18L5,6.3V11.22C5,15.54 8.07,19.68 12,20.92C15.93,19.68 19,15.54 19,11.22V6.3L12,3.18M15.09,8L16.5,9.41L10.5,15.41L7.5,12.41L8.91,11L10.5,12.59L15.09,8Z"/>
-              </svg>
-            </div>
-            <span className="actionLabel">Wallet management</span>
-          </div>
-          <div className="actionItem">
-            <div className="actionIcon invite">
-              <svg viewBox="0 0 24 24" fill="white" width="28" height="28">
-                <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
-                <circle cx="9" cy="12" r="2"/>
-                <path d="M6,18C6,16.34 7.34,15 9,15C10.66,15 12,16.34 12,18H6Z"/>
-                <circle cx="16" cy="13" r="1.5"/>
-              </svg>
-            </div>
-            <span className="actionLabel">Invite friends</span>
-          </div>
-        </div>
-
-        {/* Menu Items */}
-        <div className="menuSection">
-          <div className="menuSubSection">
-            <div className="menuColumn">
-              <div className="menuItem">
-                <div className="menuIcon profile">
-                  <span>👤</span>
-                </div>
-                <span className="menuLabel">Profile</span>
-                <span className="menuArrow">›</span>
-              </div>
-              <div className="menuItem" onClick={handleDepositClick}>
-                <div className="menuIcon deposit">
-                  <span>📊</span>
-                </div>
-                <span className="menuLabel">Deposit</span>
-                <span className="menuArrow">›</span>
-              </div>
-              <div className="menuItem">
-                <div className="menuIcon settings">
-                <span>💳</span>
-                </div>
-                <span className="menuLabel">Deposit records</span>
-                <span className="menuArrow">›</span>
-              </div>
-            </div>
-            <div className="menuColumn">
-              <div className="menuItem">
-                <div className="menuIcon deposit">
-                  <span>💳</span>
-                </div>
-                <span className="menuLabel">Wallet</span>
-                <span className="menuArrow">›</span>
-              </div>
-              <div className="menuItem">
-                <div className="menuIcon withdraw">
-                  <span>📤</span>
-                </div>
-                <span className="menuLabel">Withdrawal</span>
-                <span className="menuArrow">›</span>
-              </div>
-              <div className="menuItem">
-                <div className="menuIcon settings">
-                  <span>⚙️</span>
-                </div>
-                <span className="menuLabel">Setting</span>
-                <span className="menuArrow">›</span>
-              </div>
-            </div>
+        <div className="mine-balance">
+          <div className="mine-balance-title">My Account</div>
+          <div className="mine-balance-row">
+            <span className="mine-balance-unit">USDT</span>
+            <span className="mine-balance-val">{money(user.balance)}</span>
           </div>
         </div>
       </div>
 
-      {/* Reusable Bottom Navigation */}
-      <MemberBottomNav active="mine" />
+      {/* 4 Quick Actions */}
+      <div className="mine-actions-wrap">
+        <div className="mine-actions">
+          <CardButton
+            icon={<img src={teamIcon} alt="Teams" className="custom-icon" />}
+            label="Teams"
+            onClick={() => nav("/teams")}
+          />
+          <CardButton
+            icon={<img src={depositIcon} alt="Deposit" className="custom-icon" />}
+            label="Deposit"
+            onClick={() => nav("/deposit-method")}
+          />
+          <CardButton
+            icon={
+              <img
+                src={withdrawalIcon}
+                alt="Withdrawal"
+                className="custom-icon"
+              />
+            }
+            label="Withdrawal"
+            onClick={() => nav("/withdraw-method")}
+          />
+          <CardButton
+            icon={<FaUserFriends />}
+            label="Invite friends"
+            onClick={() => nav("/invite")}
+          />
+        </div>
+      </div>
+
+      {/* List blocks */}
+      <div className="mine-lists">
+        <div className="mine-list">
+          <ListItem
+            icon={<img src={profileIcon} alt="Profile" className="list-icon-img" />}
+            label="Profile"
+            onClick={() => nav("/profile")}
+          />
+          <ListItem
+            icon={
+              <img
+                src={withdrawalIcon}
+                alt="Withdrawal Management"
+                className="list-icon-img"
+              />
+            }
+            label="Withdrawal Management"
+            onClick={() => nav("/withdrawal-management")}
+          />
+          <ListItem
+            icon={<img src={settingsIcon} alt="Setting" className="list-icon-img" />}
+            label="Setting"
+            onClick={() => nav("/setting")}
+          />
+        </div>
+
+        <div className="mine-list">
+          <ListItem
+            icon={
+              <img
+                src={depositRec1Icon}
+                alt="Deposit Records"
+                className="list-icon-img"
+              />
+            }
+            label="Deposit Records"
+            onClick={() => nav("/deposit-records")}
+          />
+          <ListItem
+            icon={
+              <img
+                src={depositRec2Icon}
+                alt="Deposit Records"
+                className="list-icon-img"
+              />
+            }
+            label="Deposit Records"
+            onClick={() => nav("/deposit-records")}
+          />
+          <ListItem
+            icon={<img src={securityIcon} alt="Security" className="list-icon-img" />}
+            label="Security"
+            onClick={() => nav("/security")}
+          />
+        </div>
+      </div>
+
+      {/* ✅ Bottom bar removed as you requested */}
+            {/* Reusable Bottom Nav */}
+      <MemberBottomNav active="service" />
+
+      {/* Spacer so content doesn't hide behind bottom nav */}
+      <div className="svcNavSpacer" />
     </div>
   );
 }
