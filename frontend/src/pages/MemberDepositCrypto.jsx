@@ -3,6 +3,8 @@ import "./DepositCrypto.css";
 import "../styles/memberDepositCrypto.css";
 import MemberBottomNav from "../components/MemberBottomNav";
 
+import depositBg from "../assets/bg/deposit.png";
+
 const ASSETS = [
   {
     symbol: "USDT",
@@ -111,11 +113,7 @@ export default function DepositCrypto() {
   return (
     <div
       className="dc-page"
-      style={{
-        // Put your background image here if you want:
-        // backgroundImage: `url(/bg/deposit.png)`,
-        backgroundImage: `url(../assets/bg/deposit.png)`,
-      }}
+      style={{ backgroundImage: `url(${depositBg})` }}
     >
       <div className="dc-overlay" />
 
