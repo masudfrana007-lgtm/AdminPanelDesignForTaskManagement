@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import "./DepositCrypto.css";
 import "../styles/memberDepositCrypto.css";
 import MemberBottomNav from "../components/MemberBottomNav";
 
