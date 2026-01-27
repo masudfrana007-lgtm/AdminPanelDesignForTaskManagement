@@ -617,3 +617,28 @@
   background: rgba(0,0,0,.18);
   border-color: rgba(255,255,255,.14);
 }
+/* =========================================================
+   ✅ Bottom Nav SAFE ZONE
+   This prevents .dc-* global styles from changing the bottom bar
+   ========================================================= */
+.dc-bottomNavSafe {
+  position: relative;
+  z-index: 9999;
+}
+
+/* Reset all dc styling from leaking into bottom nav */
+.dc-bottomNavSafe,
+.dc-bottomNavSafe * {
+  all: revert;
+}
+
+/* Re-apply layout only (since all: revert resets everything) */
+.dc-bottomNavSafe {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* If your MemberBottomNav already uses fixed positioning,
+   you can comment out the position:fixed block above. */

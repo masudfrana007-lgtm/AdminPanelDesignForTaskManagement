@@ -1,9 +1,6 @@
 import { useMemo, useState } from "react";
-import "./DepositCrypto.css";
 import "../styles/memberDepositCrypto.css";
-import MemberBottomNav from "../components/MemberBottomNav";
-
-import depositBg from "../assets/bg/deposit.png";
+import MemberBottomNav from "../components/MemberBottomNav"; // ✅ if you use it
 
 const ASSETS = [
   {
@@ -36,17 +33,14 @@ const ASSETS = [
   },
 ];
 
-
 function money(n) {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n);
 }
-
 function shortAddr(addr) {
   if (!addr) return "";
   if (addr.length <= 16) return addr;
   return addr.slice(0, 10) + "..." + addr.slice(-6);
 }
-
 function getDemoAddress(symbol, networkKey) {
   const base = `${symbol}-${networkKey}-ADDR-`;
   const rnd = Math.random().toString(16).slice(2).padEnd(34, "a").slice(0, 34);
@@ -55,11 +49,11 @@ function getDemoAddress(symbol, networkKey) {
 
 export default function DepositCrypto() {
   const [asset, setAsset] = useState("USDT");
-  const assetObj = useMemo(() => ASSETS.find(a => a.symbol === asset), [asset]);
+  const assetObj = useMemo(() => ASSETS.find((a) => a.symbol === asset), [asset]);
 
   const [network, setNetwork] = useState(assetObj.networks[0].key);
   const networkObj = useMemo(
-    () => assetObj.networks.find(n => n.key === network) || assetObj.networks[0],
+    () => assetObj.networks.find((n) => n.key === network) || assetObj.networks[0],
     [assetObj, network]
   );
 
@@ -79,7 +73,7 @@ export default function DepositCrypto() {
 
   const onChangeAsset = (sym) => {
     setAsset(sym);
-    const a = ASSETS.find(x => x.symbol === sym);
+    const a = ASSETS.find((x) => x.symbol === sym);
     const defaultNet = a.networks[0].key;
     setNetwork(defaultNet);
     setAddress(getDemoAddress(sym, defaultNet));
@@ -113,11 +107,12 @@ export default function DepositCrypto() {
   return (
     <div
       className="dc-page"
-      style={{ backgroundImage: `url(${depositBg})` }}
+      style={{
+        backgroundImage: `url(/bg/deposit.png)`,
+      }}
     >
       <div className="dc-overlay" />
 
-      {/* Header */}
       <header className="dc-header">
         <button className="dc-back" onClick={() => window.history.back()}>
           ←
@@ -134,35 +129,32 @@ export default function DepositCrypto() {
       </header>
 
       <main className="dc-wrap">
-        {/* Top summary */}
         <section className="dc-gridTop">
-          {/* ✅ Different color balance card */}
-         <div className="dc-card dc-balance dc-balance--highlight">
-  <div className="dc-balanceTop">
-    <div className="dc-balanceTitleRow">
-      <div className="dc-dot dc-dot--cyan" />
-      <div className="dc-balanceTitle">Wallet Balance</div>
-    </div>
+          <div className="dc-card dc-balance dc-balance--highlight">
+            <div className="dc-balanceTop">
+              <div className="dc-balanceTitleRow">
+                <div className="dc-dot dc-dot--cyan" />
+                <div className="dc-balanceTitle">Wallet Balance</div>
+              </div>
 
-    <div className="dc-balanceAmounts">
-      <div className="dc-balanceMain">
-        <span className="dc-balanceUsd">${money(walletUsd)}</span>
-        <span className="dc-balanceUnit">USD</span>
-      </div>
-      <div className="dc-balanceSub">≈ {money(walletUsdt)} USDT</div>
-    </div>
-  </div>
+              <div className="dc-balanceAmounts">
+                <div className="dc-balanceMain">
+                  <span className="dc-balanceUsd">${money(walletUsd)}</span>
+                  <span className="dc-balanceUnit">USD</span>
+                </div>
+                <div className="dc-balanceSub">≈ {money(walletUsdt)} USDT</div>
+              </div>
+            </div>
 
-  <div className="dc-balanceActions">
-    <button className="dc-miniBtn" onClick={() => showToast("Opening deposit history...")}>
-      View History
-    </button>
-    <button className="dc-miniBtn" onClick={() => showToast("Refreshing balance...")}>
-      Refresh
-    </button>
-  </div>
-</div>
-
+            <div className="dc-balanceActions">
+              <button className="dc-miniBtn" onClick={() => showToast("Opening deposit history...")}>
+                View History
+              </button>
+              <button className="dc-miniBtn" onClick={() => showToast("Refreshing balance...")}>
+                Refresh
+              </button>
+            </div>
+          </div>
 
           <div className="dc-card dc-status">
             <div className="dc-statusTitle">Deposit Status</div>
@@ -170,17 +162,12 @@ export default function DepositCrypto() {
               <div className="dc-chip">Pending: 0</div>
               <div className="dc-chip">Completed: 12</div>
             </div>
-            <div className="dc-mutedSmall">
-              Deposits are credited after required confirmations.
-            </div>
+            <div className="dc-mutedSmall">Deposits are credited after required confirmations.</div>
           </div>
         </section>
 
-        {/* Steps */}
         <section className="dc-gridMain">
-          {/* Left column */}
           <div className="dc-left">
-            {/* Step 1 */}
             <div className="dc-card">
               <div className="dc-stepHead">
                 <div className="dc-stepNum">1</div>
@@ -191,24 +178,22 @@ export default function DepositCrypto() {
               </div>
 
               <div className="dc-assetRow">
-  {ASSETS.map(a => (
-    <button
-      key={a.symbol}
-      className={"dc-assetBtn " + (asset === a.symbol ? "is-selected" : "")}
-      onClick={() => onChangeAsset(a.symbol)}
-    >
-      <img src={a.icon} alt={a.symbol} className="dc-coinLogo" />
-      <div className="dc-assetMeta">
-        <div className="dc-assetSym">{a.symbol}</div>
-        <div className="dc-mutedSmall">{a.name}</div>
-      </div>
-    </button>
-  ))}
-</div>
-
+                {ASSETS.map((a) => (
+                  <button
+                    key={a.symbol}
+                    className={"dc-assetBtn " + (asset === a.symbol ? "is-selected" : "")}
+                    onClick={() => onChangeAsset(a.symbol)}
+                  >
+                    <img src={a.icon} alt={a.symbol} className="dc-coinLogo" />
+                    <div className="dc-assetMeta">
+                      <div className="dc-assetSym">{a.symbol}</div>
+                      <div className="dc-mutedSmall">{a.name}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Step 2 */}
             <div className="dc-card">
               <div className="dc-stepHead">
                 <div className="dc-stepNum">2</div>
@@ -219,7 +204,7 @@ export default function DepositCrypto() {
               </div>
 
               <div className="dc-netRow">
-                {assetObj.networks.map(n => (
+                {assetObj.networks.map((n) => (
                   <button
                     key={n.key}
                     className={"dc-netBtn " + (network === n.key ? "is-selected" : "")}
@@ -240,7 +225,6 @@ export default function DepositCrypto() {
               </div>
             </div>
 
-            {/* Step 3 */}
             <div className="dc-card">
               <div className="dc-stepHead">
                 <div className="dc-stepNum">3</div>
@@ -258,7 +242,9 @@ export default function DepositCrypto() {
                       <div className="dc-qrText">QR</div>
                     </div>
                   </div>
-                  <button className="dc-miniBtn" onClick={refreshAddress}>Refresh Address</button>
+                  <button className="dc-miniBtn" onClick={refreshAddress}>
+                    Refresh Address
+                  </button>
                 </div>
 
                 <div className="dc-addressRight">
@@ -268,8 +254,12 @@ export default function DepositCrypto() {
                       <span className="dc-mono">{address}</span>
                     </div>
                     <div className="dc-fieldActions">
-                      <button className="dc-miniBtn" onClick={() => copy(address)}>Copy</button>
-                      <button className="dc-ghostBtn" onClick={() => showToast("Sharing...")}>Share</button>
+                      <button className="dc-miniBtn" onClick={() => copy(address)}>
+                        Copy
+                      </button>
+                      <button className="dc-ghostBtn" onClick={() => showToast("Sharing...")}>
+                        Share
+                      </button>
                     </div>
                     <div className="dc-mutedSmall">
                       Short: <span className="dc-mono">{shortAddr(address)}</span>
@@ -279,7 +269,11 @@ export default function DepositCrypto() {
                   <div className="dc-field">
                     <div className="dc-label">
                       Memo / Tag{" "}
-                      {memoRequired ? <span className="dc-required">Required</span> : <span className="dc-mutedSmall">(if needed)</span>}
+                      {memoRequired ? (
+                        <span className="dc-required">Required</span>
+                      ) : (
+                        <span className="dc-mutedSmall">(if needed)</span>
+                      )}
                     </div>
                     <input
                       className="dc-input"
@@ -287,15 +281,12 @@ export default function DepositCrypto() {
                       onChange={(e) => setMemoTag(e.target.value)}
                       placeholder="Enter memo/tag if your wallet requires it"
                     />
-                    <div className="dc-mutedSmall">
-                      Some exchanges require memo/tag for certain assets.
-                    </div>
+                    <div className="dc-mutedSmall">Some exchanges require memo/tag for certain assets.</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Step 4 */}
             <div className="dc-card">
               <div className="dc-stepHead">
                 <div className="dc-stepNum">4</div>
@@ -335,7 +326,6 @@ export default function DepositCrypto() {
             </div>
           </div>
 
-          {/* Right column */}
           <aside className="dc-right">
             <div className="dc-card dc-side">
               <div className="dc-sideTitle">Quick Summary</div>
@@ -349,7 +339,9 @@ export default function DepositCrypto() {
               </div>
               <div className="dc-sideLine">
                 <span className="dc-muted">Min</span>
-                <span className="dc-strong">{networkObj.min} {asset}</span>
+                <span className="dc-strong">
+                  {networkObj.min} {asset}
+                </span>
               </div>
               <div className="dc-sideLine">
                 <span className="dc-muted">Confirmations</span>
@@ -380,8 +372,10 @@ export default function DepositCrypto() {
 
       {toast ? <div className="dc-toast">{toast}</div> : null}
 
-      {/* ✅ OLD bottom bar (reusable) */}
-      <MemberBottomNav active="mine" />      
+      {/* ✅ OLD bottom bar EXACT look: isolate it from dc styles */}
+      <div className="dc-bottomNavSafe">
+        <MemberBottomNav active="mine" />
+      </div>
     </div>
   );
 }
