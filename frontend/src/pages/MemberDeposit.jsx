@@ -1,7 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import "../styles/memberDeposit.css";
-import MemberBottomNav from "../components/MemberBottomNav";
-
 
 const user = {
   balance: 97280.12,
@@ -118,11 +116,8 @@ export default function DepositMethod() {
             <li>• Deposits sent to wrong addresses or networks may not be recoverable.</li>
             <li>• If your deposit is pending too long, contact Customer Service with TXID / receipt.</li>
           </ul>
-        </div>      
+        </div>
       </div>
-
-      {/* Bottom Navigation */}
-      <MemberBottomNav active="mine" />      
     </div>
   );
 }
