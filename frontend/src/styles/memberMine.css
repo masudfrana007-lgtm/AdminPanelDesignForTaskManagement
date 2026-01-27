@@ -1,19 +1,53 @@
-/* =========================
-   NEW Mine layout styles (works inside old .minePage bg)
-   ========================= */
+/* src/styles/memberMine.css */
 
+/* =========================
+   OLD BG (KEEP THIS)
+   ========================= */
 .minePage {
-  padding-bottom: 110px; /* ensures content not hidden behind MemberBottomNav */
+  min-height: 100vh;
+  background: url("../assets/background.png") no-repeat center center fixed;
+  background-size: cover;
+  padding: 18px 18px 110px; /* space for bottom nav */
+  color: #eaf2ff;
+  position: relative;
+  overflow: hidden;
 }
 
+.minePage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      ellipse 1400px 420px at 92% 18%,
+      rgba(255,255,255,0.28),
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 1100px 360px at 75% 55%,
+      rgba(180,220,245,0.20),
+      transparent 65%
+    );
+  pointer-events: none;
+}
+
+/* container */
+.mineContainer {
+  max-width: 1000px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1; /* make sure content is above ::before */
+}
+
+/* =========================
+   NEW PAGE UI STYLES
+   ========================= */
 .mine-hero,
 .mine-actions-wrap,
 .mine-lists {
   width: min(980px, 94vw);
   margin-left: auto;
   margin-right: auto;
-  position: relative;
-  z-index: 1;
 }
 
 .mine-hero {
@@ -29,6 +63,7 @@
     0 22px 40px rgba(0, 0, 0, 0.18),
     inset 0 1px 0 rgba(255, 255, 255, 0.10);
   overflow: hidden;
+  position: relative;
 }
 
 .mine-hero-top {
@@ -104,7 +139,7 @@
   color: #fff;
 }
 
-/* Quick Actions */
+/* Quick actions */
 .mine-actions-wrap {
   margin-top: 18px;
 }
@@ -143,6 +178,7 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
 
+/* gradients behind icons */
 .mine-action:nth-child(1) .mine-action-icon { background: linear-gradient(180deg, #ffc87a, #ff8c1a); }
 .mine-action:nth-child(2) .mine-action-icon { background: linear-gradient(180deg, #9dffe8, #2bd2aa); }
 .mine-action:nth-child(3) .mine-action-icon { background: linear-gradient(180deg, #ffb2b2, #eb5050); }
@@ -189,6 +225,10 @@
   background: rgba(247, 211, 74, 0.12);
 }
 
+.mine-item:active {
+  transform: scale(0.995);
+}
+
 .mine-item + .mine-item {
   border-top: 1px solid rgba(15, 40, 70, 0.08);
 }
@@ -228,4 +268,12 @@
 /* responsive */
 @media (max-width: 520px) {
   .mine-lists { grid-template-columns: 1fr; }
+}
+
+/* Button reset */
+.mine-action,
+.mine-item {
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
 }
