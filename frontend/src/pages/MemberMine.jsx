@@ -88,7 +88,7 @@ export default function MemberMine() {
             <CardButton
               icon={<img src={depositIcon} alt="Deposit" className="custom-icon" />}
               label="Deposit"
-              onClick={() => nav("/deposit-method")}
+              onClick={() => nav("/member/deposit")}
             />
             <CardButton
               icon={
