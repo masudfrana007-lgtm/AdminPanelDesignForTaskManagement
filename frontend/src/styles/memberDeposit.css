@@ -16,7 +16,7 @@
 
   background:
     linear-gradient(135deg, rgba(6, 30, 50, 0.78), rgba(10, 70, 95, 0.55)),
-    url("/bg/deposit.png") center / cover no-repeat;
+    url("../assets/bg/deposit.png") center / cover no-repeat;
 }
 
 /* soft glow */
