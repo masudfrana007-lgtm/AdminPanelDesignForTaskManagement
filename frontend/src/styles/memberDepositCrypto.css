@@ -1,311 +1,619 @@
-.depositCryptoPage {
-  min-height: 100vh !important;
-  background: url('../assets/background.png') no-repeat center center fixed !important;
-  background-size: cover !important;
-  color: white !important;
-  padding: 20px;
-  padding-bottom: 120px;
+/* ===== Bybit accent variables (yellow/orange) ===== */
+:root{
+  --bybit-yellow: #FFC107;
+  --bybit-orange: #FF8A00;
+  --bybit-glow: rgba(255, 193, 7, 0.22);
+  --bybit-border: rgba(255, 193, 7, 0.32);
+}
+
+/* Full page background */
+.dc-page{
+  min-height: 100vh;
   position: relative;
-  overflow: hidden;
+  padding: 22px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  background-image: radial-gradient(circle at 20% 20%, rgba(70,150,255,.35), transparent 45%),
+    radial-gradient(circle at 80% 70%, rgba(255,180,80,.25), transparent 50%),
+    linear-gradient(160deg, #0c1c3c 0%, #071229 60%, #040a18 100%);
+  color: #eaf2ff;
 }
 
-.depositCryptoPage::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: 
-    radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 70%),
-    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.03) 0%, transparent 60%);
-  pointer-events: none;
-  opacity: 0.6;
+.dc-overlay{
+  position:absolute; inset:0;
+  background: linear-gradient(180deg, rgba(0,0,0,.20), rgba(0,0,0,.35));
+  pointer-events:none;
 }
 
-.depositCryptoContainer {
-  max-width: 420px;
-  margin: 0 auto;
+/* Header */
+.dc-header{
   position: relative;
-  z-index: 2;
+  max-width: 1100px;
+  margin: 0 auto 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
-.backButton {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  color: white;
+.dc-back{
   width: 44px;
   height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.08);
+  color: #fff;
   cursor: pointer;
-  margin-bottom: 24px;
-  /* backdrop-filter: blur(10px); */
-  transition: all 0.2s ease;
 }
 
-.backButton:hover {
-  background: rgba(255, 255, 255, 0.15);
-  transform: translateX(-2px);
+.dc-title h1{
+  font-size: 22px;
+  margin: 0;
+  letter-spacing: .2px;
 }
-
-.pageTitle {
-  text-align: center;
-  font-size: 24px;
-  font-weight: 600;
-  margin-bottom: 32px;
-  color: white;
+.dc-title p{
+  margin: 4px 0 0;
+  font-size: 13px;
+  opacity: .85;
 }
+.dc-headerActions{ margin-left: auto; display:flex; gap:10px; }
 
-/* Wallet Balance Card */
-.walletBalanceCard {
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 20px;
-  padding: 24px;
-  margin-bottom: 40px;
-  /* backdrop-filter: blur(20px); */
-  box-shadow: 
-    0 20px 40px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  color: #1a1a1a;
-}
-
-.balanceHeader {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.walletIcon {
-  width: 32px;
-  height: 32px;
-  background: rgba(139, 115, 85, 0.1);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.walletLabel {
-  font-size: 16px;
-  font-weight: 500;
-  color: #333;
-}
-
-.balanceAmount {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.amount {
-  font-size: 32px;
-  font-weight: 700;
-  color: #1a1a1a;
-}
-
-.currency {
-  font-size: 18px;
-  font-weight: 600;
-  color: #666;
-}
-
-.balanceEquivalent {
-  font-size: 14px;
-  color: #888;
-}
-
-/* Select Coin Section */
-.selectCoinSection {
-  margin-bottom: 60px;
-}
-
-.selectCoinTitle {
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 20px;
-  color: white;
-}
-
-.coinOptions {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.coinOption {
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  padding: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  /* backdrop-filter: blur(15px); */
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 16px;
+/* Layout */
+.dc-wrap{
   position: relative;
-  overflow: hidden;
-}
-
-.coinOption::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(45deg, transparent 0%, rgba(255, 255, 255, 0.02) 50%, transparent 100%);
-  pointer-events: none;
-}
-
-.coinOption:hover {
-  background: rgba(255, 255, 255, 0.12);
-  transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-}
-
-.coinOption.selected {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-}
-
-.coinIcon {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.coinIcon.usdt {
-  background: #26A17B;
-}
-
-.coinIcon.bsc {
-  background: #F3BA2F;
-  position: relative;
-}
-
-.coinInfo {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.coinName {
-  font-size: 18px;
-  font-weight: 600;
-  color: white;
-}
-
-.coinSubname {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.7);
-  font-weight: 500;
-}
-
-.coinArrow {
-  font-size: 24px;
-  color: rgba(255, 255, 255, 0.5);
-  transition: all 0.2s ease;
-}
-
-.coinOption:hover .coinArrow {
-  color: rgba(255, 255, 255, 0.8);
-  transform: translateX(4px);
-}
-
-/* Next Button */
-.nextButton {
-  width: 100%;
-  padding: 16px 24px;
-  background: linear-gradient(135deg, #4a90e2, #357abd);
-  border: none;
-  border-radius: 16px;
-  color: white;
-  font-size: 18px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 8px 20px rgba(74, 144, 226, 0.3);
-  /* backdrop-filter: blur(10px); */
-  position: fixed;
-  bottom: 100px;
-  left: 20px;
-  right: 20px;
-  max-width: 380px;
+  max-width: 1100px;
   margin: 0 auto;
 }
 
-.nextButton:hover {
-  background: linear-gradient(135deg, #357abd, #2e5a87);
-  transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(74, 144, 226, 0.4);
+.dc-gridTop{
+  display: grid;
+  grid-template-columns: 1.2fr .8fr;
+  gap: 14px;
+  margin-bottom: 14px;
 }
 
-.nextButton:active {
-  transform: translateY(0);
+.dc-gridMain{
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 14px;
 }
 
-/* Desktop Responsive */
-@media (min-width: 768px) {
-  .depositCryptoContainer {
-    max-width: 500px;
-    padding: 0 20px;
-  }
-  
-  .walletBalanceCard {
-    padding: 32px;
-  }
-  
-  .coinOption {
-    padding: 24px;
-  }
-  
-  .coinIcon {
-    width: 56px;
-    height: 56px;
-  }
-  
-  .nextButton {
-    position: static;
-    margin-top: 40px;
-  }
+.dc-left{ display:flex; flex-direction:column; gap:14px; }
+.dc-right{ position: relative; }
+
+/* Glass card */
+.dc-card{
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.08);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 20px 50px rgba(0,0,0,.35);
+  padding: 16px;
 }
 
-/* Mobile Responsive */
-@media (max-width: 480px) {
-  .depositCryptoPage {
-    padding: 16px;
-  }
-  
-  .walletBalanceCard {
-    padding: 20px;
-  }
-  
-  .amount {
-    font-size: 28px;
-  }
-  
-  .coinOption {
-    padding: 16px;
-  }
-  
-  .coinIcon {
-    width: 40px;
-    height: 40px;
-  }
-  
-  .coinName {
-    font-size: 16px;
-  }
+/* =======================
+   Top balance card highlight
+   ======================= */
+/* =======================
+   Wallet Balance – Light White / Grey Highlight
+   ======================= */
+/* =======================
+   Wallet Balance – Professional (Balanced + Premium)
+   ======================= */
+
+.dc-balance--highlight{
+  min-height: 150px; /* makes it balanced with Deposit Status */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  background:
+    radial-gradient(circle at 15% 20%, rgba(255,255,255,0.60), transparent 55%),
+    linear-gradient(135deg, rgba(255,255,255,0.78), rgba(235,238,245,0.70));
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow:
+    0 18px 44px rgba(0,0,0,.18),
+    0 0 0 1px rgba(255,255,255,.55) inset;
+
+  color: #1c2330;
+}
+
+.dc-balanceTop{
+  display:flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.dc-balanceTitleRow{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+}
+
+.dc-balanceTitle{
+  font-size: 14px;
+  font-weight: 800;
+  color: #2a3446;
+  letter-spacing: .2px;
+}
+
+.dc-balanceAmounts{
+  margin-top: 10px;
+}
+
+.dc-balanceMain{
+  display:flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.dc-balanceUsd{
+  font-size: 34px;   /* bigger, more professional */
+  font-weight: 900;
+  color: #121722;
+  letter-spacing: .2px;
+}
+
+.dc-balanceUnit{
+  font-size: 14px;
+  font-weight: 800;
+  color: #4b5568;
+}
+
+.dc-balanceSub{
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #5b6475;
+}
+
+/* =======================
+   Wallet Balance – Royal Blue / Indigo
+   ======================= */
+
+/* =======================
+   Wallet Balance – Royal Purple (Premium)
+   ======================= */
+
+/* =======================
+   Wallet Balance – Light Bybit Yellow (Professional)
+   ======================= */
+
+/* =======================
+   Wallet Balance – Light Bybit Yellow Glass
+   ======================= */
+
+/* =======================
+   Wallet Balance – Royal Gold (Glossy, Clean)
+   ======================= */
+
+/* =======================
+   Wallet Balance – Royal Gold Glass (Glossy + Transparent)
+   ======================= */
+
+/* =======================
+   Wallet Balance – Dark Royal Gold (Glossy Premium)
+   ======================= */
+
+/* =======================
+   Wallet Balance – Dark Royal Gold Glass (High Gloss)
+   ======================= */
+
+.dc-balance--highlight{
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  /* dark gold glass base */
+  background:
+    /* diagonal glass light */
+    linear-gradient(
+      120deg,
+      rgba(255,255,255,0.22) 0%,
+      rgba(255,255,255,0.06) 28%,
+      rgba(255,255,255,0.00) 60%
+    ),
+    /* gold body */
+    linear-gradient(
+      180deg,
+      rgba(120, 90, 18, 0.92) 0%,
+      rgba(165, 125, 28, 0.88) 40%,
+      rgba(95, 70, 10, 0.94) 100%
+    );
+
+  border: 1px solid rgba(255, 205, 110, 0.45);
+
+  /* glass depth + gloss */
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.55),      /* top glass line */
+    inset 0 18px 30px rgba(255, 225, 140,.20),/* inner gold glow */
+    inset 0 -2px 0 rgba(70,50,8,.65),         /* bottom depth */
+    0 22px 46px rgba(0,0,0,.48);               /* lift */
+
+  color: #fff7da;
+}
+
+/* Title */
+.dc-balanceTitle{
+  font-size: 14px;
+  font-weight: 800;
+  color: rgba(255, 235, 180, 0.95);
+  letter-spacing: .3px;
+}
+
+/* Main amount */
+.dc-balanceUsd{
+  font-size: 36px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: .35px;
+  text-shadow:
+    0 2px 6px rgba(0,0,0,.35);
+}
+
+/* Currency */
+.dc-balanceUnit{
+  font-size: 14px;
+  font-weight: 800;
+  color: rgba(255, 225, 160, 0.95);
+}
+
+/* Sub amount */
+.dc-balanceSub{
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 215, 140, 0.95);
+}
+
+/* Accent dot */
+.dc-balance--highlight .dc-dot--cyan{
+  background: linear-gradient(135deg, #FFE082, #FFC107);
+  box-shadow:
+    0 0 18px rgba(255,193,7,.85),
+    inset 0 1px 0 rgba(255,255,255,.75);
+}
+
+/* Buttons */
+.dc-balance--highlight .dc-miniBtn{
+  background: rgba(255,255,255,0.18);
+  color: #fff7da;
+  border: 1px solid rgba(255, 215, 120, 0.38);
+  font-weight: 800;
+}
+.dc-balance--highlight .dc-miniBtn:hover{
+  background: rgba(255,255,255,0.28);
+}
+
+
+
+
+/* Status card */
+.dc-statusTitle{ font-weight: 700; margin-bottom: 10px; }
+.dc-statusRow{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom: 8px; }
+.dc-chip{
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.15);
+}
+
+/* Step headers */
+.dc-stepHead{
+  display:flex; gap:12px; align-items:flex-start; margin-bottom: 12px;
+}
+.dc-stepNum{
+  width: 30px; height: 30px;
+  border-radius: 10px;
+  display:flex; align-items:center; justify-content:center;
+  font-weight: 800;
+  background: rgba(255,255,255,.14);
+  border: 1px solid rgba(255,255,255,.18);
+}
+.dc-stepTitle{ font-weight: 800; }
+
+/* Asset buttons */
+.dc-assetRow{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(0,1fr));
+  gap: 10px;
+}
+.dc-assetBtn{
+  display:flex; gap:10px; align-items:center;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.16);
+  cursor: pointer;
+  color: #fff;
+  transition: transform .12s ease, background .12s ease, border-color .12s ease, box-shadow .12s ease;
+}
+.dc-assetBtn:hover{ transform: translateY(-1px); }
+
+/* ✅ Bybit selection */
+.dc-assetBtn.is-selected{
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.18), rgba(255, 140, 0, 0.12));
+  border-color: var(--bybit-border);
+  box-shadow: 0 0 0 1px rgba(255,193,7,.10) inset, 0 14px 30px rgba(0,0,0,.30);
+}
+.dc-assetBtn.is-selected .dc-assetIcon{
+  background: rgba(255, 193, 7, 0.20);
+  border: 1px solid rgba(255,193,7,.18);
+}
+.dc-assetBtn.is-selected .dc-assetSym{
+  color: var(--bybit-yellow);
+}
+
+.dc-assetIcon{
+  width: 38px; height: 38px;
+  border-radius: 14px;
+  display:flex; align-items:center; justify-content:center;
+  background: rgba(255,255,255,.14);
+  font-weight: 900;
+}
+.dc-assetSym{ font-weight: 900; }
+
+/* Network buttons */
+.dc-netRow{ display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; }
+.dc-netBtn{
+  text-align:left;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.16);
+  cursor:pointer;
+  color:#fff;
+  transition: transform .12s ease, background .12s ease, border-color .12s ease, box-shadow .12s ease;
+}
+.dc-netBtn:hover{ transform: translateY(-1px); }
+
+/* ✅ Bybit selection for networks */
+.dc-netBtn.is-selected{
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.18), rgba(255, 140, 0, 0.12));
+  border-color: var(--bybit-border);
+  box-shadow: 0 0 0 1px rgba(255,193,7,.10) inset, 0 14px 30px rgba(0,0,0,.30);
+}
+.dc-netBtn.is-selected .dc-netName{
+  color: var(--bybit-yellow);
+}
+
+.dc-netTop{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom: 6px; }
+.dc-netName{ font-weight: 900; }
+
+/* Badges */
+.dc-badge{
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.08);
+}
+.dc-badge.is-green{ background: rgba(0,200,120,.16); border-color: rgba(0,200,120,.25); }
+.dc-badge.is-blue{ background: rgba(80,160,255,.16); border-color: rgba(80,160,255,.25); }
+.dc-badge.is-red{ background: rgba(255,90,90,.16); border-color: rgba(255,90,90,.25); }
+.dc-badge.is-gray{ background: rgba(180,180,180,.12); }
+
+.dc-warning{
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,200,120,.25);
+  background: rgba(255,180,80,.12);
+  font-size: 12px;
+  display:flex; gap:10px; align-items:flex-start;
+}
+.dc-warningIcon{ font-size: 14px; }
+
+/* Address section */
+.dc-addressGrid{
+  display:grid;
+  grid-template-columns: 240px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+.dc-qrBox{
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.18);
+  padding: 12px;
+}
+.dc-qrFake{
+  height: 180px;
+  border-radius: 12px;
+  border: 1px dashed rgba(255,255,255,.20);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position: relative;
+  overflow:hidden;
+}
+.dc-qrSquares{
+  position:absolute; inset:0;
+  background-image:
+    linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255,255,255,.08) 1px, transparent 1px);
+  background-size: 18px 18px;
+  opacity: .55;
+}
+.dc-qrText{
+  position: relative;
+  font-weight: 900;
+  font-size: 18px;
+  opacity: .9;
+}
+
+.dc-field{ margin-bottom: 12px; }
+.dc-label{ font-size: 12px; opacity: .85; margin-bottom: 6px; }
+.dc-required{
+  margin-left: 8px;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255,90,90,.16);
+  border: 1px solid rgba(255,90,90,.22);
+}
+.dc-inputLike{
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.18);
+  padding: 12px;
+  overflow: hidden;
+}
+.dc-mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 12px; }
+.dc-fieldActions{ margin-top: 10px; display:flex; gap:10px; }
+.dc-input{
+  width: 100%;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.18);
+  color: #fff;
+  outline: none;
+}
+
+/* Info grid */
+.dc-infoGrid{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(0,1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+.dc-infoItem{
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.16);
+  padding: 12px;
+}
+.dc-infoValue{ font-weight: 900; margin-top: 6px; }
+
+/* Buttons */
+.dc-miniBtn, .dc-ghostBtn, .dc-primaryBtn, .dc-secondaryBtn, .dc-linkBtn{
+  cursor:pointer;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.14);
+  padding: 10px 12px;
+  color: #fff;
+  background: rgba(255,255,255,.08);
+}
+.dc-miniBtn{ padding: 9px 12px; font-size: 13px; background: rgba(0,0,0,.18); }
+.dc-ghostBtn{ background: rgba(255,255,255,.08); }
+
+/* Primary stays blue premium (you can make it yellow if you want later) */
+.dc-primaryBtn{
+  background: linear-gradient(90deg, rgba(80,160,255,.55), rgba(140,220,255,.35));
+  border-color: rgba(170,220,255,.35);
+  font-weight: 900;
+  padding: 12px 14px;
+}
+.dc-secondaryBtn{
+  background: rgba(0,0,0,.18);
+  border-color: rgba(255,255,255,.14);
+  font-weight: 800;
+  padding: 12px 14px;
+}
+.dc-actions{
+  display:flex;
+  gap: 10px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+.dc-linkBtn{
+  background: transparent;
+  border: none;
+  padding: 8px 0;
+  opacity: .9;
+  text-decoration: underline;
+}
+.dc-helpRow{
+  display:flex;
+  gap: 14px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+/* Side panel */
+.dc-side{ position: sticky; top: 14px; }
+.dc-sideTitle{ font-weight: 900; margin-bottom: 10px; }
+.dc-sideLine{ display:flex; justify-content:space-between; padding: 8px 0; }
+.dc-strong{ font-weight: 900; }
+.dc-divider{ height:1px; background: rgba(255,255,255,.12); margin: 12px 0; }
+.dc-list{ margin: 0; padding-left: 16px; opacity: .9; }
+.w100{ width: 100%; margin-top: 10px; }
+
+/* Toast */
+.dc-toast{
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(0,0,0,.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 50;
+}
+
+/* Responsive */
+@media (max-width: 980px){
+  .dc-gridTop{ grid-template-columns: 1fr; }
+  .dc-gridMain{ grid-template-columns: 1fr; }
+  .dc-side{ position: relative; top: 0; }
+  .dc-assetRow{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .dc-netRow{ grid-template-columns: 1fr; }
+  .dc-addressGrid{ grid-template-columns: 1fr; }
+  .dc-infoGrid{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+}/* Crypto logos in asset section */
+.dc-coinLogo{
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #fff;
+  padding: 3px;
+  object-fit: contain;
+  box-shadow: 0 4px 12px rgba(0,0,0,.25);
+}
+/* ===== Quick Summary: Highlight Card (Bybit gold + purple glass) ===== */
+.dc-card.dc-side{
+  background:
+    radial-gradient(circle at 15% 20%, rgba(255, 193, 7, 0.22), transparent 45%),
+    radial-gradient(circle at 85% 80%, rgba(255, 140, 0, 0.18), transparent 55%),
+    linear-gradient(135deg, rgba(40, 22, 68, 0.72), rgba(18, 10, 32, 0.55));
+  border: 1px solid rgba(255, 193, 7, 0.22);
+  box-shadow:
+    0 22px 55px rgba(0,0,0,.35),
+    0 0 0 1px rgba(255, 193, 7, 0.10) inset;
+}
+
+/* Stronger heading style inside Quick Summary */
+.dc-card.dc-side .dc-sideTitle{
+  color: rgba(255, 210, 120, 0.95);
+  letter-spacing: .2px;
+}
+
+/* Lines inside quick summary */
+.dc-card.dc-side .dc-sideLine{
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.dc-card.dc-side .dc-sideLine:last-child{
+  border-bottom: none;
+}
+
+/* Buttons inside Quick Summary */
+.dc-card.dc-side .dc-secondaryBtn{
+  background: rgba(255, 193, 7, 0.14);
+  border-color: rgba(255, 193, 7, 0.22);
+}
+.dc-card.dc-side .dc-secondaryBtn:hover{
+  background: rgba(255, 193, 7, 0.18);
+}
+.dc-card.dc-side .dc-ghostBtn{
+  background: rgba(0,0,0,.18);
+  border-color: rgba(255,255,255,.14);
 }
