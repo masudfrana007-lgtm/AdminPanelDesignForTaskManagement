@@ -2,6 +2,7 @@
 import { useNavigate } from "react-router-dom";
 import { FaUserFriends } from "react-icons/fa";
 import "../styles/memberMine.css";
+import MemberBottomNav from "../components/MemberBottomNav";
 
 /* ✅ Import ALL your custom icons */
 import teamIcon from "../assets/icons/Team.jpg";
