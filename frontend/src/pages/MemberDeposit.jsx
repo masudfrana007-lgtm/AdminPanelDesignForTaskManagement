@@ -87,7 +87,7 @@ export default function DepositMethod() {
               Tip: Select the correct network. Wrong network deposits may not be recoverable.
             </div>
 
-            <button className="dm-btn" type="button" onClick={(e) => { e.stopPropagation(); nav("/deposit"); }}>
+            <button className="dm-btn" type="button" onClick={(e) => { e.stopPropagation(); nav("/member/deposit/crypto"); }}>
               Continue
             </button>
           </div>
