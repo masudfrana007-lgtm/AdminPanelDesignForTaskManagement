@@ -13,7 +13,7 @@
   padding: 22px;
 
   /* keep your old background */
-  background: url('../assets/background.png') no-repeat center center fixed;
+  background: url('../assets/bg/deposit.png') no-repeat center center fixed;
   background-size: cover;
 
   color: #eaf2ff;
@@ -52,6 +52,7 @@
   font-size: 22px;
   margin: 0;
   letter-spacing: .2px;
+  color: white;
 }
 .dc-title p{
   margin: 4px 0 0;
