@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import "../styles/CustomerService.css";
+import "../styles/memberService.css";
 import MemberBottomNav from "../components/MemberBottomNav";
 
 const CATEGORIES = [
