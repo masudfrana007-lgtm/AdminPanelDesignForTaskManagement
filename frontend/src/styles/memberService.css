@@ -8,13 +8,9 @@
 
 .cs-page{
   min-height:100vh;
-  padding:22px;
   position:relative;
-  color: var(--text);
-
-  /* ✅ background image */
-  background: url('../assets/background.png') no-repeat center center fixed;
-  background-size: cover;
+  padding:22px;
+  color:#eaf2ff;
 }
 
 .cs-overlay{
@@ -32,7 +28,7 @@
   gap:14px;
 }
 
-.cs-title h1{ margin:0; font-size:22px; }
+.cs-title h1{ margin:0; font-size:22px; color:white; }
 .cs-title p{ margin:4px 0 0; font-size:13px; opacity:.85; }
 
 .cs-headerActions{
@@ -375,24 +371,20 @@
 /* ✅ Background (no image file needed) */
 .cs-bgSupport{
   background:
+    /* overlay gradients on top */
     radial-gradient(circle at 15% 20%, rgba(255,193,7,.14), transparent 45%),
     radial-gradient(circle at 85% 75%, rgba(120,90,255,.18), transparent 52%),
     radial-gradient(circle at 55% 35%, rgba(40,160,255,.14), transparent 55%),
-    /* subtle stars */
-    radial-gradient(rgba(255,255,255,.10) 1px, transparent 1px),
-    radial-gradient(rgba(255,255,255,.06) 1px, transparent 1px),
-    linear-gradient(160deg, #060b1a 0%, #0b1731 55%, #070c1c 100%);
-  background-size:
-    auto, auto, auto,
-    140px 140px,
-    220px 220px,
-    auto;
-  background-position:
-    center, center, center,
-    0 0,
-    40px 70px,
-    center;
+
+    /* your image at the bottom layer */
+    url('../assets/background.png');
+
+  background-size: auto, auto, auto, cover;
+  background-position: center, center, center, center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
+
 
 /* ✅ Delivery + time row */
 .cs-metaRow{
