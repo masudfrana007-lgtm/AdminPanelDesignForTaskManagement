@@ -29,7 +29,7 @@ import Profile from "./pages/Profile";
 
 import WithdrawalMethod from "./pages/WithdrawalMethod";
 //import MemberWithdrawBank from "./pages/MemberWithdrawBank";
-import MemberWithdrawCrypto from "./pages/MemberWithdrawCrypto";
+import WithdrawCrypto from "./pages/WithdrawCrypto";
 
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
