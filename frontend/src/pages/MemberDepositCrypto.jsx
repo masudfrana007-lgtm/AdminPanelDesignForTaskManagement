@@ -401,7 +401,10 @@ export default function MemberDepositCrypto() {
       {toast ? <div className="dc-toast">{toast}</div> : null}
 
       {/* ✅ KEEP OLD BOTTOM BAR EXACTLY */}
-      <MemberBottomNav active="mine" />
+      <div className="memberBottomNavFixed">
+        <MemberBottomNav active="mine" />
+      </div>
+      
     </div>
   );
 }

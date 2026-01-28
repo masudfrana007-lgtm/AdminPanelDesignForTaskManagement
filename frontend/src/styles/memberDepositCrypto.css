@@ -470,3 +470,16 @@
   .dc-addressGrid{ grid-template-columns: 1fr; }
   .dc-infoGrid{ grid-template-columns: repeat(2, minmax(0,1fr)); }
 }
+/* keep bottom nav fixed */
+.memberBottomNavFixed{
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+}
+
+/* important: make sure page content doesn't hide behind the fixed menu */
+.dc-page{
+  padding-bottom: 140px; /* adjust if your bottom bar height is different */
+}
