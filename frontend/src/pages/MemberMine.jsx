@@ -99,7 +99,7 @@ export default function MemberMine() {
                 />
               }
               label="Withdrawal"
-              onClick={() => nav("/withdraw-method")}
+              onClick={() => nav("/member/withdraw")}
             />
             <CardButton
               icon={<FaUserFriends />}

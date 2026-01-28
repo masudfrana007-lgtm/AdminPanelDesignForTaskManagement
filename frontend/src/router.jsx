@@ -27,6 +27,10 @@ import MemberDepositUSDT from "./pages/MemberDepositUSDT";
 import DepositCrypto from "./pages/DepositCrypto";
 import Profile from "./pages/Profile";
 
+import WithdrawalMethod from "./pages/WithdrawalMethod";
+//import MemberWithdrawBank from "./pages/MemberWithdrawBank";
+//import MemberWithdrawCrypto from "./pages/MemberWithdrawCrypto";
+
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
   
@@ -194,4 +198,14 @@ export const router = createBrowserRouter([
     </MemberProtectedRoute>
   ),
 },  
+
+{
+  path: "/member/withdraw",
+  element: (
+    <MemberProtectedRoute>
+      <WithdrawalMethod />
+    </MemberProtectedRoute>
+  ),
+},
+
 ]);
