@@ -65,7 +65,7 @@ export default function DepositMethod() {
         {/* Deposit Options */}
         <div className="dm-options">
           {/* Crypto */}
-          <div className="dm-card" onClick={() => nav("/deposit")} role="button" tabIndex={0}>
+          <div className="dm-card" onClick={() => nav("/member/deposit/crypto")} role="button" tabIndex={0}>
             <div className="dm-cardHead">
              <div className="dm-icon crypto usdt-badge">
   USDT
@@ -93,7 +93,7 @@ export default function DepositMethod() {
           </div>
 
           {/* Bank */}
-          <div className="dm-card" onClick={() => nav("/deposit-bank")} role="button" tabIndex={0}>
+          <div className="dm-card" onClick={() => nav("/member/deposit/bank")} role="button" tabIndex={0}>
             <div className="dm-cardHead">
               <div className="dm-icon bank">🏦</div>
               <div className="dm-cardText">
@@ -117,7 +117,7 @@ export default function DepositMethod() {
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                nav("/deposit-bank");
+                nav("/member/deposit/bank");
               }}
             >
               Continue
