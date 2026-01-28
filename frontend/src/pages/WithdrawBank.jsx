@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MemberBottomNav from "../components/MemberBottomNav";
 import "../styles/WithdrawBank.css";
+import withdrawBg from "../assets/bg/withdraw.png";
 
 function money(n) {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n);
@@ -209,7 +210,10 @@ export default function WithdrawBank() {
   };
 
   return (
-    <div className="wb-page">
+	  <div
+	    className="wb-page"
+	    style={{ backgroundImage: `url(${withdrawBg})` }}
+	  >    	
       <header className="wb-header">
         <button className="wb-back" onClick={() => nav(-1)} type="button">
           ←
