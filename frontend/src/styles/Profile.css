@@ -26,12 +26,24 @@
 
 .pf-header{
   position: relative;
+  max-width: 980px;
+  margin: 0 auto 18px;
   display:flex;
   align-items:center;
   gap:14px;
-  margin-bottom:18px;
+  color: #ffffff;
   z-index: 2;
 }
+
+.pf-header h1{
+  color:#ffffff;
+  font-weight:900;
+}
+
+.pf-header p{
+  color: rgba(255,255,255,.85);
+}
+
 
 .pf-back{
   width:42px;

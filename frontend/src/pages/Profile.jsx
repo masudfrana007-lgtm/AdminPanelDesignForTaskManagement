@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import "../styles/Profile.css";
+import MemberBottomNav from "../components/MemberBottomNav";
 
 export default function Profile() {
   const fileRef = useRef(null);
@@ -141,6 +142,11 @@ export default function Profile() {
           <button className="pf-btn warn">Log Out</button>
         </section>
       </main>
+
+	{/* spacer so content doesn't hide behind nav */}
+	<div className="pfNavSpacer" />
+
+	<MemberBottomNav active="mine" />      
     </div>
   );
 }
