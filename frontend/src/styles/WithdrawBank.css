@@ -8,9 +8,8 @@
 
 .wb-page{
   min-height:100vh;
-  padding:22px;
+  padding: 22px 22px 110px; /* ✅ space for bottom nav */
 
-  /* ✅ allow bg image from inline style */
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -21,8 +20,10 @@
   text-rendering: optimizeLegibility;
 
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden; /* ✅ don’t use full hidden */
 }
+
+/* overlay */
 .wb-page::before{
   content:"";
   position:absolute;
@@ -30,11 +31,6 @@
   background: rgba(6, 18, 30, 0.55);
   pointer-events:none;
   z-index:0;
-}
-
-.wb-page *{
-  position: relative;
-  z-index: 1;
 }
 
 .wb-header{
