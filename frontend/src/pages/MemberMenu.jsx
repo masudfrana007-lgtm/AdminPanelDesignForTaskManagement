@@ -43,6 +43,7 @@ export default function MemberMenu() {
   const [slots, setSlots] = useState(EMPTY_SLOTS);
   const [activeSet, setActiveSet] = useState(null); // backend response
   const [loading, setLoading] = useState(false);
+  const [me, setMe] = useState(null);
 
   // countdown tick (keep same behavior)
   const [tick, setTick] = useState(Date.now());
@@ -50,6 +51,19 @@ export default function MemberMenu() {
     const t = setInterval(() => setTick(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
+
+useEffect(() => {
+  (async () => {
+    try {
+      const r = await memberApi.get("/member/me");
+      console.log("ME RESPONSE:", r.data); // ✅ check sponsor_short_id exists here
+      setMe(r.data || null);
+    } catch (e) {
+      console.log("ME ERROR:", e?.response?.status, e?.response?.data || e.message);
+      setMe(null);
+    }
+  })();
+}, []);
 
   const loadActiveSet = async () => {
     setLoading(true);
@@ -67,7 +81,7 @@ export default function MemberMenu() {
 
         // show the set as a "task card" without changing layout
         const setTaskCard = {
-          id: `SET-${r.data.set?.id ?? ""}`,
+          id: r.data.current_task?.id ?? `SET-${r.data.set?.id ?? ""}`,
           title: r.data.set?.name || "Assigned Set",
           type: "Assigned Set",
           reward: r.data.set_amount ?? 0, // keep same reward line, but show set amount
@@ -78,7 +92,7 @@ export default function MemberMenu() {
             `Pending tasks: ${pendingTasks}`,
             pendingTasks === 0 ? "Set is complete ✅" : "Open Task to continue the set",
           ],
-          ref: `MS-${r.data.assignment?.id ?? ""}`,
+          ref: me?.sponsor_short_id ?? "—",
         };
 
         setSlots((prev) => [

@@ -1,31 +1,46 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MemberBottomNav from "../components/MemberBottomNav";
 import "../styles/TaskList.css";
+import memberApi from "../services/memberApi";
 
 function money(n) {
-  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n);
+  const num = Number(n || 0);
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(num);
 }
 
-const DEMO_TASKS = Array.from({ length: 25 }).map((_, i) => {
-  const id = "TK-" + (20000 + i);
-  const diffs = ["Easy", "Medium", "Hard"];
-  const difficulty = diffs[i % diffs.length];
-  const reward = [8.5, 10, 12.5, 15, 18][i % 5];
-  const status = ["Active", "Pending Review", "Urgent"][i % 3];
+// ✅ Convert backend image path to a real browser URL
+function toImageUrl(img) {
+  if (!img) return "";
 
+  const s = String(img).trim();
+  if (!s) return "";
+
+  // already absolute: http / https / data url
+  if (/^(https?:)?\/\//i.test(s) || /^data:/i.test(s)) return s;
+
+  // remove starting slashes so we can join cleanly
+  const clean = s.replace(/^\/+/, "");
+
+  // use same base as your axios baseURL
+  const base = (import.meta.env.VITE_API_URL || "http://localhost:5010").replace(/\/+$/, "");
+  return `${base}/${clean}`;
+}
+
+// Keep your UI shape the same
+function normalizeTaskRow(row) {
   return {
-    id,
-    title: ["Order Verification", "Order Completion", "Proof Review", "Payment Check", "Account Review"][i % 5],
-    ref: "ORD-" + (88000 + i),
-    image: "",
-    difficulty,
-    reward,
-    status,
-    createdAt: new Date(Date.now() - (i + 1) * 36 * 60 * 1000).toLocaleString(),
-    steps: ["Open order detail", "Verify required proof", "Submit completion / notes"],
+    id: String(row?.id ?? ""),
+    title: row?.title || "Task",
+    ref: row?.ref || "—",
+    image: row?.image || "",
+    difficulty: row?.difficulty || "—",
+    reward: Number(row?.reward || 0),
+    status: row?.status || "Active",
+    createdAt: row?.createdAt || "-",
+    steps: Array.isArray(row?.steps) ? row.steps : [],
   };
-});
+}
 
 export default function TaskList() {
   const nav = useNavigate();
@@ -37,16 +52,64 @@ export default function TaskList() {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState("All");
 
-  const tasks = useMemo(() => DEMO_TASKS, []);
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+
+  const load = async () => {
+    setLoading(true);
+    setErr("");
+    try {
+      const r = await memberApi.get("/member/active-set");
+      const d = r.data || null;
+
+      if (!d?.active) {
+        setTasks([]);
+        return;
+      }
+
+      const idx = Number(d.assignment?.current_task_index || 0);
+      const t = d.current_task;
+
+      const row = normalizeTaskRow({
+        id: t?.id ?? `SET-${d.set?.id ?? ""}`,
+        title: t?.title || d.set?.name || "Queued Task",
+        ref: `SET-${d.set?.id ?? ""}-#${idx + 1}`,
+        // ✅ FIX HERE
+        image: toImageUrl(t?.image_url),
+        difficulty: idx >= Number(d.total_tasks || 0) ? "Completed" : "Active",
+        reward: Number(t?.price ?? 0),
+        status: "Active",
+        // ✅ Created = assignment created_at (time when set assigned)
+        createdAt: d.assignment?.created_at
+          ? new Date(d.assignment.created_at).toLocaleString()
+          : "-",
+        steps: ["Open order detail", "Verify required proof", "Submit completion / notes"],
+      });
+
+      setTasks([row]);
+    } catch (e) {
+      const msg = e?.response?.data?.message || e?.message || "Failed to load tasks";
+      setErr(msg);
+      setTasks([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
     return tasks.filter((t) => {
       const matchText =
         !s ||
-        t.id.toLowerCase().includes(s) ||
-        t.title.toLowerCase().includes(s) ||
-        t.ref.toLowerCase().includes(s);
+        String(t.id).toLowerCase().includes(s) ||
+        String(t.title).toLowerCase().includes(s) ||
+        String(t.ref).toLowerCase().includes(s);
 
       const matchFilter = filter === "All" ? true : t.status === filter;
       return matchText && matchFilter;
@@ -66,8 +129,8 @@ export default function TaskList() {
         </div>
 
         <div className="tl-right">
-          <button className="tl-ghost" type="button" onClick={() => alert("Refresh (wire later)")}>
-            Refresh
+          <button className="tl-ghost" type="button" onClick={load} disabled={loading}>
+            {loading ? "Loading..." : "Refresh"}
           </button>
         </div>
       </header>
@@ -104,18 +167,11 @@ export default function TaskList() {
           <div className="tl-card tl-rules">
             <div className="tl-cardTitle">Rules & Guidelines</div>
             <ul className="tl-list">
-              <li>
-                Each assigned task must be completed within <b>24 hours</b>.
-              </li>
-              <li>
-                Always verify the <b>Order ID</b>, <b>Ref</b>, and required steps before submitting.
-              </li>
+              <li>Each assigned task must be completed within <b>24 hours</b>.</li>
+              <li>Always verify the <b>Order ID</b>, <b>Ref</b>, and required steps before submitting.</li>
               <li>Do not submit fake proof. Accounts may be restricted for violations.</li>
-              <li>
-                For issues, use <b>Customer Service</b> and provide screenshots if needed.
-              </li>
+              <li>For issues, use <b>Customer Service</b> and provide screenshots if needed.</li>
             </ul>
-
             <div className="tl-note">Tip: complete tasks early to avoid urgent deadlines.</div>
           </div>
         </section>
@@ -128,6 +184,11 @@ export default function TaskList() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
+            {err ? (
+              <div className="tl-mutedSmall" style={{ marginTop: 8 }}>
+                {err}
+              </div>
+            ) : null}
           </div>
 
           <div className="tl-filters">
@@ -172,20 +233,28 @@ export default function TaskList() {
                 <div className="tl-taskCell">
                   <div className="tl-taskTitle">{t.title}</div>
                   <div className="tl-mutedSmall">
-                    <span>
-                      <b>{t.id}</b>
-                    </span>
+                    <span><b>{t.id}</b></span>
                     <span className="tl-dot">•</span>
-                    <span>
-                      Ref: <b>{t.ref}</b>
-                    </span>
+                    <span>Ref: <b>{t.ref}</b></span>
                     <span className="tl-dot">•</span>
-                    <span>{t.steps.join(" • ")}</span>
+                    <span>{(t.steps || []).join(" • ")}</span>
                   </div>
                 </div>
 
                 <div className="tl-photoCell">
-                  <div className="tl-photoPlaceholder">Your Product photo is here</div>
+                  {t.image ? (
+                    <img
+                      src={t.image}
+                      alt="task"
+                      style={{ width: 72, height: 72, objectFit: "cover", borderRadius: 10 }}
+                      onError={(e) => {
+                        console.log("IMAGE FAILED:", t.image);
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                  ) : (
+                    <div className="tl-photoPlaceholder">Your Product photo is here</div>
+                  )}
                 </div>
 
                 <div className={"tl-status " + (t.status === "Urgent" ? "is-urgent" : t.status === "Active" ? "is-active" : "is-pending")}>
@@ -197,32 +266,35 @@ export default function TaskList() {
                 <div className="tl-created">{t.createdAt}</div>
 
                 <div className="tl-open">
-
-					<button
-					  className="tl-openBtn"
-					  type="button"
-					  onClick={() =>
-					    nav("/member/task-detail", {
-					      state: {
-					        tasks: filtered,               // pass current filtered list
-					        index: filtered.findIndex(x => x.id === t.id),
-					        balance,
-					        completedCount: 0,             // demo (can be real later)
-					      },
-					    })
-					  }
-					>
-					  Open
-					</button>
-                  
-                </div>                
+                  <button
+                    className="tl-openBtn"
+                    type="button"
+                    onClick={() =>
+                      nav("/member/task-detail", {
+                        state: {
+                          tasks: filtered,
+                          index: filtered.findIndex((x) => x.id === t.id),
+                          balance,
+                          completedCount: 0,
+                        },
+                      })
+                    }
+                  >
+                    Open
+                  </button>
+                </div>
               </div>
             ))}
+
+            {!loading && tasks.length === 0 ? (
+              <div className="tl-mutedSmall" style={{ padding: 16 }}>
+                No active task found.
+              </div>
+            ) : null}
           </div>
         </section>
       </main>
 
-      {/* ✅ keep bottom bar (same component) */}
       <MemberBottomNav active="menu" />
     </div>
   );

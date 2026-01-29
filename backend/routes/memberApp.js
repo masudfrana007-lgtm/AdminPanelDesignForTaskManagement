@@ -42,6 +42,18 @@ router.get("/active-set", memberAuth, async (req, res) => {
   try {
     const memberId = req.member.member_id;
 
+    const sponsorRes = await pool.query(
+      `
+      SELECT u.short_id AS sponsor_short_id
+      FROM members m
+      LEFT JOIN users u ON u.id = m.sponsor_id
+      WHERE m.id = $1
+      `,
+      [memberId]
+    );
+
+    const sponsor_short_id = sponsorRes.rows[0]?.sponsor_short_id || null;
+
     const msRes = await pool.query(
       `
       SELECT *
@@ -107,6 +119,7 @@ router.get("/active-set", memberAuth, async (req, res) => {
 
     res.json({
       active: true,
+      sponsor_short_id,
       assignment: {
         id: ms.id,
         status: ms.status,

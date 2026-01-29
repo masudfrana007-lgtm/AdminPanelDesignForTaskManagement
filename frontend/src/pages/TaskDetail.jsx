@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import "../styles/TaskDetail.css";
 
 function money(n) {
-  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n);
+  const num = Number(n || 0);
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(num);
 }
 
 function dtString(d = new Date()) {
@@ -13,10 +14,51 @@ function dtString(d = new Date()) {
   )}:${pad(d.getSeconds())}`;
 }
 
+// ✅ make image work even if backend gives relative path
+function toImageUrl(src) {
+  if (!src) return "";
+  if (/^https?:\/\//i.test(src)) return src;
+  // if it starts with /uploads/... or /images/... make it full
+  const base = import.meta.env.VITE_API_URL || "http://localhost:5010";
+  return base.replace(/\/$/, "") + (src.startsWith("/") ? src : `/${src}`);
+}
+
+// ✅ accept both demo tasks and your real backend tasks
+function normalizeTask(t) {
+  const qty = Number(t?.quantity ?? t?.qty ?? 1) || 1;
+
+  // backend: price is usually order amount (total) OR unit price.
+  // If you store unit price separately later, update here.
+  const unitPrice = Number(t?.unitPrice ?? t?.price ?? 0) || 0;
+
+  const commissionRate = Number(t?.commission_rate ?? t?.commissionRate ?? 0) || 0;
+
+  const title = t?.title || "Task";
+  const status = t?.status || "Pending";
+
+  return {
+    id: String(t?.id ?? ""),
+    status,
+    title,
+
+    // ✅ backend fields
+    description: t?.description || "",
+    image: toImageUrl(t?.image_url || t?.image || ""),
+
+    qty,
+    unitPrice,
+    commissionRate,
+
+    // anything else you may have
+    rate: t?.rate ?? null,
+  };
+}
+
 export default function TaskDetail() {
   const nav = useNavigate();
   const loc = useLocation();
 
+  // demo fallback
   const demoTasks = useMemo(
     () =>
       Array.from({ length: 25 }).map((_, i) => ({
@@ -26,30 +68,35 @@ export default function TaskDetail() {
         qty: 1,
         unitPrice: 12900,
         commissionRate: 0.7,
+        image: "",
+        description: "",
       })),
     []
   );
 
-  const tasks = loc.state?.tasks?.length ? loc.state.tasks : demoTasks;
+  // ✅ tasks passed from TaskList
+  const incomingTasks = loc.state?.tasks?.length ? loc.state.tasks : demoTasks;
+  const tasks = useMemo(() => incomingTasks.map(normalizeTask), [incomingTasks]);
+
   const balance = loc.state?.balance ?? 111.38;
 
   const [index, setIndex] = useState(loc.state?.index ?? 0);
   const [completedCount, setCompletedCount] = useState(loc.state?.completedCount ?? 0);
 
-  // ✅ new: tab state + completed history
+  // tabs + completed history
   const [tab, setTab] = useState("active"); // "active" | "completed"
-  const [completed, setCompleted] = useState([]); // store completed task summaries
+  const [completed, setCompleted] = useState([]);
 
-  // Loading / success
+  // loading / success
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const task = tasks[index];
-  const totalAmount = task.qty * task.unitPrice;
-  const taskProfit = (totalAmount * task.commissionRate) / 100;
+  const task = tasks[index] || tasks[0];
 
-  // totals
+  const totalAmount = (task.qty || 1) * (task.unitPrice || 0);
+  const taskProfit = (totalAmount * (task.commissionRate || 0)) / 100;
+
   const totalProfit = completed.reduce((sum, t) => sum + (t.profit || 0), 0);
 
   const canPrev = index > 0;
@@ -57,35 +104,31 @@ export default function TaskDetail() {
 
   const goPrev = () => !isLoading && canPrev && setIndex((i) => i - 1);
 
+  // ✅ FIXED routes: keep them under /member/*
   const goNext = () => {
-  const updatedTasks = tasks.map((t, i) =>
-    i === index ? { ...t, status: "Completed" } : t
-  );
+    if (isLoading) return;
 
-  if (index < tasks.length - 1) {
-    nav("/task-detail", {
-      state: {
-        tasks: updatedTasks,
-        index: index + 1,
-        balance,
-        completedCount: completedCount + 1,
-      },
-      replace: true,
-    });
-  } else {
-    // last task → go back to list
-    nav("/tasks", {
-      state: {
-        tasks: updatedTasks,
-        balance,
-      },
-      replace: true,
-    });
-  }
-};
+    // mark current task as completed in local tasks list (for UI only)
+    const updatedTasks = tasks.map((t, i) => (i === index ? { ...t, status: "Completed" } : t));
 
+    if (index < tasks.length - 1) {
+      nav("/member/task-detail", {
+        state: {
+          tasks: updatedTasks,
+          index: index + 1,
+          balance,
+          completedCount: Math.min(updatedTasks.length, completedCount + 1),
+        },
+        replace: true,
+      });
+    } else {
+      nav("/member/tasks", { state: { balance }, replace: true });
+    }
+  };
 
   const submit = () => {
+    if (isLoading) return;
+
     setIsLoading(true);
     setProgress(0);
 
@@ -96,11 +139,9 @@ export default function TaskDetail() {
           setIsLoading(false);
           setIsSuccess(true);
 
-          // ✅ mark completed (avoid duplicates)
+          // add to completed list (avoid duplicates)
           setCompleted((prev) => {
-            const exists = prev.some((x) => x.id === task.id);
-            if (exists) return prev;
-
+            if (prev.some((x) => x.id === task.id)) return prev;
             return [
               {
                 id: task.id,
@@ -116,7 +157,7 @@ export default function TaskDetail() {
           setCompletedCount((c) => Math.min(tasks.length, c + 1));
           return 100;
         }
-        return p + 4; // 5 seconds total
+        return p + 4;
       });
     }, 200);
   };
@@ -155,7 +196,7 @@ export default function TaskDetail() {
           </button>
         </div>
 
-        {/* Top finance summary (responsive) */}
+        {/* Top finance summary */}
         <div className="td-balance">
           <div className="td-balanceBlock">
             <span className="td-balanceLabel">Main Balance</span>
@@ -163,7 +204,7 @@ export default function TaskDetail() {
           </div>
 
           <div className="td-balanceBlock">
-            <span className="td-balanceLabel">Last Task Profit</span>
+            <span className="td-balanceLabel">This Task Profit</span>
             <span className="td-balanceValue profit">+${money(taskProfit)}</span>
           </div>
 
@@ -176,7 +217,6 @@ export default function TaskDetail() {
 
       {/* BODY */}
       <main className="td-wrap">
-        {/* ✅ Completed tab content */}
         {tab === "completed" ? (
           <section className="td-card">
             <div className="td-cardTop">
@@ -185,9 +225,7 @@ export default function TaskDetail() {
             </div>
 
             {completed.length === 0 ? (
-              <div className="td-empty">
-                No completed tasks yet. Finish a task and it will appear here.
-              </div>
+              <div className="td-empty">No completed tasks yet. Finish a task and it will appear here.</div>
             ) : (
               <div className="td-completedList">
                 {completed.map((c) => (
@@ -195,7 +233,9 @@ export default function TaskDetail() {
                     <div className="td-ciMain">
                       <div className="td-ciTitle">{c.title}</div>
                       <div className="td-ciMeta">
-                        <span><b>{c.id}</b></span>
+                        <span>
+                          <b>{c.id}</b>
+                        </span>
                         <span className="td-ciDot">•</span>
                         <span>{c.time}</span>
                       </div>
@@ -211,7 +251,6 @@ export default function TaskDetail() {
             )}
           </section>
         ) : (
-          /* ✅ Active tab content (your original block) */
           <section className="td-card">
             <div className="td-cardTop">
               <div className="td-date">{dtString()}</div>
@@ -220,9 +259,16 @@ export default function TaskDetail() {
 
             <div className="td-title">{task.title}</div>
 
+            {/* ✅ show description if exists */}
+            {task.description ? <div className="td-desc">{task.description}</div> : null}
+
             <div className="td-productRow">
               <div className="td-imageWrap">
-                <div className="td-imagePlaceholder">Your product image will appear here</div>
+                {task.image ? (
+                  <img className="td-image" src={task.image} alt="task" />
+                ) : (
+                  <div className="td-imagePlaceholder">Your product image will appear here</div>
+                )}
               </div>
 
               <div className="td-metrics">
@@ -231,19 +277,30 @@ export default function TaskDetail() {
                     <div className="td-label">Quantity</div>
                     <div className="td-value">{task.qty}</div>
                   </div>
+
                   <div className="td-box">
                     <div className="td-label">Unit Price</div>
                     <div className="td-value">${money(task.unitPrice)}</div>
                   </div>
+
                   <div className="td-box">
                     <div className="td-label">Commission Rate</div>
                     <div className="td-value">{task.commissionRate}%</div>
                   </div>
+
                   <div className="td-box">
                     <div className="td-label">Order Amount</div>
                     <div className="td-value">${money(totalAmount)}</div>
                   </div>
                 </div>
+
+                {/* ✅ show extra backend field if present */}
+                {task.rate != null ? (
+                  <div className="td-row" style={{ marginTop: 10 }}>
+                    <span>Rate</span>
+                    <span className="td-strong">{String(task.rate)}</span>
+                  </div>
+                ) : null}
 
                 <div className="td-summary">
                   <div className="td-row">
@@ -324,7 +381,14 @@ export default function TaskDetail() {
             </div>
 
             <div className="td-successBtns">
-              <button className="td-finishBtn" onClick={() => { setIsSuccess(false); setTab("completed"); }} type="button">
+              <button
+                className="td-finishBtn"
+                onClick={() => {
+                  setIsSuccess(false);
+                  setTab("completed");
+                }}
+                type="button"
+              >
                 View Completed
               </button>
               <button className="td-finishBtn is-next" onClick={goNext} type="button">
