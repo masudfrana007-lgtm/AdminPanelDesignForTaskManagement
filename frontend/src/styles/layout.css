@@ -67,3 +67,49 @@
 .pilllink .small {
   color: var(--muted);
 }
+
+/* ===== Force readable text in main content ===== */
+
+/* main content area text */
+.main-area,
+.page-content,
+.container {
+  color: var(--text);
+}
+
+/* cards: make sure all normal text becomes dark */
+.card {
+  color: var(--text);
+}
+
+/* common readable text inside cards */
+.card h1,
+.card h2,
+.card h3,
+.card p,
+.card li,
+.card td,
+.card th,
+.card b,
+.card .small {
+  color: var(--text);
+}
+
+/* keep badges muted as intended */
+.card .badge {
+  color: var(--muted);
+}
+
+/* dashboard pills */
+.pilllink,
+.pilllink b,
+.pilllink .small {
+  color: var(--text);
+}
+
+/* tables everywhere */
+.table,
+.table th,
+.table td {
+  color: var(--text);
+}
