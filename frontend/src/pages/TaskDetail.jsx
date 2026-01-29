@@ -120,7 +120,19 @@ export default function TaskDetail() {
   const orderAmount = task ? task.qty * task.unitPrice : 0;
   const taskProfit = task ? (orderAmount * task.commissionRate) / 100 : 0;
 
-  const totalProfit = completed.reduce((sum, x) => sum + (x.profit || 0), 0);
+// ✅ Total Profit from API-completed orders (tasks before currentIndex)
+const totalProfit = useMemo(() => {
+  if (!Array.isArray(tasks) || currentIndex <= 0) return 0;
+
+  return tasks.slice(0, currentIndex).reduce((sum, ct) => {
+    const qty = Number(ct.quantity || 1);
+    const unitPrice = Number(ct.rate || 0);
+    const amount = qty * unitPrice;
+    const profit = (amount * Number(ct.commission_rate || 0)) / 100;
+    return sum + profit;
+  }, 0);
+}, [tasks, currentIndex]);
+  
 
   // ✅ completed count is backend progress, not the UI viewIndex
   const completedCount = currentIndex;
