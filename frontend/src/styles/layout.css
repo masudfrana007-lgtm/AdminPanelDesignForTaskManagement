@@ -57,15 +57,15 @@
 }
 
 .pilllink {
-  color: var(--text); /* solid dark text */
+  color: black; /* solid dark text */
 }
 
 .pilllink b {
-  color: var(--text);
+  color: black;
 }
 
 .pilllink .small {
-  color: var(--muted);
+  color: black;
 }
 
 /* ===== Force readable text in main content ===== */
@@ -74,7 +74,7 @@
 .main-area,
 .page-content,
 .container {
-  color: var(--text);
+  color: black;
 }
 
 /* cards: make sure all normal text becomes dark */
@@ -92,24 +92,24 @@
 .card th,
 .card b,
 .card .small {
-  color: var(--text);
+  color: black;
 }
 
 /* keep badges muted as intended */
 .card .badge {
-  color: var(--muted);
+  color: black;
 }
 
 /* dashboard pills */
 .pilllink,
 .pilllink b,
 .pilllink .small {
-  color: var(--text);
+  color: black;
 }
 
 /* tables everywhere */
 .table,
 .table th,
 .table td {
-  color: var(--text);
+  color: black;
 }
