@@ -61,7 +61,7 @@ export default function TaskDetail() {
       setActiveSet(r.data || null);
     } catch (e) {
       setActiveSet(null);
-      setErr(e?.response?.data?.message || e?.message || "Failed to load active task");
+      setErr(e?.response?.data?.message || e?.message || "Failed to load active order");
     } finally {
       setLoading(false);
     }
@@ -99,7 +99,7 @@ export default function TaskDetail() {
 
     return {
       id: String(t.id),
-      title: t.title || "Task",
+      title: t.title || "Order",
       description: t.description || "",
       image: toImageUrl(t.image_url),
 
@@ -181,7 +181,7 @@ export default function TaskDetail() {
       setIsSuccess(false);
       await load(); // this will update currentIndex + tasks + sync viewIndex
     } catch (e) {
-      alert(e?.response?.data?.message || "Failed to complete task");
+      alert(e?.response?.data?.message || "Failed to complete Order");
     }
   };
 
@@ -199,14 +199,14 @@ export default function TaskDetail() {
         <button className="td-back" onClick={() => nav(-1)} type="button">
           ←
         </button>
-        <div style={{ marginTop: 10 }}>{err || "No active task."}</div>
+        <div style={{ marginTop: 10 }}>{err || "No active order."}</div>
       </div>
     );
   }
 
   // Optional: label for viewed task status
   const viewedStatusText = isCurrentTask
-    ? "Current Task"
+    ? "Current Order"
     : viewIndex < currentIndex
     ? "Completed"
     : "Locked";
@@ -226,7 +226,7 @@ export default function TaskDetail() {
             onClick={() => setTab("active")}
             disabled={isLoading}
           >
-            Active Task
+            Active Order
           </button>
 
           <button
@@ -241,7 +241,7 @@ export default function TaskDetail() {
 
         <div className="td-balance">
           <div className="td-balanceBlock">
-            <span className="td-balanceLabel">This Task Profit</span>
+            <span className="td-balanceLabel">This Order Profit</span>
             <span className="td-balanceValue profit">+${money(taskProfit)}</span>
           </div>
 
@@ -257,13 +257,13 @@ export default function TaskDetail() {
 		{tab === "completed" ? (
 		  <section className="td-card">
 		    <div className="td-cardTop">
-		      <div className="td-date">Completed Task History</div>
+		      <div className="td-date">Completed Order History</div>
 		      <span className="td-status is-ok">Completed</span>
 		    </div>
 
 		    {/* ✅ API-based completed tasks: tasks[0 .. currentIndex-1] */}
 		    {currentIndex <= 0 ? (
-		      <div className="td-empty">No completed tasks yet.</div>
+		      <div className="td-empty">No completed orders yet.</div>
 		    ) : (
 		      <div className="td-completedList">
 		        {tasks.slice(0, currentIndex).map((ct, idx) => {
@@ -275,7 +275,7 @@ export default function TaskDetail() {
 		          return (
 		            <div key={ct.id} className="td-completedItem">
 		              <div className="td-ciMain">
-		                <div className="td-ciTitle">{ct.title || `Task ${idx + 1}`}</div>
+		                <div className="td-ciTitle">{ct.title || `Order ${idx + 1}`}</div>
 		                <div className="td-ciMeta">
 		                  <span>
 		                    <b>{ct.id}</b>
@@ -323,7 +323,7 @@ export default function TaskDetail() {
             <div className="td-productRow">
               <div className="td-imageWrap">
                 {task.image ? (
-                  <img className="td-image" src={task.image} alt="task" />
+                  <img className="td-image" src={task.image} alt="order" />
                 ) : (
                   <div className="td-imagePlaceholder">Your product image will appear here</div>
                 )}
@@ -354,7 +354,7 @@ export default function TaskDetail() {
 
                 <div className="td-summary">
                   <div className="td-row">
-                    <span>Estimated Task Commission</span>
+                    <span>Estimated Order Commission</span>
                     <span className="td-commission">+${money(taskProfit)}</span>
                   </div>
                 </div>
@@ -368,13 +368,13 @@ export default function TaskDetail() {
                 disabled={isLoading || !isCurrentTask}
                 type="button"
               >
-                Submit Task
+                Submit Order
               </button>
 
               {!isCurrentTask ? (
-                <div className="td-hint">Submit is enabled only for the current task.</div>
+                <div className="td-hint">Submit is enabled only for the current order.</div>
               ) : (
-                <div className="td-hint">Please wait while the system verifies and processes this task.</div>
+                <div className="td-hint">Please wait while the system verifies and processes this order.</div>
               )}
             </div>
           </section>
@@ -384,7 +384,7 @@ export default function TaskDetail() {
       {/* BOTTOM BAR */}
       <footer className="td-bottomBar">
         <div>
-          <div className="td-progressTitle">Tasks Completed</div>
+          <div className="td-progressTitle">Orders Completed</div>
           <div className="td-progressValue">
             {completedCount} / {task.totalTasks}
           </div>
@@ -415,7 +415,7 @@ export default function TaskDetail() {
       {isLoading && (
         <div className="td-overlay">
           <div className="td-loader"></div>
-          <div className="td-loadingText">Processing task, please wait…</div>
+          <div className="td-loadingText">Processing order, please wait…</div>
           <div className="td-progressBar">
             <div className="td-progressFill" style={{ width: `${progress}%` }} />
           </div>
@@ -425,12 +425,12 @@ export default function TaskDetail() {
       {isSuccess && (
         <div className="td-overlay success">
           <div className="td-successCard">
-            <h2>Task Successfully Completed</h2>
+            <h2>Order Successfully Completed</h2>
             <p>The commission has been recorded.</p>
 
             <div className="td-successMeta">
               <div>
-                <div className="td-smLabel">Task Profit</div>
+                <div className="td-smLabel">Order Profit</div>
                 <div className="td-smValue">+${money(taskProfit)}</div>
               </div>
               <div>
@@ -445,6 +445,7 @@ export default function TaskDetail() {
                 onClick={() => {
                   setIsSuccess(false);
                   setTab("completed");
+                  proceedToNextTask();
                 }}
                 type="button"
               >
@@ -453,7 +454,7 @@ export default function TaskDetail() {
 
               {/* ✅ ONLY this button completes backend task */}
               <button className="td-finishBtn is-next" onClick={proceedToNextTask} type="button">
-                Proceed to Next Task →
+                Proceed to Next Order →
               </button>
             </div>
           </div>
