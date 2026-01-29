@@ -168,12 +168,12 @@ export default function MemberMenu() {
             <div className="mn-balanceSub">Keep enough balance for task operations.</div>
 
             <div className="mn-balanceActions">
-              <button className="mn-miniBtn" onClick={() => alert("Open Deposit page")}>
+              <button className="mn-miniBtn" onClick={() => nav("/member/deposit")}>
                 Deposit
               </button>
-              <button className="mn-miniBtn" onClick={() => alert("Open Withdraw page")}>
+              <button className="mn-miniBtn" onClick={() => nav("/member/withdraw")}>
                 Withdraw
-              </button>
+              </button>              
               <button className="mn-miniBtn" onClick={() => setBalance((b) => b + 50)}>
                 + Test
               </button>

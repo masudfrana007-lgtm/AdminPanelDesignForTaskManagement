@@ -161,12 +161,12 @@ export default function TaskList() {
             </div>
 
             <div className="tl-actions">
-              <button className="tl-mini" type="button" onClick={() => alert("Deposit page")}>
-                Deposit
-              </button>
-              <button className="tl-mini" type="button" onClick={() => alert("Withdraw page")}>
-                Withdraw
-              </button>
+				<button className="mn-miniBtn" onClick={() => nav("/member/deposit")}>
+				  Deposit
+				</button>
+				<button className="mn-miniBtn" onClick={() => nav("/member/withdraw")}>
+				  Withdraw
+				</button>              
               <button className="tl-mini" type="button" onClick={() => alert("Customer Service")}>
                 Support
               </button>
