@@ -3,8 +3,6 @@ import { useNavigate } from "react-router-dom";
 import "../styles/TaskDetail.css";
 import memberApi from "../services/memberApi";
 
-/* ---------------- utils ---------------- */
-
 function money(n) {
   const num = Number(n || 0);
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(num);
@@ -14,12 +12,17 @@ function pad2(x) {
   return String(x).padStart(2, "0");
 }
 
+// ✅ mm/dd/yyyy hh:mm:ss (GMT)
 function fmtGMT(iso) {
   if (!iso) return "-";
   const d = new Date(iso);
-  return `${pad2(d.getUTCMonth() + 1)}/${pad2(d.getUTCDate())}/${d.getUTCFullYear()} ${pad2(
-    d.getUTCHours()
-  )}:${pad2(d.getUTCMinutes())}:${pad2(d.getUTCSeconds())} (GMT)`;
+  const mm = pad2(d.getUTCMonth() + 1);
+  const dd = pad2(d.getUTCDate());
+  const yyyy = d.getUTCFullYear();
+  const hh = pad2(d.getUTCHours());
+  const mi = pad2(d.getUTCMinutes());
+  const ss = pad2(d.getUTCSeconds());
+  return `${mm}/${dd}/${yyyy} ${hh}:${mi}:${ss} (GMT)`;
 }
 
 function toImageUrl(src) {
@@ -29,26 +32,26 @@ function toImageUrl(src) {
   return base.replace(/\/$/, "") + (src.startsWith("/") ? src : `/${src}`);
 }
 
-/* ---------------- component ---------------- */
-
 export default function TaskDetail() {
   const nav = useNavigate();
 
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
+
+  // live payload
   const [activeSet, setActiveSet] = useState(null);
 
-  // UI navigation index (does NOT touch backend)
-  const [viewIndex, setViewIndex] = useState(0);
+  // UI tabs
+  const [tab, setTab] = useState("active");
+  const [completed, setCompleted] = useState([]);
 
-  // submit overlay
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // overlay
+  const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const [completedLocal, setCompletedLocal] = useState([]);
-
-  /* ---------------- load live data ---------------- */
+  // ✅ UI navigation index (Prev/Next changes this only)
+  const [viewIndex, setViewIndex] = useState(0);
 
   const load = async () => {
     setLoading(true);
@@ -58,7 +61,7 @@ export default function TaskDetail() {
       setActiveSet(r.data || null);
     } catch (e) {
       setActiveSet(null);
-      setErr(e?.response?.data?.message || "Failed to load active task");
+      setErr(e?.response?.data?.message || e?.message || "Failed to load active task");
     } finally {
       setLoading(false);
     }
@@ -68,40 +71,47 @@ export default function TaskDetail() {
     load();
   }, []);
 
-  /* ---------------- derived state ---------------- */
+  // ✅ must come from backend now
+  const tasks = Array.isArray(activeSet?.tasks) ? activeSet.tasks : [];
 
-  const tasks = activeSet?.tasks || [];
   const currentIndex = Number(activeSet?.assignment?.current_task_index || 0);
   const totalTasks = Number(activeSet?.total_tasks || tasks.length || 0);
 
-  // always sync UI with backend progress
+  // ✅ keep the viewed task synced to current task when backend changes
   useEffect(() => {
+    if (!Number.isFinite(currentIndex)) return;
     setViewIndex(currentIndex);
   }, [currentIndex]);
 
+  // bounds
   const canPrev = viewIndex > 0;
   const canNext = viewIndex < tasks.length - 1;
+
+  // ✅ only current task can be submitted
   const isCurrentTask = viewIndex === currentIndex;
 
-  const t = tasks[viewIndex];
+  // ✅ show the task at viewIndex (not only current_task)
+  const t = tasks[viewIndex] || null;
 
+  // ✅ map backend -> UI (for the currently viewed task)
   const task = useMemo(() => {
     if (!activeSet?.active || !t) return null;
 
     return {
-      id: t.id,
+      id: String(t.id),
       title: t.title || "Task",
       description: t.description || "",
       image: toImageUrl(t.image_url),
 
       qty: Number(t.quantity || 1),
-      unitPrice: Number(t.rate || 0),
+      unitPrice: Number(t.rate || 0), // rate is unit price
       commissionRate: Number(t.commission_rate || 0),
 
-      assignedAt: activeSet.assignment?.created_at,
+      assignedAt: activeSet.assignment?.created_at || null,
       sponsorRef: activeSet.sponsor_short_id || "—",
+      setId: activeSet.set?.name ?? null,
 
-      setId: activeSet.set?.id,
+      // ✅ this is the viewed step number (UI)
       stepNo: viewIndex + 1,
       totalTasks,
     };
@@ -110,43 +120,40 @@ export default function TaskDetail() {
   const orderAmount = task ? task.qty * task.unitPrice : 0;
   const taskProfit = task ? (orderAmount * task.commissionRate) / 100 : 0;
 
-  const totalProfit = completedLocal.reduce((s, x) => s + (x.profit || 0), 0);
+  const totalProfit = completed.reduce((sum, x) => sum + (x.profit || 0), 0);
 
-  /* ---------------- UI navigation only ---------------- */
+  // ✅ completed count is backend progress, not the UI viewIndex
+  const completedCount = currentIndex;
 
-  const goPrev = () => {
-    if (!isSubmitting && canPrev) setViewIndex((i) => i - 1);
-  };
-
-  const goNext = () => {
-    if (!isSubmitting && canNext) setViewIndex((i) => i + 1);
-  };
-
-  /* ---------------- submit (UI only) ---------------- */
-
+  // ✅ UI only: submit animation, no backend call here
   const submit = () => {
-    if (!isCurrentTask || isSubmitting) return;
+    // 🔒 only allow submit if viewing the current task
+    if (!task || isLoading || !isCurrentTask) return;
 
-    setIsSubmitting(true);
+    setIsLoading(true);
     setProgress(0);
 
-    const timer = setInterval(() => {
+    const interval = setInterval(() => {
       setProgress((p) => {
         if (p >= 100) {
-          clearInterval(timer);
-          setIsSubmitting(false);
+          clearInterval(interval);
+          setIsLoading(false);
           setIsSuccess(true);
 
-          setCompletedLocal((prev) => [
-            {
-              id: task.id,
-              title: task.title,
-              profit: taskProfit,
-              amount: orderAmount,
-              time: fmtGMT(new Date().toISOString()),
-            },
-            ...prev,
-          ]);
+          setCompleted((prev) => {
+            // avoid duplicates
+            if (prev.some((x) => x.id === task.id)) return prev;
+            return [
+              {
+                id: task.id,
+                title: task.title,
+                profit: taskProfit,
+                amount: orderAmount,
+                time: fmtGMT(new Date().toISOString()),
+              },
+              ...prev,
+            ];
+          });
 
           return 100;
         }
@@ -155,141 +162,260 @@ export default function TaskDetail() {
     }, 200);
   };
 
-  /* ---------------- backend completion (ONLY here) ---------------- */
+  // ✅ Prev / Next: only change UI viewIndex (NO backend)
+  const goPrevUI = () => {
+    if (isLoading) return;
+    if (canPrev) setViewIndex((i) => i - 1);
+  };
 
-  const proceedNext = async () => {
+  const goNextUI = () => {
+    if (isLoading) return;
+    if (canNext) setViewIndex((i) => i + 1);
+  };
+
+  // ✅ ONLY place that completes current task in backend
+  const proceedToNextTask = async () => {
+    if (isLoading) return;
     try {
       await memberApi.post("/member/complete-task", {});
       setIsSuccess(false);
-      await load();
+      await load(); // this will update currentIndex + tasks + sync viewIndex
     } catch (e) {
       alert(e?.response?.data?.message || "Failed to complete task");
     }
   };
 
-  /* ---------------- guards ---------------- */
-
   if (loading && !activeSet) {
-    return <div className="td-page" style={{ padding: 16 }}>Loading…</div>;
+    return (
+      <div className="td-page" style={{ padding: 16 }}>
+        Loading...
+      </div>
+    );
   }
 
   if (!task) {
     return (
       <div className="td-page" style={{ padding: 16 }}>
-        <button className="td-back" onClick={() => nav(-1)}>←</button>
+        <button className="td-back" onClick={() => nav(-1)} type="button">
+          ←
+        </button>
         <div style={{ marginTop: 10 }}>{err || "No active task."}</div>
       </div>
     );
   }
 
-  /* ---------------- render ---------------- */
+  // Optional: label for viewed task status
+  const viewedStatusText = isCurrentTask
+    ? "Current Task"
+    : viewIndex < currentIndex
+    ? "Completed"
+    : "Locked";
 
   return (
     <div className="td-page">
+      {/* HEADER */}
       <header className="td-top">
-        <button className="td-back" onClick={() => nav(-1)} disabled={isSubmitting}>
+        <button className="td-back" onClick={() => nav(-1)} disabled={isLoading} type="button">
           ←
         </button>
 
+        <div className="td-tabs">
+          <button
+            className={"td-tab " + (tab === "active" ? "is-active" : "")}
+            type="button"
+            onClick={() => setTab("active")}
+            disabled={isLoading}
+          >
+            Active Task
+          </button>
+
+          <button
+            className={"td-tab " + (tab === "completed" ? "is-active" : "")}
+            type="button"
+            onClick={() => setTab("completed")}
+            disabled={isLoading}
+          >
+            Completed ({completedCount})
+          </button>
+        </div>
+
         <div className="td-balance">
           <div className="td-balanceBlock">
-            <span>This Task Profit</span>
-            <span className="profit">+${money(taskProfit)}</span>
+            <span className="td-balanceLabel">This Task Profit</span>
+            <span className="td-balanceValue profit">+${money(taskProfit)}</span>
           </div>
+
           <div className="td-balanceBlock">
-            <span>Total Profit</span>
-            <span className="profit">${money(totalProfit)}</span>
+            <span className="td-balanceLabel">Total Profit (This Session)</span>
+            <span className="td-balanceValue profit">${money(totalProfit)}</span>
           </div>
         </div>
       </header>
 
+      {/* BODY */}
       <main className="td-wrap">
-        <section className="td-card">
-          <div className="td-cardTop">
-            <div className="td-date">{fmtGMT(task.assignedAt)}</div>
-            <span className="td-status">
-              {isCurrentTask
-                ? "Current Task"
-                : viewIndex < currentIndex
-                ? "Completed"
-                : "Locked"}
-            </span>
-          </div>
+		{tab === "completed" ? (
+		  <section className="td-card">
+		    <div className="td-cardTop">
+		      <div className="td-date">Completed Task History</div>
+		      <span className="td-status is-ok">Completed</span>
+		    </div>
 
-          <div className="td-title">{task.title}</div>
-          {task.description && <div className="td-desc">{task.description}</div>}
+		    {/* ✅ API-based completed tasks: tasks[0 .. currentIndex-1] */}
+		    {currentIndex <= 0 ? (
+		      <div className="td-empty">No completed tasks yet.</div>
+		    ) : (
+		      <div className="td-completedList">
+		        {tasks.slice(0, currentIndex).map((ct, idx) => {
+		          const qty = Number(ct.quantity || 1);
+		          const unitPrice = Number(ct.rate || 0);
+		          const amount = qty * unitPrice;
+		          const profit = (amount * Number(ct.commission_rate || 0)) / 100;
 
-          <div className="td-summary">
-            <div className="td-row">
-              <span>Ref</span>
-              <span className="td-strong">{task.sponsorRef}</span>
+		          return (
+		            <div key={ct.id} className="td-completedItem">
+		              <div className="td-ciMain">
+		                <div className="td-ciTitle">{ct.title || `Task ${idx + 1}`}</div>
+		                <div className="td-ciMeta">
+		                  <span>
+		                    <b>{ct.id}</b>
+		                  </span>
+		                  <span className="td-ciDot">•</span>
+		                  <span>
+		                    SET-{activeSet?.set?.name ?? "-"}-#{idx + 1} / {totalTasks}
+		                  </span>
+		                </div>
+		              </div>
+
+		              <div className="td-ciRight">
+		                <div className="td-ciAmount">${money(amount)}</div>
+		                <div className="td-ciProfit">+${money(profit)}</div>
+		              </div>
+		            </div>
+		          );
+		        })}
+		      </div>
+		    )}
+		  </section>		          
+        ) : (
+          <section className="td-card">
+            <div className="td-cardTop">
+              <div className="td-date">{fmtGMT(task.assignedAt)}</div>
+              <span className="td-status">{viewedStatusText}</span>
             </div>
-            <div className="td-row">
-              <span>Set / Step</span>
-              <span className="td-strong">
-                SET-{task.setId}-#{task.stepNo} / {task.totalTasks}
-              </span>
-            </div>
-          </div>
 
-          <div className="td-productRow">
-            <div className="td-imageWrap">
-              {task.image ? (
-                <img src={task.image} className="td-image" alt="task" />
+            <div className="td-title">{task.title}</div>
+            {task.description ? <div className="td-desc">{task.description}</div> : null}
+
+            <div className="td-summary" style={{ marginTop: 10 }}>
+              <div className="td-row">
+                <span>Ref</span>
+                <span className="td-strong">{task.sponsorRef}</span>
+              </div>
+              <div className="td-row">
+                <span>Set / Step</span>
+                <span className="td-strong">
+                  SET-{task.setId}-#{task.stepNo} / {task.totalTasks}
+                </span>
+              </div>
+            </div>
+
+            <div className="td-productRow">
+              <div className="td-imageWrap">
+                {task.image ? (
+                  <img className="td-image" src={task.image} alt="task" />
+                ) : (
+                  <div className="td-imagePlaceholder">Your product image will appear here</div>
+                )}
+              </div>
+
+              <div className="td-metrics">
+                <div className="td-grid">
+                  <div className="td-box">
+                    <div className="td-label">Quantity</div>
+                    <div className="td-value">{task.qty}</div>
+                  </div>
+
+                  <div className="td-box">
+                    <div className="td-label">Unit Price</div>
+                    <div className="td-value">${money(task.unitPrice)}</div>
+                  </div>
+
+                  <div className="td-box">
+                    <div className="td-label">Commission Rate</div>
+                    <div className="td-value">{task.commissionRate}%</div>
+                  </div>
+
+                  <div className="td-box">
+                    <div className="td-label">Order Amount</div>
+                    <div className="td-value">${money(orderAmount)}</div>
+                  </div>
+                </div>
+
+                <div className="td-summary">
+                  <div className="td-row">
+                    <span>Estimated Task Commission</span>
+                    <span className="td-commission">+${money(taskProfit)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="td-actions">
+              <button
+                className="td-submit"
+                onClick={submit}
+                disabled={isLoading || !isCurrentTask}
+                type="button"
+              >
+                Submit Task
+              </button>
+
+              {!isCurrentTask ? (
+                <div className="td-hint">Submit is enabled only for the current task.</div>
               ) : (
-                <div className="td-imagePlaceholder">Product image</div>
+                <div className="td-hint">Please wait while the system verifies and processes this task.</div>
               )}
             </div>
-
-            <div className="td-metrics">
-              <div className="td-grid">
-                <div className="td-box"><div>Quantity</div><b>{task.qty}</b></div>
-                <div className="td-box"><div>Unit Price</div><b>${money(task.unitPrice)}</b></div>
-                <div className="td-box"><div>Commission</div><b>{task.commissionRate}%</b></div>
-                <div className="td-box"><div>Order Amount</div><b>${money(orderAmount)}</b></div>
-              </div>
-
-              <div className="td-row">
-                <span>Estimated Commission</span>
-                <span className="td-commission">+${money(taskProfit)}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="td-actions">
-            <button
-              className="td-submit"
-              onClick={submit}
-              disabled={!isCurrentTask || isSubmitting}
-            >
-              Submit Task
-            </button>
-
-            {!isCurrentTask && (
-              <div className="td-hint">Only the current task can be submitted.</div>
-            )}
-          </div>
-        </section>
+          </section>
+        )}
       </main>
 
+      {/* BOTTOM BAR */}
       <footer className="td-bottomBar">
-        <div className="td-progressValue">
-          {currentIndex} / {totalTasks}
+        <div>
+          <div className="td-progressTitle">Tasks Completed</div>
+          <div className="td-progressValue">
+            {completedCount} / {task.totalTasks}
+          </div>
         </div>
 
+        {/* ✅ bottom-right: Previous + Next side by side */}
         <div className="td-navBtns">
-          <button className="td-navBtn" onClick={goPrev} disabled={!canPrev || isSubmitting}>
+          <button
+            className="td-navBtn"
+            onClick={goPrevUI}
+            disabled={isLoading || !canPrev}
+            type="button"
+          >
             ← Previous
           </button>
-          <button className="td-navBtn is-primary" onClick={goNext} disabled={!canNext || isSubmitting}>
+
+          <button
+            className="td-navBtn is-primary"
+            onClick={goNextUI}
+            disabled={isLoading || !canNext}
+            type="button"
+          >
             Next →
           </button>
         </div>
       </footer>
 
-      {isSubmitting && (
+      {isLoading && (
         <div className="td-overlay">
           <div className="td-loader"></div>
+          <div className="td-loadingText">Processing task, please wait…</div>
           <div className="td-progressBar">
             <div className="td-progressFill" style={{ width: `${progress}%` }} />
           </div>
@@ -299,12 +425,37 @@ export default function TaskDetail() {
       {isSuccess && (
         <div className="td-overlay success">
           <div className="td-successCard">
-            <h2>Task Completed</h2>
-            <p>Commission recorded successfully.</p>
+            <h2>Task Successfully Completed</h2>
+            <p>The commission has been recorded.</p>
 
-            <button className="td-finishBtn is-next" onClick={proceedNext}>
-              Proceed to Next Task →
-            </button>
+            <div className="td-successMeta">
+              <div>
+                <div className="td-smLabel">Task Profit</div>
+                <div className="td-smValue">+${money(taskProfit)}</div>
+              </div>
+              <div>
+                <div className="td-smLabel">Order Amount</div>
+                <div className="td-smValue">${money(orderAmount)}</div>
+              </div>
+            </div>
+
+            <div className="td-successBtns">
+              <button
+                className="td-finishBtn"
+                onClick={() => {
+                  setIsSuccess(false);
+                  setTab("completed");
+                }}
+                type="button"
+              >
+                View Completed
+              </button>
+
+              {/* ✅ ONLY this button completes backend task */}
+              <button className="td-finishBtn is-next" onClick={proceedToNextTask} type="button">
+                Proceed to Next Task →
+              </button>
+            </div>
           </div>
         </div>
       )}

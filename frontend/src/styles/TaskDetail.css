@@ -237,6 +237,19 @@
   gap: 10px;
 }
 
+/* Submit section */
+.td-actions{
+  margin-top: 14px;
+  display:flex;
+  flex-direction:column;
+  gap: 10px;
+}
+
+/* =========================
+   SUBMIT BUTTON DISABLED UI
+   ========================= */
+
+/* enabled (default) */
 .td-submit{
   height: 52px;
   border-radius: 999px;
@@ -246,8 +259,43 @@
   cursor:pointer;
   font-weight: 900;
   font-size: 16px;
+  transition: filter .2s ease, transform .15s ease, opacity .2s ease;
 }
-.td-submit:hover{ background: var(--primaryDark); }
+
+/* hover only for enabled */
+.td-submit:hover{
+  background: var(--primaryDark);
+}
+
+/* ✅ disabled state */
+.td-submit:disabled,
+.td-submit[disabled]{
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  color: #64748b;
+  cursor: not-allowed;
+  opacity: 1;
+  filter: none;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ✅ prevent hover styles when disabled */
+.td-submit:disabled:hover,
+.td-submit[disabled]:hover{
+  background: #e2e8f0;
+}
+
+/* optional: subtle "locked" look */
+.td-submit:disabled{
+  text-transform: none;
+  letter-spacing: .2px;
+}
+
+.td-hint{
+  font-size: 12px;
+  color: var(--muted);
+}
 
 .td-hint{
   font-size: 12px;
@@ -535,13 +583,13 @@
 
 .td-ciTitle{
   font-weight: 900;
-  color: #fff;
+  color: black;
 }
 
 .td-ciMeta{
   margin-top: 4px;
   font-size: 12px;
-  color: rgba(255,255,255,.72);
+  color: black;
 }
 .td-ciDot{ margin: 0 8px; opacity: .6; }
 
