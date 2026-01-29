@@ -16,7 +16,14 @@ import memberAuthRoutes from "./routes/memberAuth.js";
 import memberAppRoutes from "./routes/memberApp.js";
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: [
+    "http://159.198.40.145:5175",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173"
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 // ---------------------------
@@ -41,4 +48,6 @@ app.use("/member-auth", memberAuthRoutes);
 app.use("/member", memberAppRoutes);
 
 const port = process.env.PORT || 5000;
-app.listen(port, () => console.log(`API running on http://localhost:${port}`));
+app.listen(port, "0.0.0.0", () => {
+  console.log(`API running on port ${port}`);
+});
