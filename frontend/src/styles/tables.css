@@ -16,3 +16,13 @@
   color: var(--muted);
   font-weight: 600;
 }
+
+.table,
+.table th,
+.table td {
+  color: var(--text); /* makes all table text dark */
+}
+
+.table thead th {
+  color: #020617; /* optional: slightly stronger for header */
+}

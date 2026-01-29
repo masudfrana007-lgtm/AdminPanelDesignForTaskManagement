@@ -55,3 +55,15 @@
   transform: translateY(-2px);
   border-color: var(--accent);
 }
+
+.pilllink {
+  color: var(--text); /* solid dark text */
+}
+
+.pilllink b {
+  color: var(--text);
+}
+
+.pilllink .small {
+  color: var(--muted);
+}
