@@ -71,14 +71,23 @@ export default function TaskList() {
       const idx = Number(d.assignment?.current_task_index || 0);
       const t = d.current_task;
 
+		const qty = Number(t?.quantity ?? 1);
+		const rate = Number(t?.rate ?? 0);
+		const commissionRate = Number(t?.commission_rate ?? 0);
+
+		const orderAmount = qty * rate;
+		const commission = (orderAmount * commissionRate) / 100;
+
       const row = normalizeTaskRow({
         id: t?.id ?? `SET-${d.set?.id ?? ""}`,
         title: t?.title || d.set?.name || "Queued Task",
-        ref: `SET-${d.set?.id ?? ""}-#${idx + 1}`,
+        ref: d.sponsor_short_id || "—",
         // ✅ FIX HERE
         image: toImageUrl(t?.image_url),
         difficulty: idx >= Number(d.total_tasks || 0) ? "Completed" : "Active",
-        reward: Number(t?.price ?? 0),
+
+		reward: commission,
+
         status: "Active",
         // ✅ Created = assignment created_at (time when set assigned)
         createdAt: d.assignment?.created_at

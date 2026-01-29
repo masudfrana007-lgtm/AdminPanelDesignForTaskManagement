@@ -52,19 +52,6 @@ export default function MemberMenu() {
     return () => clearInterval(t);
   }, []);
 
-useEffect(() => {
-  (async () => {
-    try {
-      const r = await memberApi.get("/member/me");
-      console.log("ME RESPONSE:", r.data); // ✅ check sponsor_short_id exists here
-      setMe(r.data || null);
-    } catch (e) {
-      console.log("ME ERROR:", e?.response?.status, e?.response?.data || e.message);
-      setMe(null);
-    }
-  })();
-}, []);
-
   const loadActiveSet = async () => {
     setLoading(true);
     try {
@@ -92,7 +79,7 @@ useEffect(() => {
             `Pending tasks: ${pendingTasks}`,
             pendingTasks === 0 ? "Set is complete ✅" : "Open Task to continue the set",
           ],
-          ref: me?.sponsor_short_id ?? "—",
+          ref: r.data?.sponsor_short_id ?? "—",
         };
 
         setSlots((prev) => [

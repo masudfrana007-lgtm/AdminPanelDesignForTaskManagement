@@ -70,6 +70,9 @@ router.get("/active-set", memberAuth, async (req, res) => {
       return res.json({ active: false, message: "No active set assigned" });
     }
 
+    const currentIndex = Number(ms.current_task_index || 0);
+
+    // totals + set amount
     const totalsRes = await pool.query(
       `
       SELECT 
@@ -85,9 +88,8 @@ router.get("/active-set", memberAuth, async (req, res) => {
     const total_tasks = totalsRes.rows[0]?.total_tasks || 0;
     const set_amount = totalsRes.rows[0]?.set_amount || "0.00";
 
-    const currentIndex = Number(ms.current_task_index || 0);
-
-    const currentTaskRes = await pool.query(
+    // ✅ get ALL tasks of this set (ordered)
+    const allTasksRes = await pool.query(
       `
       SELECT 
         t.id,
@@ -102,11 +104,12 @@ router.get("/active-set", memberAuth, async (req, res) => {
       JOIN tasks t ON t.id = st.task_id
       WHERE st.set_id = $1
       ORDER BY st.id ASC
-      OFFSET $2
-      LIMIT 1
       `,
-      [ms.set_id, currentIndex]
+      [ms.set_id]
     );
+
+    const tasks = allTasksRes.rows || [];
+    const current_task = tasks[currentIndex] || null;
 
     const setRes = await pool.query(
       `
@@ -128,11 +131,17 @@ router.get("/active-set", memberAuth, async (req, res) => {
         updated_at: ms.updated_at,
       },
       set: setRes.rows[0] || null,
+
       total_tasks,
       set_amount,
+
+      // ✅ IMPORTANT: full tasks list for next/previous
+      tasks,
+
+      // keep for compatibility
       last_completed_task_number: currentIndex,
-      current_task: currentTaskRes.rows[0] || null,
-      current_task_amount: currentTaskRes.rows[0]?.price ?? null,
+      current_task,
+      current_task_amount: current_task?.price ?? null,
     });
   } catch (e) {
     console.error(e);
