@@ -23,7 +23,7 @@ textarea {
 .btn {
   border: 1px solid var(--border);
   background: var(--accent);
-  color: white;
+  color: white!IMPORTANT;
   padding: 10px 12px;
   border-radius: 10px;
   cursor: pointer;
@@ -57,7 +57,7 @@ select {
   border-radius: 10px;
   border: 1px solid var(--border);
   background: #f8fafc;
-  color: var(--text);
+  color: black;
   outline: none;
   font-size: 14px;
   appearance: none;

@@ -31,6 +31,9 @@ import WithdrawalMethod from "./pages/WithdrawalMethod";
 import WithdrawBank from "./pages/WithdrawBank";
 import WithdrawCrypto from "./pages/WithdrawCrypto";
 
+import TaskList from "./pages/TaskList";
+import TaskDetail from "./pages/TaskDetail";
+
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
   
@@ -222,6 +225,24 @@ export const router = createBrowserRouter([
   element: (
     <MemberProtectedRoute>
       <WithdrawBank />
+    </MemberProtectedRoute>
+  ),
+},
+
+{
+  path: "/member/tasks",
+  element: (
+    <MemberProtectedRoute>
+      <TaskList />
+    </MemberProtectedRoute>
+  ),
+},
+
+{
+  path: "/member/task-detail",
+  element: (
+    <MemberProtectedRoute>
+      <TaskDetail />
     </MemberProtectedRoute>
   ),
 },

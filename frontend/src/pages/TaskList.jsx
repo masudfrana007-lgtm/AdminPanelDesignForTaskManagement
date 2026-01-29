@@ -1,0 +1,229 @@
+import { useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import MemberBottomNav from "../components/MemberBottomNav";
+import "../styles/TaskList.css";
+
+function money(n) {
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n);
+}
+
+const DEMO_TASKS = Array.from({ length: 25 }).map((_, i) => {
+  const id = "TK-" + (20000 + i);
+  const diffs = ["Easy", "Medium", "Hard"];
+  const difficulty = diffs[i % diffs.length];
+  const reward = [8.5, 10, 12.5, 15, 18][i % 5];
+  const status = ["Active", "Pending Review", "Urgent"][i % 3];
+
+  return {
+    id,
+    title: ["Order Verification", "Order Completion", "Proof Review", "Payment Check", "Account Review"][i % 5],
+    ref: "ORD-" + (88000 + i),
+    image: "",
+    difficulty,
+    reward,
+    status,
+    createdAt: new Date(Date.now() - (i + 1) * 36 * 60 * 1000).toLocaleString(),
+    steps: ["Open order detail", "Verify required proof", "Submit completion / notes"],
+  };
+});
+
+export default function TaskList() {
+  const nav = useNavigate();
+  const loc = useLocation();
+
+  const startingBalance = loc.state?.balance ?? 97280.12;
+
+  const [balance] = useState(startingBalance);
+  const [q, setQ] = useState("");
+  const [filter, setFilter] = useState("All");
+
+  const tasks = useMemo(() => DEMO_TASKS, []);
+
+  const filtered = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    return tasks.filter((t) => {
+      const matchText =
+        !s ||
+        t.id.toLowerCase().includes(s) ||
+        t.title.toLowerCase().includes(s) ||
+        t.ref.toLowerCase().includes(s);
+
+      const matchFilter = filter === "All" ? true : t.status === filter;
+      return matchText && matchFilter;
+    });
+  }, [tasks, q, filter]);
+
+  return (
+    <div className="tl-page">
+      <header className="tl-topbar">
+        <button className="tl-back" onClick={() => nav(-1)} type="button">
+          ← Back
+        </button>
+
+        <div className="tl-title">
+          <h1>Tasks</h1>
+          <p>Review and manage assigned tasks</p>
+        </div>
+
+        <div className="tl-right">
+          <button className="tl-ghost" type="button" onClick={() => alert("Refresh (wire later)")}>
+            Refresh
+          </button>
+        </div>
+      </header>
+
+      <main className="tl-wrap">
+        <section className="tl-topGrid">
+          <div className="tl-card tl-balance">
+            <div className="tl-cardHead">
+              <div>
+                <div className="tl-kicker">Wallet Balance</div>
+                <div className="tl-balanceRow">
+                  <div className="tl-balanceValue">${money(balance)}</div>
+                  <div className="tl-unit">USD</div>
+                </div>
+                <div className="tl-muted">Keep enough balance for task operations.</div>
+              </div>
+
+              <div className="tl-pill">Available</div>
+            </div>
+
+            <div className="tl-actions">
+              <button className="tl-mini" type="button" onClick={() => alert("Deposit page")}>
+                Deposit
+              </button>
+              <button className="tl-mini" type="button" onClick={() => alert("Withdraw page")}>
+                Withdraw
+              </button>
+              <button className="tl-mini" type="button" onClick={() => alert("Customer Service")}>
+                Support
+              </button>
+            </div>
+          </div>
+
+          <div className="tl-card tl-rules">
+            <div className="tl-cardTitle">Rules & Guidelines</div>
+            <ul className="tl-list">
+              <li>
+                Each assigned task must be completed within <b>24 hours</b>.
+              </li>
+              <li>
+                Always verify the <b>Order ID</b>, <b>Ref</b>, and required steps before submitting.
+              </li>
+              <li>Do not submit fake proof. Accounts may be restricted for violations.</li>
+              <li>
+                For issues, use <b>Customer Service</b> and provide screenshots if needed.
+              </li>
+            </ul>
+
+            <div className="tl-note">Tip: complete tasks early to avoid urgent deadlines.</div>
+          </div>
+        </section>
+
+        <section className="tl-controls">
+          <div className="tl-searchWrap">
+            <input
+              className="tl-search"
+              placeholder="Search by Task ID, Title, or Ref..."
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+          </div>
+
+          <div className="tl-filters">
+            <button className={"tl-filter " + (filter === "All" ? "is-active" : "")} onClick={() => setFilter("All")} type="button">
+              All
+            </button>
+            <button className={"tl-filter " + (filter === "Active" ? "is-active" : "")} onClick={() => setFilter("Active")} type="button">
+              Active
+            </button>
+            <button className={"tl-filter " + (filter === "Pending Review" ? "is-active" : "")} onClick={() => setFilter("Pending Review")} type="button">
+              Pending
+            </button>
+            <button className={"tl-filter " + (filter === "Urgent" ? "is-active" : "")} onClick={() => setFilter("Urgent")} type="button">
+              Urgent
+            </button>
+          </div>
+
+          <div className="tl-count">
+            Showing <b>{filtered.length}</b> / {tasks.length}
+          </div>
+        </section>
+
+        <section className="tl-card tl-tableCard">
+          <div className="tl-tableHead">
+            <div className="tl-tableTitle">Task List</div>
+            <div className="tl-mutedSmall">All tasks with status and details.</div>
+          </div>
+
+          <div className="tl-table">
+            <div className="tl-row tl-rowHead">
+              <div>Task</div>
+              <div>Photo</div>
+              <div>Status</div>
+              <div>Reward</div>
+              <div>Level</div>
+              <div>Created</div>
+              <div></div>
+            </div>
+
+            {filtered.map((t) => (
+              <div key={t.id} className="tl-row">
+                <div className="tl-taskCell">
+                  <div className="tl-taskTitle">{t.title}</div>
+                  <div className="tl-mutedSmall">
+                    <span>
+                      <b>{t.id}</b>
+                    </span>
+                    <span className="tl-dot">•</span>
+                    <span>
+                      Ref: <b>{t.ref}</b>
+                    </span>
+                    <span className="tl-dot">•</span>
+                    <span>{t.steps.join(" • ")}</span>
+                  </div>
+                </div>
+
+                <div className="tl-photoCell">
+                  <div className="tl-photoPlaceholder">Your Product photo is here</div>
+                </div>
+
+                <div className={"tl-status " + (t.status === "Urgent" ? "is-urgent" : t.status === "Active" ? "is-active" : "is-pending")}>
+                  {t.status}
+                </div>
+
+                <div className="tl-reward">${money(t.reward)}</div>
+                <div className="tl-level">{t.difficulty}</div>
+                <div className="tl-created">{t.createdAt}</div>
+
+                <div className="tl-open">
+
+					<button
+					  className="tl-openBtn"
+					  type="button"
+					  onClick={() =>
+					    nav("/member/task-detail", {
+					      state: {
+					        tasks: filtered,               // pass current filtered list
+					        index: filtered.findIndex(x => x.id === t.id),
+					        balance,
+					        completedCount: 0,             // demo (can be real later)
+					      },
+					    })
+					  }
+					>
+					  Open
+					</button>
+                  
+                </div>                
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
+
+      {/* ✅ keep bottom bar (same component) */}
+      <MemberBottomNav active="menu" />
+    </div>
+  );
+}

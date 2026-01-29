@@ -68,5 +68,5 @@ h1, h2, h3 {
   border: 1px solid var(--border);
   font-size: 12px;
   background: #f1f5f9;
-  color: var(--muted);
+  color: black;
 }

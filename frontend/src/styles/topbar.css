@@ -23,7 +23,7 @@
   border-radius: 8px;
   border: 1px solid transparent;
   font-size: 14px;
-  color: var(--text);
+  color: black;
   background: transparent;
   transition: 0.15s ease;
 }

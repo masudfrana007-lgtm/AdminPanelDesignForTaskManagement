@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import MemberBottomNav from "../components/MemberBottomNav";
-import "../styles/memberMenu.css"; // keep this path (we’ll replace CSS content)
+import "../styles/memberMenu.css"; // keep this path
+import { useNavigate } from "react-router-dom";
+import memberApi from "../services/memberApi"; // ✅ use your existing axios instance
 
 function money(n) {
-  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n);
+  const num = Number(n || 0);
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(num);
 }
 
 function pad2(x) {
@@ -22,73 +25,115 @@ function isExpired(ms) {
   return ms <= 0;
 }
 
-// demo data (replace with backend later)
-const DEMO_SLOTS = [
-  {
-    dateLabel: "Today",
-    dateISO: "2026-01-28",
-    task: {
-      id: "TK-20481",
-      title: "Order Verification",
-      type: "Assigned Task",
-      reward: 12.5,
-      difficulty: "Medium",
-      assignedAt: Date.now() - 2 * 60 * 60 * 1000 - 8 * 60 * 1000,
-      steps: ["Open order detail", "Verify payment proof", "Mark as completed"],
-      ref: "ORD-88912",
-    },
-  },
-  { dateLabel: "Tomorrow", dateISO: "2026-01-29", task: null },
-  { dateLabel: "Next Day", dateISO: "2026-01-30", task: null },
+function toMs(d) {
+  const t = new Date(d).getTime();
+  return Number.isFinite(t) ? t : Date.now();
+}
+
+// keep the 3-slot UI the same
+const EMPTY_SLOTS = [
+  { dateLabel: "Today", dateISO: "—", task: null },
+  { dateLabel: "Tomorrow", dateISO: "—", task: null },
+  { dateLabel: "Next Day", dateISO: "—", task: null },
 ];
 
 export default function MemberMenu() {
-  const [balance, setBalance] = useState(97280.12);
-  const [slots, setSlots] = useState(DEMO_SLOTS);
+  const nav = useNavigate();
+  const [balance, setBalance] = useState(97280.12); // keep as-is (wire later if you want)
+  const [slots, setSlots] = useState(EMPTY_SLOTS);
+  const [activeSet, setActiveSet] = useState(null); // backend response
+  const [loading, setLoading] = useState(false);
 
-  // countdown tick
+  // countdown tick (keep same behavior)
   const [tick, setTick] = useState(Date.now());
   useEffect(() => {
     const t = setInterval(() => setTick(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
 
-  const openTask = (task) => {
-    alert(`Open task: ${task.id} (wire to your task detail page)`);
+  const loadActiveSet = async () => {
+    setLoading(true);
+    try {
+      const r = await memberApi.get("/member/active-set");
+      setActiveSet(r.data || null);
+
+      // ✅ Keep same UI slots, but slot[0] represents the assigned SET (not individual tasks)
+      if (r.data?.active) {
+        const assignedAtMs = toMs(r.data.assignment?.created_at || Date.now());
+
+        const totalTasks = Number(r.data.total_tasks || 0);
+        const done = Number(r.data.assignment?.current_task_index || 0);
+        const pendingTasks = Math.max(0, totalTasks - done);
+
+        // show the set as a "task card" without changing layout
+        const setTaskCard = {
+          id: `SET-${r.data.set?.id ?? ""}`,
+          title: r.data.set?.name || "Assigned Set",
+          type: "Assigned Set",
+          reward: r.data.set_amount ?? 0, // keep same reward line, but show set amount
+          difficulty: pendingTasks === 0 ? "Completed" : "Active",
+          assignedAt: assignedAtMs,
+          steps: [
+            `Total tasks in set: ${totalTasks}`,
+            `Pending tasks: ${pendingTasks}`,
+            pendingTasks === 0 ? "Set is complete ✅" : "Open Task to continue the set",
+          ],
+          ref: `MS-${r.data.assignment?.id ?? ""}`,
+        };
+
+        setSlots((prev) => [
+          {
+            dateLabel: "Today",
+            dateISO: new Date(assignedAtMs).toISOString().slice(0, 10),
+            task: setTaskCard,
+          },
+          prev[1],
+          prev[2],
+        ]);
+      } else {
+        setSlots(EMPTY_SLOTS);
+      }
+    } catch (e) {
+      // if error, keep UI but show as inactive
+      setActiveSet({ active: false });
+      setSlots(EMPTY_SLOTS);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const applyForDate = (slot) => {
-    const now = Date.now();
-    const newTask = {
-      id: "TK-" + Math.floor(10000 + Math.random() * 90000),
-      title: "Order Completion",
-      type: "Applied Task",
-      reward: 10.0,
-      difficulty: "Easy",
-      assignedAt: now,
-      steps: ["Open assigned order", "Complete required action", "Submit proof"],
-      ref: "AUTO-" + Math.floor(1000 + Math.random() * 9000),
-    };
+  useEffect(() => {
+    loadActiveSet();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    setSlots((prev) =>
-      prev.map((s) => (s.dateISO === slot.dateISO ? { ...s, task: newTask } : s))
-    );
+  const openTask = () => {
+    // ✅ navigate to your task flow page (member/tasks)
+    // You can use backend activeSet there to show current_task etc.
+    nav("/member/tasks", {
+      state: {
+        balance,
+      },
+    });
   };
 
-  const completeTask = (slot) => {
-    alert(`Complete task for ${slot.dateLabel} (wire to submit flow)`);
+  // keep Apply button UI, but backend doesn't support it yet
+  const applyForDate = () => {
+    alert("No apply endpoint yet. Set is assigned by owner/agent.");
   };
 
   const stats = useMemo(() => {
-    const assigned = slots.filter((s) => !!s.task).length;
-    const pending = slots.filter((s) => {
-      if (!s.task) return false;
-      const remaining = 24 * 3600 * 1000 - (tick - s.task.assignedAt);
-      return remaining > 0;
-    }).length;
+    const totalTasks = Number(activeSet?.total_tasks || 0);
+    const done = Number(activeSet?.assignment?.current_task_index || 0);
+    const pendingTasks = activeSet?.active ? Math.max(0, totalTasks - done) : 0;
 
-    return { assigned, pending };
-  }, [slots, tick]);
+    return {
+      assigned: activeSet?.active ? totalTasks : 0,
+      pending: activeSet?.active ? pendingTasks : 0,
+      statusText: activeSet?.active ? "Active" : "Inactive",
+      statusClass: activeSet?.active ? "ok" : "bad",
+    };
+  }, [activeSet]);
 
   return (
     <div className="mn-page">
@@ -99,8 +144,8 @@ export default function MemberMenu() {
           <p>Assigned tasks & daily operations</p>
         </div>
 
-        <button className="mn-ghostBtn" onClick={() => alert("Refresh (wire backend later)")}>
-          Refresh
+        <button className="mn-ghostBtn" onClick={loadActiveSet} disabled={loading}>
+          {loading ? "Loading..." : "Refresh"}
         </button>
       </header>
 
@@ -153,7 +198,7 @@ export default function MemberMenu() {
               </div>
               <div className="mn-metric">
                 <div className="mn-mLabel">Status</div>
-                <div className="mn-mValue ok">Active</div>
+                <div className={"mn-mValue " + stats.statusClass}>{stats.statusText}</div>
               </div>
             </div>
 
@@ -184,15 +229,15 @@ export default function MemberMenu() {
 
               if (!task) {
                 return (
-                  <div key={slot.dateISO} className="mn-slot mn-slotEmpty">
+                  <div key={slot.dateLabel} className="mn-slot mn-slotEmpty">
                     <div className="mn-slotLeft">
                       <div className="mn-slotDate">{slot.dateLabel}</div>
                       <div className="mn-mutedSmall">{slot.dateISO}</div>
-                      <div className="mn-emptyText">No task assigned for this date.</div>
+                      <div className="mn-emptyText">No set assigned for this date.</div>
                     </div>
 
                     <div className="mn-slotRight">
-                      <button className="mn-primaryBtn" onClick={() => applyForDate(slot)}>
+                      <button className="mn-primaryBtn" onClick={applyForDate}>
                         Apply for Task
                       </button>
                       <div className="mn-mutedSmall">Apply to receive a task from the system.</div>
@@ -209,15 +254,18 @@ export default function MemberMenu() {
               const urgent = remaining <= 2 * 3600 * 1000;
               const expired = isExpired(remaining);
 
+              // ✅ set-based active/inactive indicator (requested)
+              const isSetActive = !!activeSet?.active;
+              const statusChipClass = isSetActive ? "ok" : "bad";
+              const statusChipText = isSetActive ? "Active" : "Inactive";
+
               return (
-                <div key={slot.dateISO} className={"mn-slot " + (urgent ? "is-urgent" : "")}>
+                <div key={slot.dateLabel} className={"mn-slot " + (urgent ? "is-urgent" : "")}>
                   <div className="mn-slotLeft">
                     <div className="mn-slotDateRow">
                       <div className="mn-slotDate">{slot.dateLabel}</div>
                       <span className="mn-chip">{task.type}</span>
-                      <span className={"mn-chip " + (expired ? "bad" : urgent ? "warn" : "ok")}>
-                        {expired ? "Expired" : urgent ? "Urgent" : "Active"}
-                      </span>
+                      <span className={"mn-chip " + statusChipClass}>{statusChipText}</span>
                     </div>
 
                     <div className="mn-taskTitle">{task.title}</div>
@@ -257,17 +305,10 @@ export default function MemberMenu() {
                       <div className="mn-progressBar" style={{ width: `${pct}%` }} />
                     </div>
 
+                    {/* ✅ ONLY Open Task, full width */}
                     <div className="mn-rightBtns">
-                      <button className="mn-secondaryBtn" onClick={() => openTask(task)}>
+                      <button className="mn-secondaryBtn mn-openFull" onClick={openTask}>
                         Open Task
-                      </button>
-                      <button
-                        className="mn-primaryBtn"
-                        onClick={() => completeTask(slot)}
-                        disabled={expired}
-                        title={expired ? "Task expired" : "Submit completion"}
-                      >
-                        Complete
                       </button>
                     </div>
 
@@ -303,7 +344,7 @@ export default function MemberMenu() {
         </section>
       </main>
 
-      {/* ✅ Keep bottom bar exactly as you already use it */}
+      {/* keep bottom bar exactly */}
       <MemberBottomNav active="menu" />
     </div>
   );

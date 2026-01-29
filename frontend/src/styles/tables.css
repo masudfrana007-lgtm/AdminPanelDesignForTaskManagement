@@ -20,7 +20,7 @@
 .table,
 .table th,
 .table td {
-  color: var(--text); /* makes all table text dark */
+  color: black; /* makes all table text dark */
 }
 
 .table thead th {
