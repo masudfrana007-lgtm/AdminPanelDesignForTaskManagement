@@ -30,7 +30,7 @@
   gap:14px;
 }
 
-.mn-title h1{ margin:0; font-size:22px; letter-spacing:.2px; }
+.mn-title h1{ margin:0; font-size:22px; letter-spacing:.2px; color:white; }
 .mn-title p{ margin:4px 0 0; font-size:13px; opacity:.85; }
 
 .mn-wrap{

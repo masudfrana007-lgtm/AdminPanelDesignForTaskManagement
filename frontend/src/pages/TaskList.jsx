@@ -56,55 +56,66 @@ export default function TaskList() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
-  const load = async () => {
-    setLoading(true);
-    setErr("");
-    try {
-      const r = await memberApi.get("/member/active-set");
-      const d = r.data || null;
+const load = async () => {
+  setLoading(true);
+  setErr("");
+  try {
+    const r = await memberApi.get("/member/active-set");
+    const d = r.data || null;
 
-      if (!d?.active) {
-        setTasks([]);
-        return;
-      }
+    if (!d?.active) {
+      setTasks([]);
+      return;
+    }
 
-      const idx = Number(d.assignment?.current_task_index || 0);
-      const t = d.current_task;
+    const currentIndex = Number(d.assignment?.current_task_index || 0);
+    const totalTasks = Number(d.total_tasks || 0);
+    const setName = d.set?.name || d.set?.id || "-";
 
-		const qty = Number(t?.quantity ?? 1);
-		const rate = Number(t?.rate ?? 0);
-		const commissionRate = Number(t?.commission_rate ?? 0);
+    const rows = (Array.isArray(d.tasks) ? d.tasks : []).map((t, i) => {
+      const qty = Number(t?.quantity ?? 1);
+      const rate = Number(t?.rate ?? 0);
+      const commissionRate = Number(t?.commission_rate ?? 0);
 
-		const orderAmount = qty * rate;
-		const commission = (orderAmount * commissionRate) / 100;
+      const orderAmount = qty * rate;
+      const commission = (orderAmount * commissionRate) / 100;
 
-      const row = normalizeTaskRow({
-        id: t?.id ?? `SET-${d.set?.id ?? ""}`,
-        title: t?.title || d.set?.name || "Queued Task",
+      // ✅ status by position
+      const status =
+        i < currentIndex ? "Completed" : i === currentIndex ? "Active" : "Pending";
+
+      return normalizeTaskRow({
+        id: t?.id ?? `SET-${d.set?.id ?? ""}-#${i + 1}`,
+        title: t?.title || `Order ${i + 1}`,
         ref: d.sponsor_short_id || "—",
-        // ✅ FIX HERE
         image: toImageUrl(t?.image_url),
-        difficulty: idx >= Number(d.total_tasks || 0) ? "Completed" : "Active",
-
-		reward: commission,
-
-        status: "Active",
-        // ✅ Created = assignment created_at (time when set assigned)
+        difficulty: status, // or keep "Active"/"Pending"/"Completed"
+        reward: commission,
+        status,
         createdAt: d.assignment?.created_at
           ? new Date(d.assignment.created_at).toLocaleString()
           : "-",
-        steps: ["Open order detail", "Verify required proof", "Submit completion / notes"],
+        // optional: show serial info
+        steps: [
+          `SET-${setName} • Step ${i + 1}/${totalTasks}`,
+          status === "Completed"
+            ? "Already completed ✅"
+            : status === "Active"
+            ? "Current order (submit enabled)"
+            : "Upcoming (locked until current is done)",
+        ],
       });
+    });
 
-      setTasks([row]);
-    } catch (e) {
-      const msg = e?.response?.data?.message || e?.message || "Failed to load tasks";
-      setErr(msg);
-      setTasks([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    setTasks(rows);
+  } catch (e) {
+    const msg = e?.response?.data?.message || e?.message || "Failed to load tasks";
+    setErr(msg);
+    setTasks([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     load();
@@ -200,20 +211,39 @@ export default function TaskList() {
             ) : null}
           </div>
 
-          <div className="tl-filters">
-            <button className={"tl-filter " + (filter === "All" ? "is-active" : "")} onClick={() => setFilter("All")} type="button">
-              All
-            </button>
-            <button className={"tl-filter " + (filter === "Active" ? "is-active" : "")} onClick={() => setFilter("Active")} type="button">
-              Active
-            </button>
-            <button className={"tl-filter " + (filter === "Pending Review" ? "is-active" : "")} onClick={() => setFilter("Pending Review")} type="button">
-              Pending
-            </button>
-            <button className={"tl-filter " + (filter === "Urgent" ? "is-active" : "")} onClick={() => setFilter("Urgent")} type="button">
-              Urgent
-            </button>
-          </div>
+<div className="tl-filters">
+  <button
+    className={"tl-filter " + (filter === "All" ? "is-active" : "")}
+    onClick={() => setFilter("All")}
+    type="button"
+  >
+    All
+  </button>
+
+  <button
+    className={"tl-filter " + (filter === "Active" ? "is-active" : "")}
+    onClick={() => setFilter("Active")}
+    type="button"
+  >
+    Active
+  </button>
+
+  <button
+    className={"tl-filter " + (filter === "Pending" ? "is-active" : "")}
+    onClick={() => setFilter("Pending")}
+    type="button"
+  >
+    Pending
+  </button>
+
+  <button
+    className={"tl-filter " + (filter === "Completed" ? "is-active" : "")}
+    onClick={() => setFilter("Completed")}
+    type="button"
+  >
+    Completed
+  </button>
+</div>
 
           <div className="tl-count">
             Showing <b>{filtered.length}</b> / {tasks.length}
@@ -266,7 +296,16 @@ export default function TaskList() {
                   )}
                 </div>
 
-                <div className={"tl-status " + (t.status === "Urgent" ? "is-urgent" : t.status === "Active" ? "is-active" : "is-pending")}>
+                <div
+                  className={
+                    "tl-status " +
+                    (t.status === "Active"
+                      ? "is-active"
+                      : t.status === "Completed"
+                      ? "is-completed"
+                      : "is-pending")
+                  }
+                >
                   {t.status}
                 </div>
 
@@ -275,22 +314,25 @@ export default function TaskList() {
                 <div className="tl-created">{t.createdAt}</div>
 
                 <div className="tl-open">
-                  <button
-                    className="tl-openBtn"
-                    type="button"
-                    onClick={() =>
-                      nav("/member/task-detail", {
-                        state: {
-                          tasks: filtered,
-                          index: filtered.findIndex((x) => x.id === t.id),
-                          balance,
-                          completedCount: 0,
-                        },
-                      })
-                    }
-                  >
-                    Open
-                  </button>
+
+                <button
+                  className={"tl-openBtn " + (t.status !== "Active" ? "is-disabled" : "")}
+                  type="button"
+                  disabled={t.status !== "Active"}
+                  onClick={() =>
+                    nav("/member/task-detail", {
+                      state: {
+                        tasks,                 // IMPORTANT: pass full list (serial), not filtered
+                        index: tasks.findIndex((x) => x.id === t.id),
+                        balance,
+                        completedCount: 0,
+                      },
+                    })
+                  }
+                >
+                  Open
+                </button>
+
                 </div>
               </div>
             ))}
