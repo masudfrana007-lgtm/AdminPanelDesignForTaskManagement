@@ -16,7 +16,6 @@ router.get("/me", memberAuth, async (req, res) => {
         m.id,
         m.short_id,
         m.nickname,
-        m.email,
         m.phone,
         m.ranking,
         m.withdraw_privilege,

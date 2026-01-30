@@ -39,11 +39,13 @@ const EMPTY_SLOTS = [
 
 export default function MemberMenu() {
   const nav = useNavigate();
-  const [balance, setBalance] = useState(97280.12); // keep as-is (wire later if you want)
+  const [balance, setBalance] = useState(0);
+  const [locked, setLocked] = useState(0);
+  const [me, setMe] = useState(null);
+
   const [slots, setSlots] = useState(EMPTY_SLOTS);
   const [activeSet, setActiveSet] = useState(null); // backend response
   const [loading, setLoading] = useState(false);
-  const [me, setMe] = useState(null);
 
   // countdown tick (keep same behavior)
   const [tick, setTick] = useState(Date.now());
@@ -51,6 +53,18 @@ export default function MemberMenu() {
     const t = setInterval(() => setTick(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
+
+  const loadMe = async () => {
+    try {
+        const { data } = await memberApi.get("/member/me");
+        setMe(data || null);
+        setBalance(Number(data?.balance || 0));
+        setLocked(Number(data?.locked_balance || 0));
+      } catch {
+        // keep old values if request fails
+      }
+    };
+
 
   const loadActiveSet = async () => {
     setLoading(true);
@@ -104,6 +118,7 @@ export default function MemberMenu() {
   };
 
   useEffect(() => {
+      loadMe();
     loadActiveSet();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -145,9 +160,17 @@ export default function MemberMenu() {
           <p>Assigned tasks & daily operations</p>
         </div>
 
-        <button className="mn-ghostBtn" onClick={loadActiveSet} disabled={loading}>
+        <button
+          className="mn-ghostBtn"
+          onClick={async () => {
+            await loadMe();
+            await loadActiveSet();
+          }}
+          disabled={loading}
+        >
           {loading ? "Loading..." : "Refresh"}
         </button>
+
       </header>
 
       <main className="mn-wrap">
