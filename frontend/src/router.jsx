@@ -23,6 +23,21 @@ import MemberDepositCrypto from "./pages/MemberDepositCrypto";
 import MemberDepositUSDT from "./pages/MemberDepositUSDT";
 import MemberDepositBank from "./pages/MemberDepositBank";
 
+import MemberDeposit from "./pages/MemberDeposit";
+import MemberDepositBank from "./pages/MemberDepositBank";
+import MemberDepositCrypto from "./pages/MemberDepositCrypto";
+import MemberDepositUSDT from "./pages/MemberDepositUSDT";
+
+import DepositCrypto from "./pages/DepositCrypto";
+import Profile from "./pages/Profile";
+
+import WithdrawalMethod from "./pages/WithdrawalMethod";
+import WithdrawBank from "./pages/WithdrawBank";
+import WithdrawCrypto from "./pages/WithdrawCrypto";
+
+import TaskList from "./pages/TaskList";
+import TaskDetail from "./pages/TaskDetail";
+
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
   
@@ -30,6 +45,13 @@ export const router = createBrowserRouter([
   { path: "/member/signup", element: <MemberSignup /> },
 
   { path: "/", element: <ProtectedRoute><Dashboard /></ProtectedRoute> },
+
+  /* ✅ PUBLIC / TEST ROUTE */
+  {
+    path: "/member/depositCrypto",
+    element: <DepositCrypto />,
+  },
+
   
   {
     path: "/users",
@@ -139,40 +161,94 @@ export const router = createBrowserRouter([
     ),
   },
 
-  {
-    path: "/member/deposit",
-    element: (
-      <MemberProtectedRoute>
-        <MemberDeposit />
-      </MemberProtectedRoute>
-    ),
-  },
+{
+  path: "/member/deposit",
+  element: (
+    <MemberProtectedRoute>
+      <MemberDeposit />
+    </MemberProtectedRoute>
+  ),
+},
 
-  {
-    path: "/member/deposit/crypto",
-    element: (
-      <MemberProtectedRoute>
-        <MemberDepositCrypto />
-      </MemberProtectedRoute>
-    ),
-  },
+{
+  path: "/member/deposit/bank",
+  element: (
+    <MemberProtectedRoute>
+      <MemberDepositBank />
+    </MemberProtectedRoute>
+  ),
+},
 
-  {
-    path: "/member/deposit/usdt",
-    element: (
-      <MemberProtectedRoute>
-        <MemberDepositUSDT />
-      </MemberProtectedRoute>
-    ),
-  },
+{
+  path: "/member/deposit/crypto",
+  element: (
+    <MemberProtectedRoute>
+      <MemberDepositCrypto />
+    </MemberProtectedRoute>
+  ),
+},
 
-  {
-    path: "/member/deposit/bank",
-    element: (
-      <MemberProtectedRoute>
-        <MemberDepositBank />
-      </MemberProtectedRoute>
-    ),
-  },
-  
+{
+  path: "/member/deposit/usdt",
+  element: (
+    <MemberProtectedRoute>
+      <MemberDepositUSDT />
+    </MemberProtectedRoute>
+  ),
+},
+
+{
+  path: "/profile",
+  element: (
+    <MemberProtectedRoute>
+      <Profile />
+    </MemberProtectedRoute>
+  ),
+},  
+
+{
+  path: "/member/withdraw",
+  element: (
+    <MemberProtectedRoute>
+      <WithdrawalMethod />
+    </MemberProtectedRoute>
+  ),
+},
+
+{
+  path: "/member/withdraw/crypto",
+  element: (
+    <MemberProtectedRoute>
+      <WithdrawCrypto />
+    </MemberProtectedRoute>
+  ),
+},
+
+{
+  path: "/member/withdraw/bank",
+  element: (
+    <MemberProtectedRoute>
+      <WithdrawBank />
+    </MemberProtectedRoute>
+  ),
+},
+
+{
+  path: "/member/tasks",
+  element: (
+    <MemberProtectedRoute>
+      <TaskList />
+    </MemberProtectedRoute>
+  ),
+},
+
+{
+  path: "/member/task-detail",
+  element: (
+    <MemberProtectedRoute>
+      <TaskDetail />
+    </MemberProtectedRoute>
+  ),
+},
+
 ]);

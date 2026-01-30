@@ -7,6 +7,13 @@ import MemberBottomNav from "../components/MemberBottomNav";
 
 const TABS = ["All", "VIP 1", "VIP 2", "VIP 3"];
 
+const LOGOS = import.meta.glob("../assets/img/*.png", {
+  eager: true,
+  import: "default",
+});
+
+const getLogoSrc = (logoType) => LOGOS[`../assets/img/${logoType}.png`];
+
 export default function MemberDashboard() {
   const nav = useNavigate();
   const me = getMember();
@@ -126,10 +133,10 @@ export default function MemberDashboard() {
             <div className="vipBadge">{c.tier}</div>
 
             <div className="vipCardTop">
-              <img 
-                src={`/src/assets/img/${c.logoType}.png`} 
-                alt={c.brand} 
-                className={`vipIcon ${c.logoType}`} 
+              <img
+                src={getLogoSrc(c.logoType)}
+                alt={c.brand}
+                className={`vipIcon ${c.logoType}`}
               />
               <div className="vipTitleBlock">
                 <div className="vipStore">{c.brand}</div>

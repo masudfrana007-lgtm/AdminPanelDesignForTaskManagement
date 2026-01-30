@@ -55,3 +55,61 @@
   transform: translateY(-2px);
   border-color: var(--accent);
 }
+
+.pilllink {
+  color: black; /* solid dark text */
+}
+
+.pilllink b {
+  color: black;
+}
+
+.pilllink .small {
+  color: black;
+}
+
+/* ===== Force readable text in main content ===== */
+
+/* main content area text */
+.main-area,
+.page-content,
+.container {
+  color: black;
+}
+
+/* cards: make sure all normal text becomes dark */
+.card {
+  color: var(--text);
+}
+
+/* common readable text inside cards */
+.card h1,
+.card h2,
+.card h3,
+.card p,
+.card li,
+.card td,
+.card th,
+.card b,
+.card .small {
+  color: black;
+}
+
+/* keep badges muted as intended */
+.card .badge {
+  color: black;
+}
+
+/* dashboard pills */
+.pilllink,
+.pilllink b,
+.pilllink .small {
+  color: black;
+}
+
+/* tables everywhere */
+.table,
+.table th,
+.table td {
+  color: black;
+}

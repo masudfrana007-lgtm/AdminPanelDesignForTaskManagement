@@ -2,133 +2,146 @@ import { useNavigate } from "react-router-dom";
 import "../styles/memberDeposit.css";
 import MemberBottomNav from "../components/MemberBottomNav";
 
-export default function MemberDeposit() {
+const user = {
+  name: "User",
+  vip: 3,
+  inviteCode: "ABCD-1234",
+  balance: 97280.12,
+};
+
+function money(n) {
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n);
+}
+
+export default function DepositMethod() {
   const nav = useNavigate();
 
-  const goBack = () => {
-    nav(-1);
-  };
-
-  const handleCryptoClick = () => {
-    nav("/member/deposit/crypto");
-  };
-
-  const handleBankClick = () => {
-    nav("/member/deposit/bank");
-  };
-
   return (
-    <div className="depositPage">
-      <div className="depositContainer">
-        {/* Back Button */}
-        <button className="backButton" onClick={goBack}>
+    <div className="page deposit-method">
+      {/* Top header */}
+      <div className="dm-header">
+        <button className="dm-back" onClick={() => nav(-1)} type="button">
           ←
         </button>
 
-        {/* Wallet Balance Card */}
-        <div className="walletCard">
-          <div className="balanceLabel">Wallet Balance</div>
-          <div className="balanceAmount">
-            <span className="amount">$1,280.45</span>
-            <span className="currency">USD</span>
-          </div>
-          <div className="balanceDetails">
-            <span className="balanceText">≈ 1,245.32 USDT</span>
-            <div className="statusIndicator">
-              <span className="statusDot active"></span>
-              <span className="statusText">+300 (2 days ago)</span>
-              <span className="activeText">Active</span>
+        <div className="dm-header-title">
+          <div className="dm-title">Deposit Funds</div>
+          <div className="dm-sub">Choose a deposit method that is convenient and secure</div>
+        </div>
+
+        <button className="dm-help" onClick={() => nav("/member/service")} type="button">
+          Support
+        </button>
+      </div>
+
+      <div className="dm-wrap">
+        {/* Profile + Balance card */}
+        <div className="dm-profileCard">
+          <div className="dm-profLeft">
+            <div className="dm-avatar" aria-hidden="true" />
+            <div className="dm-profMeta">
+              <div className="dm-profRow">
+                <span className="dm-profName">{user.name}</span>
+                <span className="dm-vip">VIP {user.vip}</span>
+              </div>
+
+              <div className="dm-codeRow">
+                <span className="dm-codeLabel">Reference code:</span>
+                <span className="dm-codePill">{user.inviteCode}</span>
+              </div>
             </div>
+          </div>
+
+          <div className="dm-balanceBox">
+            <div className="dm-balLabel">Current Balance</div>
+            <div className="dm-balValue">
+              <span className="dm-balUnit">USDT</span>
+              <span className="dm-balNum">{money(user.balance)}</span>
+            </div>
+            <div className="dm-balHint">Available to deposit and trade</div>
           </div>
         </div>
 
-        {/* Deposit Methods */}
-        <div className="depositMethods">
-          <h2 className="methodsTitle">Choose Deposit Method</h2>
-          
-          {/* Crypto Deposit */}
-          <div className="methodCard crypto" onClick={handleCryptoClick}>
-            <div className="methodHeader">
-              <div className="methodIcon crypto">
-                <svg viewBox="0 0 24 24" fill="white" width="24" height="24">
-                  <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z"/>
-                </svg>
+        {/* Deposit Options */}
+        <div className="dm-options">
+          {/* Crypto */}
+          <div className="dm-card" onClick={() => nav("/member/deposit/crypto")} role="button" tabIndex={0}>
+            <div className="dm-cardHead">
+             <div className="dm-icon crypto usdt-badge">
+  USDT
+</div>
+
+              <div className="dm-cardText">
+                <div className="dm-cardTitle">Deposit by Crypto</div>
+                <div className="dm-cardDesc">Fast, secure, and available 24/7</div>
               </div>
-              <div className="methodInfo">
-                <div className="methodTitle">
-                  <span>Deposit by Crypto</span>
-                  <span className="methodBadge fast">Fast</span>
-                  <span className="methodBadge recommended">Recommended</span>
-                </div>
-                <div className="methodSubtitle">USDT / BTC / ETH supported</div>
-                <div className="methodDetails">
-                  <span>Instant confirmation</span>
-                  <span>Low fees</span>
-                </div>
-              </div>
-              <div className="methodArrow">›</div>
             </div>
+
+            <div className="dm-list">
+              <div className="dm-item">✔ Networks: TRC20 / ERC20 / BEP20</div>
+              <div className="dm-item">✔ Auto-update after confirmations</div>
+              <div className="dm-item">✔ Low fees (depends on network)</div>
+            </div>
+
+            <div className="dm-tip">
+              Tip: Select the correct network. Wrong network deposits may not be recoverable.
+            </div>
+
+            <button className="dm-btn" type="button" onClick={(e) => { e.stopPropagation(); nav("/member/deposit/crypto"); }}>
+              Continue
+            </button>
           </div>
 
-          {/* Bank Deposit */}
-          <div className="methodCard bank" onClick={handleBankClick}>
-            <div className="methodHeader">
-              <div className="methodIcon bank">
-                <svg viewBox="0 0 24 24" fill="white" width="24" height="24">
-                  <path d="M11.5,1L2,6V8H21V6M16,10V17H19V19H2V17H5V10H7V17H9V10H11V17H13V10H15V17H17V10H16Z"/>
-                </svg>
+          {/* Bank */}
+          <div className="dm-card" onClick={() => nav("/member/deposit/bank")} role="button" tabIndex={0}>
+            <div className="dm-cardHead">
+              <div className="dm-icon bank">🏦</div>
+              <div className="dm-cardText">
+                <div className="dm-cardTitle">Deposit by Bank</div>
+                <div className="dm-cardDesc">Best for large / local currency deposits</div>
               </div>
-              <div className="methodInfo">
-                <div className="methodTitle">
-                  <span>Deposit by Bank</span>
-                  <span className="methodBadge manual">Manual</span>
-                  <span className="methodBadge time">1-2 hours</span>
-                </div>
-                <div className="methodSubtitle">Local & International banks</div>
-                <div className="methodDetails">
-                  <span>Manual verification</span>
-                  <span>Secure transfer</span>
-                </div>
-              </div>
-              <div className="methodArrow">›</div>
             </div>
+
+            <div className="dm-list">
+              <div className="dm-item">✔ Local & international bank support</div>
+              <div className="dm-item">✔ Manual verification for extra security</div>
+              <div className="dm-item">✔ Processing time: 1–24 hours</div>
+            </div>
+
+            <div className="dm-tip">
+              Tip: Use your own account name. Third-party deposits may be rejected for safety.
+            </div>
+
+            <button
+              className="dm-btn outline"
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                nav("/member/deposit/bank");
+              }}
+            >
+              Continue
+            </button>
           </div>
         </div>
 
-        {/* Security Note */}
-        <div className="securityNote">
-          <span className="securityIcon">🔒</span>
-          <span className="securityText">Your funds are protected with bank-level encryption</span>
-        </div>
-
-        {/* Recent Activity */}
-        <div className="recentActivity">
-          <h3 className="activityTitle">Recent Deposit Activity</h3>
-          
-          <div className="activityItem">
-            <div className="activityInfo">
-              <span className="activityAmount">+$500</span>
-              <span className="activityMethod">Crypto (USDT)</span>
-            </div>
-            <div className="activityMeta">
-              <span className="activityTime">1 hour ago</span>
-            </div>
+        {/* Instructions */}
+        <div className="dm-instructions">
+          <div className="dm-instHead">
+            <div className="dm-instTitle">Important Deposit Instructions</div>
+            <span className="dm-instBadge">Security</span>
           </div>
 
-          <div className="activityItem">
-            <div className="activityInfo">
-              <span className="activityAmount">+$200</span>
-              <span className="activityMethod">Bank Transfer</span>
-            </div>
-            <div className="activityMeta">
-              <span className="activityTime">Pending</span>
-              <span className="pendingBadge">Pending</span>
-            </div>
-          </div>
+          <ul className="dm-instList">
+            <li>Always select the correct deposit method and network before sending.</li>
+            <li>Do not send funds from third-party accounts (name must match your profile).</li>
+            <li>Deposits sent to wrong addresses or networks may not be recoverable.</li>
+            <li>For delays, contact Customer Service with TXID / receipt.</li>
+          </ul>
         </div>
       </div>
 
-      {/* Bottom Navigation */}
+      {/* ✅ OLD bottom bar (reusable) */}
       <MemberBottomNav active="mine" />
     </div>
   );

@@ -1,13 +1,14 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import "../styles/memberDepositCrypto.css";
-import MemberBottomNav from "../components/MemberBottomNav";
+import "./DepositCrypto.css";
+
+// Optional: if you use react-router, uncomment this:
+// import { useNavigate } from "react-router-dom";
 
 const ASSETS = [
   {
     symbol: "USDT",
     name: "Tether",
-    icon: "https://cryptologos.cc/logos/tether-usdt-logo.png",
+    iconText: "₮",
     networks: [
       { key: "TRC20", label: "TRC20", badge: "Recommended", feeHint: "Low fee", eta: "1–5 min", conf: 12, min: 10 },
       { key: "BEP20", label: "BEP20", badge: "Fast", feeHint: "Low fee", eta: "1–3 min", conf: 15, min: 10 },
@@ -17,19 +18,19 @@ const ASSETS = [
   {
     symbol: "BTC",
     name: "Bitcoin",
-    icon: "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
+    iconText: "₿",
     networks: [{ key: "BTC", label: "Bitcoin", badge: "Mainnet", feeHint: "Network fee varies", eta: "10–60 min", conf: 2, min: 0.0002 }],
   },
   {
     symbol: "ETH",
     name: "Ethereum",
-    icon: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+    iconText: "Ξ",
     networks: [{ key: "ERC20", label: "Ethereum", badge: "Mainnet", feeHint: "Fee varies", eta: "2–15 min", conf: 12, min: 0.01 }],
   },
   {
     symbol: "BNB",
     name: "BNB",
-    icon: "https://cryptologos.cc/logos/bnb-bnb-logo.png",
+    iconText: "B",
     networks: [{ key: "BEP20", label: "BSC (BEP20)", badge: "Fast", feeHint: "Low fee", eta: "1–3 min", conf: 15, min: 0.02 }],
   },
 ];
@@ -37,48 +38,35 @@ const ASSETS = [
 function money(n) {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n);
 }
+
 function shortAddr(addr) {
   if (!addr) return "";
   if (addr.length <= 16) return addr;
   return addr.slice(0, 10) + "..." + addr.slice(-6);
 }
+
+// Fake address generator (replace with API response)
 function getDemoAddress(symbol, networkKey) {
   const base = `${symbol}-${networkKey}-ADDR-`;
   const rnd = Math.random().toString(16).slice(2).padEnd(34, "a").slice(0, 34);
   return base + rnd;
 }
-function badgeTone(badge) {
-  const b = (badge || "").toLowerCase();
-  if (b.includes("recommend")) return "is-green";
-  if (b.includes("fast")) return "is-blue";
-  if (b.includes("high")) return "is-red";
-  return "is-gray";
-}
 
-function InfoItem({ label, value }) {
-  return (
-    <div className="dc-infoItem">
-      <div className="dc-mutedSmall">{label}</div>
-      <div className="dc-infoValue">{value}</div>
-    </div>
-  );
-}
-
-export default function MemberDepositCrypto() {
-  const nav = useNavigate();
+export default function DepositCrypto() {
+  // const nav = useNavigate(); // if you use react-router
 
   const [asset, setAsset] = useState("USDT");
-  const assetObj = useMemo(() => ASSETS.find((a) => a.symbol === asset), [asset]);
+  const assetObj = useMemo(() => ASSETS.find(a => a.symbol === asset), [asset]);
 
   const [network, setNetwork] = useState(assetObj.networks[0].key);
   const networkObj = useMemo(
-    () => assetObj.networks.find((n) => n.key === network) || assetObj.networks[0],
+    () => assetObj.networks.find(n => n.key === network) || assetObj.networks[0],
     [assetObj, network]
   );
 
   const [address, setAddress] = useState(() => getDemoAddress(asset, network));
-  const [memoTag, setMemoTag] = useState("");
-  const memoRequired = false;
+  const [memoTag, setMemoTag] = useState(""); // only required for some assets on some exchanges
+  const memoRequired = useMemo(() => false, []); // set true if your backend says so
 
   const [toast, setToast] = useState("");
   const showToast = (msg) => {
@@ -87,13 +75,12 @@ export default function MemberDepositCrypto() {
     window.__toastTimer = window.setTimeout(() => setToast(""), 2200);
   };
 
-  // demo numbers (replace with real API later)
   const walletUsd = 1280.45;
   const walletUsdt = 1245.32;
 
   const onChangeAsset = (sym) => {
     setAsset(sym);
-    const a = ASSETS.find((x) => x.symbol === sym);
+    const a = ASSETS.find(x => x.symbol === sym);
     const defaultNet = a.networks[0].key;
     setNetwork(defaultNet);
     setAddress(getDemoAddress(sym, defaultNet));
@@ -122,23 +109,29 @@ export default function MemberDepositCrypto() {
 
   const markPaid = () => {
     showToast("Submitted. We are checking your deposit...");
+    // TODO: call your API: POST /deposit/confirm or open a modal
   };
 
   return (
-    <div className="dc-page">
+    <div
+      className="dc-page"
+      style={{
+        // Put your background image here:
+        // Example:
+        // backgroundImage: `url(/bg/blue-space.jpg)`,
+      }}
+    >
       <div className="dc-overlay" />
 
       {/* Header */}
       <header className="dc-header">
-        <button className="dc-back" onClick={() => nav(-1)}>
+        <button className="dc-back" onClick={() => window.history.back()}>
           ←
         </button>
-
         <div className="dc-title">
           <h1>Deposit Crypto</h1>
           <p>Choose asset & network carefully to avoid loss.</p>
         </div>
-
         <div className="dc-headerActions">
           <button className="dc-ghostBtn" onClick={() => showToast("Opening help...")}>
             Help
@@ -149,19 +142,16 @@ export default function MemberDepositCrypto() {
       <main className="dc-wrap">
         {/* Top summary */}
         <section className="dc-gridTop">
-          <div className="dc-card dc-balance dc-balance--highlight">
-            <div className="dc-balanceTop">
-              <div className="dc-balanceTitleRow">
-                <div className="dc-dot dc-dot--cyan" />
-                <div className="dc-balanceTitle">Wallet Balance</div>
-              </div>
-
-              <div className="dc-balanceAmounts">
-                <div className="dc-balanceMain">
+          <div className="dc-card dc-balance">
+            <div className="dc-cardHead">
+              <div className="dc-dot" />
+              <div>
+                <div className="dc-kicker">Wallet Balance</div>
+                <div className="dc-balanceRow">
                   <span className="dc-balanceUsd">${money(walletUsd)}</span>
-                  <span className="dc-balanceUnit">USD</span>
+                  <span className="dc-muted">USD</span>
                 </div>
-                <div className="dc-balanceSub">≈ {money(walletUsdt)} USDT</div>
+                <div className="dc-mutedSmall">≈ {money(walletUsdt)} USDT</div>
               </div>
             </div>
 
@@ -181,15 +171,17 @@ export default function MemberDepositCrypto() {
               <div className="dc-chip">Pending: 0</div>
               <div className="dc-chip">Completed: 12</div>
             </div>
-            <div className="dc-mutedSmall">Deposits are credited after required confirmations.</div>
+            <div className="dc-mutedSmall">
+              Deposits are credited after required confirmations.
+            </div>
           </div>
         </section>
 
         {/* Steps */}
         <section className="dc-gridMain">
-          {/* Left */}
+          {/* Left column: steps */}
           <div className="dc-left">
-            {/* Step 1 */}
+            {/* Step 1: Asset */}
             <div className="dc-card">
               <div className="dc-stepHead">
                 <div className="dc-stepNum">1</div>
@@ -200,14 +192,13 @@ export default function MemberDepositCrypto() {
               </div>
 
               <div className="dc-assetRow">
-                {ASSETS.map((a) => (
+                {ASSETS.map(a => (
                   <button
                     key={a.symbol}
-                    className={"dc-assetBtn " + (asset === a.symbol ? "is-selected" : "")}
+                    className={"dc-assetBtn " + (asset === a.symbol ? "is-active" : "")}
                     onClick={() => onChangeAsset(a.symbol)}
-                    type="button"
                   >
-                    <img src={a.icon} alt={a.symbol} className="dc-coinLogo" />
+                    <div className="dc-assetIcon">{a.iconText}</div>
                     <div className="dc-assetMeta">
                       <div className="dc-assetSym">{a.symbol}</div>
                       <div className="dc-mutedSmall">{a.name}</div>
@@ -217,7 +208,7 @@ export default function MemberDepositCrypto() {
               </div>
             </div>
 
-            {/* Step 2 */}
+            {/* Step 2: Network */}
             <div className="dc-card">
               <div className="dc-stepHead">
                 <div className="dc-stepNum">2</div>
@@ -228,12 +219,11 @@ export default function MemberDepositCrypto() {
               </div>
 
               <div className="dc-netRow">
-                {assetObj.networks.map((n) => (
+                {assetObj.networks.map(n => (
                   <button
                     key={n.key}
-                    className={"dc-netBtn " + (network === n.key ? "is-selected" : "")}
+                    className={"dc-netBtn " + (network === n.key ? "is-active" : "")}
                     onClick={() => onChangeNetwork(n.key)}
-                    type="button"
                   >
                     <div className="dc-netTop">
                       <span className="dc-netName">{n.label}</span>
@@ -250,7 +240,7 @@ export default function MemberDepositCrypto() {
               </div>
             </div>
 
-            {/* Step 3 */}
+            {/* Step 3: Address */}
             <div className="dc-card">
               <div className="dc-stepHead">
                 <div className="dc-stepNum">3</div>
@@ -264,13 +254,12 @@ export default function MemberDepositCrypto() {
                 <div className="dc-qr">
                   <div className="dc-qrBox">
                     <div className="dc-qrFake">
+                      {/* Placeholder QR (replace with real QR library if you want) */}
                       <div className="dc-qrSquares" />
                       <div className="dc-qrText">QR</div>
                     </div>
                   </div>
-                  <button className="dc-miniBtn" onClick={refreshAddress} type="button">
-                    Refresh Address
-                  </button>
+                  <button className="dc-miniBtn" onClick={refreshAddress}>Refresh Address</button>
                 </div>
 
                 <div className="dc-addressRight">
@@ -280,12 +269,8 @@ export default function MemberDepositCrypto() {
                       <span className="dc-mono">{address}</span>
                     </div>
                     <div className="dc-fieldActions">
-                      <button className="dc-miniBtn" onClick={() => copy(address)} type="button">
-                        Copy
-                      </button>
-                      <button className="dc-ghostBtn" onClick={() => showToast("Sharing...")} type="button">
-                        Share
-                      </button>
+                      <button className="dc-miniBtn" onClick={() => copy(address)}>Copy</button>
+                      <button className="dc-ghostBtn" onClick={() => showToast("Sharing...")}>Share</button>
                     </div>
                     <div className="dc-mutedSmall">
                       Short: <span className="dc-mono">{shortAddr(address)}</span>
@@ -294,12 +279,7 @@ export default function MemberDepositCrypto() {
 
                   <div className="dc-field">
                     <div className="dc-label">
-                      Memo / Tag{" "}
-                      {memoRequired ? (
-                        <span className="dc-required">Required</span>
-                      ) : (
-                        <span className="dc-mutedSmall">(if needed)</span>
-                      )}
+                      Memo / Tag {memoRequired ? <span className="dc-required">Required</span> : <span className="dc-mutedSmall">(if needed)</span>}
                     </div>
                     <input
                       className="dc-input"
@@ -307,13 +287,15 @@ export default function MemberDepositCrypto() {
                       onChange={(e) => setMemoTag(e.target.value)}
                       placeholder="Enter memo/tag if your wallet requires it"
                     />
-                    <div className="dc-mutedSmall">Some exchanges require memo/tag for certain assets.</div>
+                    <div className="dc-mutedSmall">
+                      Some exchanges require memo/tag for certain assets.
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Step 4 */}
+            {/* Step 4: Info + action */}
             <div className="dc-card">
               <div className="dc-stepHead">
                 <div className="dc-stepNum">4</div>
@@ -331,29 +313,29 @@ export default function MemberDepositCrypto() {
               </div>
 
               <div className="dc-actions">
-                <button className="dc-primaryBtn" onClick={markPaid} type="button">
+                <button className="dc-primaryBtn" onClick={markPaid}>
                   I have completed the transfer
                 </button>
-                <button className="dc-secondaryBtn" onClick={() => showToast("Opening support...")} type="button">
+                <button className="dc-secondaryBtn" onClick={() => showToast("Opening support...")}>
                   Contact Support
                 </button>
               </div>
 
               <div className="dc-helpRow">
-                <button className="dc-linkBtn" onClick={() => showToast("How to deposit...")} type="button">
+                <button className="dc-linkBtn" onClick={() => showToast("How to deposit...")}>
                   How to deposit?
                 </button>
-                <button className="dc-linkBtn" onClick={() => showToast("Deposit not received...")} type="button">
+                <button className="dc-linkBtn" onClick={() => showToast("Deposit not received...")}>
                   Deposit not received?
                 </button>
-                <button className="dc-linkBtn" onClick={() => showToast("Network fee info...")} type="button">
+                <button className="dc-linkBtn" onClick={() => showToast("Network fee info...")}>
                   Network & fees
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Right */}
+          {/* Right column: quick panel */}
           <aside className="dc-right">
             <div className="dc-card dc-side">
               <div className="dc-sideTitle">Quick Summary</div>
@@ -367,9 +349,7 @@ export default function MemberDepositCrypto() {
               </div>
               <div className="dc-sideLine">
                 <span className="dc-muted">Min</span>
-                <span className="dc-strong">
-                  {networkObj.min} {asset}
-                </span>
+                <span className="dc-strong">{networkObj.min} {asset}</span>
               </div>
               <div className="dc-sideLine">
                 <span className="dc-muted">Confirmations</span>
@@ -387,10 +367,10 @@ export default function MemberDepositCrypto() {
 
               <div className="dc-divider" />
 
-              <button className="dc-secondaryBtn w100" onClick={() => copy(address)} type="button">
+              <button className="dc-secondaryBtn w100" onClick={() => copy(address)}>
                 Copy Address
               </button>
-              <button className="dc-ghostBtn w100" onClick={() => showToast("Opening history...")} type="button">
+              <button className="dc-ghostBtn w100" onClick={() => showToast("Opening history...")}>
                 Deposit History
               </button>
             </div>
@@ -398,13 +378,25 @@ export default function MemberDepositCrypto() {
         </section>
       </main>
 
+      {/* Toast */}
       {toast ? <div className="dc-toast">{toast}</div> : null}
-
-      {/* ✅ KEEP OLD BOTTOM BAR EXACTLY */}
-      <div className="memberBottomNavFixed">
-        <MemberBottomNav active="mine" />
-      </div>
-      
     </div>
   );
+}
+
+function InfoItem({ label, value }) {
+  return (
+    <div className="dc-infoItem">
+      <div className="dc-mutedSmall">{label}</div>
+      <div className="dc-infoValue">{value}</div>
+    </div>
+  );
+}
+
+function badgeTone(badge) {
+  const b = (badge || "").toLowerCase();
+  if (b.includes("recommend")) return "is-green";
+  if (b.includes("fast")) return "is-blue";
+  if (b.includes("high")) return "is-red";
+  return "is-gray";
 }

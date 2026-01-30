@@ -1,446 +1,470 @@
-.depositBankPage {
-  min-height: 100vh !important;
-  background: url('../assets/background.png') no-repeat center center fixed !important;
-  background-size: cover !important;
-  color: white !important;
-  padding: 20px;
-  padding-bottom: 120px;
-  position: relative;
-  overflow: hidden;
+:root{
+  --bybit-yellow:#FFC107;
+  --bybit-orange:#FF8A00;
+
+  --glass: rgba(255,255,255,.08);
+  --stroke: rgba(255,255,255,.14);
+  --shadow: 0 20px 50px rgba(0,0,0,.35);
+
+  --text:#eaf2ff;
+  --muted: rgba(234,242,255,.78);
 }
 
-.depositBankPage::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: 
-    radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 70%),
-    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.03) 0%, transparent 60%);
-  pointer-events: none;
-  opacity: 0.6;
+.db-page{
+  min-height:100vh;
+  padding:22px;
+  position:relative;
+  color: var(--text);
+
+  /* ✅ background image */
+  background: url('../assets/bg/deposit.png') no-repeat center center fixed;
+  background-size: cover;
 }
 
-.depositBankContainer {
-  max-width: 420px;
-  margin: 0 auto;
-  position: relative;
-  z-index: 2;
+
+.db-overlay{
+  position:fixed;
+  inset:0;
+  background: linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,.40));
+  pointer-events:none;
 }
 
-.backButton {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  color: white;
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  cursor: pointer;
-  margin-bottom: 24px;
-  /* backdrop-filter: blur(10px); */
-  transition: all 0.2s ease;
+.db-header{
+  position:relative;
+  max-width:1100px;
+  margin:0 auto 14px;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:14px;
 }
 
-.backButton:hover {
-  background: rgba(255, 255, 255, 0.15);
-  transform: translateX(-2px);
+.db-title h1{ margin:0; font-size:22px; }
+.db-title p{ margin:4px 0 0; font-size:13px; opacity:.85; }
+
+.db-back{
+  width:44px; height:44px;
+  border-radius:12px;
+  border:1px solid var(--stroke);
+  background: rgba(255,255,255,.08);
+  color:#fff;
+  cursor:pointer;
 }
 
-.pageTitle {
-  text-align: center;
-  font-size: 24px;
-  font-weight: 600;
-  margin-bottom: 32px;
-  color: white;
+.db-wrap{
+  position:relative;
+  max-width:1100px;
+  margin:0 auto;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
 }
 
-/* Wallet Balance Card */
-.walletBalanceCard {
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 20px;
-  padding: 24px;
-  margin-bottom: 40px;
-  /* backdrop-filter: blur(20px); */
-  box-shadow: 
-    0 20px 40px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  color: #1a1a1a;
+.db-card{
+  border-radius:18px;
+  border:1px solid var(--stroke);
+  background: var(--glass);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding:16px;
 }
 
-.balanceHeader {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
+/* ✅ Balance finance-style */
+.db-card.db-balance{
+  background:
+    linear-gradient(
+      135deg,
+      rgba(0,180,140,.35),
+      rgba(0,120,110,.22),
+      rgba(0,0,0,.32)
+    );
+  border:1px solid rgba(0,220,180,.42);
+  box-shadow:
+    inset 0 0 0 1px rgba(0,220,180,.20),
+    0 30px 60px rgba(0,0,0,.50);
 }
 
-.walletIcon {
-  width: 32px;
-  height: 32px;
-  background: rgba(139, 115, 85, 0.1);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.walletLabel {
-  font-size: 16px;
-  font-weight: 500;
-  color: #333;
-}
-
-.balanceAmount {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.amount {
-  font-size: 32px;
-  font-weight: 700;
-  color: #1a1a1a;
-}
-
-.currency {
-  font-size: 18px;
-  font-weight: 600;
-  color: #666;
-}
-
-.balanceDetails {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.balanceEquivalent {
-  font-size: 14px;
-  color: #888;
-}
-
-.statusIndicator {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.statusDot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #10ac84;
-}
-
-.statusText {
-  font-size: 12px;
-  color: #10ac84;
-  font-weight: 500;
-}
-
-.activeText {
-  font-size: 12px;
-  color: #666;
-}
-
-/* Select Country Section */
-.selectCountrySection {
-  margin-bottom: 32px;
-}
-
-.selectCountryTitle {
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 16px;
-  color: white;
-}
-
-.countryOption {
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  padding: 16px 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  /* backdrop-filter: blur(15px); */
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.countryOption:hover {
-  background: rgba(255, 255, 255, 0.12);
-  transform: translateY(-1px);
-}
-
-.countryFlag {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-}
-
-.countryInfo {
-  flex: 1;
-}
-
-.countryName {
-  font-size: 16px;
-  font-weight: 600;
-  color: white;
-}
-
-.countryArrow {
-  font-size: 20px;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-/* Select Bank Section */
-.selectBankSection {
-  margin-bottom: 32px;
-}
-
-.selectBankTitle {
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 20px;
-  color: white;
-}
-
-.bankGrid {
-  display: grid;
+.db-topRow{
+  display:grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap:14px;
 }
 
-.bankOption {
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  padding: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  /* backdrop-filter: blur(15px); */
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  min-height: 100px;
+.db-kicker{ font-size:12px; opacity:.85; font-weight:900; }
+
+.db-pill{
+  font-size:12px;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,193,7,.30);
+  background: rgba(255,193,7,.12);
+  font-weight:900;
 }
 
-.bankOption::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(45deg, transparent 0%, rgba(255, 255, 255, 0.02) 50%, transparent 100%);
-  pointer-events: none;
-}
-
-.bankOption:hover {
-  background: rgba(255, 255, 255, 0.12);
-  transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-}
-
-.bankOption.selected {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
-}
-
-.recommendedBadge {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: #3742fa;
-  color: white;
-  padding: 2px 6px;
-  border-radius: 6px;
-  font-size: 9px;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.bankLogo {
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 8px;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.bankInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex: 1;
-}
-
-.bankName {
-  font-size: 14px;
-  font-weight: 600;
-  color: white;
-}
-
-.bankDetails {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.bankArrow {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  font-size: 16px;
-  color: rgba(255, 255, 255, 0.3);
-  transition: all 0.2s ease;
-}
-
-.bankOption:hover .bankArrow {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-/* Security Note */
-.securityNote {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 16px;
-  background: rgba(16, 172, 132, 0.1);
-  border: 1px solid rgba(16, 172, 132, 0.2);
-  border-radius: 12px;
-  margin-bottom: 60px;
-}
-
-.securityIcon {
-  font-size: 16px;
-}
-
-.securityText {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.9);
-  font-weight: 500;
-}
-
-/* Next Button */
-.nextButton {
-  width: 100%;
-  padding: 16px 24px;
-  background: linear-gradient(135deg, #4a90e2, #357abd);
+/* ✅ Available pill = Bybit Yellow */
+.db-balance .db-pill{
+  background: linear-gradient(135deg, #FFC107, #FF9800);
   border: none;
-  border-radius: 16px;
-  color: white;
-  font-size: 18px;
+  color: #000;
+  font-weight: 900;
+  box-shadow: 0 0 12px rgba(255,193,7,.55);
+}
+
+.db-balanceHead{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.db-balanceAmount{ display:flex; gap:10px; align-items:baseline; }
+.db-usd{ font-size:34px; font-weight:900; letter-spacing:.2px; }
+.db-unit{ font-size:13px; opacity:.85; font-weight:900; }
+
+.db-statusTitle{ font-weight:900; margin-bottom:10px; }
+.db-list{ margin:0; padding-left:18px; color: var(--muted); line-height:1.5; }
+
+.db-mutedSmall{ font-size:12px; opacity:.78; margin-top:10px; line-height:1.4; }
+
+.db-sectionHead{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:12px; }
+.db-sectionTitle{ font-size:16px; font-weight:900; margin-bottom:6px; }
+
+.db-row{ display:grid; grid-template-columns: 280px 1fr; gap:14px; }
+
+.db-field .db-label{ font-size:12px; opacity:.85; font-weight:900; margin-bottom:8px; }
+
+.db-select, .db-input{
+  width:100%;
+  padding:12px 12px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.18);
+  color:#fff;
+  outline:none;
+}
+
+.db-bankRow{ display:flex; flex-wrap:wrap; gap:10px; }
+.db-empty{
+  padding:12px;
+  border-radius:14px;
+  border:1px dashed rgba(255,255,255,.18);
+  color: var(--muted);
+}
+
+.db-bankCard{
+  width: 260px;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  padding:12px;
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.14);
+  color:#fff;
+  cursor:pointer;
+  text-align:left;
+}
+
+.db-bankCard:hover{
+  border-color: rgba(255,193,7,.28);
+}
+
+.db-bankCard.is-active{
+  border-color: rgba(255,193,7,.55);
+  background: linear-gradient(135deg, rgba(255,193,7,.14), rgba(255,140,0,.08), rgba(0,0,0,.14));
+  box-shadow: inset 0 0 0 1px rgba(255,193,7,.14);
+}
+
+.db-bankLogo{
+  width:44px; height:44px;
+  border-radius:16px;
+  display:flex; align-items:center; justify-content:center;
+  font-weight:900;
+  background: rgba(255,193,7,.18);
+  border:1px solid rgba(255,193,7,.25);
+}
+
+.db-bankName{ font-weight:900; }
+.db-bankType{ font-size:12px; opacity:.78; margin-top:2px; }
+
+.db-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:14px;
+}
+
+.db-kv{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  padding:10px 0;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  align-items:center;
+}
+.db-k{ font-size:12px; opacity:.8; font-weight:900; }
+.db-v{ display:flex; gap:10px; align-items:center; font-weight:800; }
+
+.db-note{
+  margin-top:12px;
+  padding:12px;
+  border-radius:16px;
+  border:1px solid rgba(255,193,7,.25);
+  background: rgba(255,193,7,.08);
+  color: rgba(255,235,190,.95);
+  line-height:1.45;
+}
+
+.db-form{ margin-top:12px; display:flex; flex-direction:column; gap:12px; }
+
+.db-refRow{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.db-ref{
+  flex:1;
+  padding:12px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.18);
+  font-weight:900;
+  letter-spacing:.4px;
+}
+
+.db-uploadRow{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+.db-uploadName{
+  font-size:12px;
+  opacity:.8;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+/* ✅ Primary buttons */
+.db-primarySmall{
+  padding:10px 12px;
+  border-radius:14px;
+  border:none;
+  cursor:pointer;
+  font-weight:900;
+  color:#000;
+  background: linear-gradient(135deg, #FFC107, #FF9800);
+}
+.db-primaryBtn{
+  padding:12px 14px;
+  border-radius:14px;
+  border:none;
+  cursor:pointer;
+  font-weight:900;
+  color:#000;
+  background: linear-gradient(135deg, #FFC107, #FF9800);
+  box-shadow: 0 10px 25px rgba(255,193,7,.40), inset 0 1px 0 rgba(255,255,255,.55);
+}
+.db-primaryBtn:hover{
+  background: linear-gradient(135deg, #FFD54F, #FFB300);
+}
+.db-primaryBtn:disabled{
+  opacity:.55;
+  cursor:not-allowed;
+  box-shadow:none;
+}
+
+/* ✅ Secondary buttons */
+.db-secondaryBtn{
+  padding:10px 12px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.08);
+  color:#fff;
+  cursor:pointer;
+  font-weight:900;
+}
+.db-secondaryBtn:hover{
+  border-color: rgba(255,193,7,.28);
+  background: rgba(255,193,7,.10);
+}
+
+/* Neutral / Ghost */
+.db-ghostBtn{
+  padding:10px 12px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.16);
+  color:#fff;
+  cursor:pointer;
+  font-weight:900;
+  opacity:.9;
+}
+.db-ghostBtn:hover{ border-color: rgba(255,193,7,.28); }
+
+/* ==============================
+   Deposit History UI
+   ============================== */
+
+.db-historyHead{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+}
+
+.db-historyTabs{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.db-tab{
+  padding:9px 12px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.14);
+  color:#fff;
+  cursor:pointer;
+  font-weight:900;
+  font-size:12px;
+  opacity:.9;
+}
+.db-tab:hover{
+  border-color: rgba(255,193,7,.25);
+}
+.db-tab.is-active{
+  border-color: rgba(255,193,7,.45);
+  background: rgba(255,193,7,.14);
+  box-shadow: inset 0 0 0 1px rgba(255,193,7,.12);
+}
+
+.db-historyTable{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-top:12px;
+}
+
+.db-historyRow{
+  display:grid;
+  grid-template-columns: 1.3fr 1.1fr .7fr .8fr 1.0fr .6fr;
+  gap:10px;
+  padding:12px;
+  border-radius:14px;
+  background: rgba(0,0,0,.14);
+  border:1px solid rgba(255,255,255,.10);
+  font-size:13px;
+  align-items:center;
+}
+
+.db-historyRow.head{
+  background: none;
+  border: none;
+  padding: 0 4px 8px;
+  font-weight:900;
+  opacity:.75;
+}
+
+.db-status{ font-weight:900; }
+.db-status.pending{ color:#FFB300; }
+.db-status.completed{ color:#3ddc97; }
+.db-status.failed{ color:#ff6b6b; }
+
+.db-refMini{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  opacity:.9;
+}
+
+.db-historyEmpty{
+  margin-top:10px;
+  padding:12px;
+  border-radius:14px;
+  border:1px dashed rgba(255,255,255,.18);
+  color: rgba(234,242,255,.75);
+}
+
+/* Responsive */
+@media (max-width: 980px){
+  .db-topRow{ grid-template-columns: 1fr; }
+  .db-row{ grid-template-columns: 1fr; }
+  .db-grid{ grid-template-columns: 1fr; }
+
+  .db-bankCard{ width: 100%; }
+
+  .db-historyRow{
+    grid-template-columns: 1fr;
+    gap:8px;
+  }
+  .db-historyRow.head{ display:none; }
+}
+/* =================================================
+   PROFESSIONAL TEXT CLARITY FIX (FINANCE GRADE)
+   ================================================= */
+
+/* 1️⃣ Global font rendering (very important) */
+.db-page{
+  -webkit-font-smoothing: subpixel-antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* 2️⃣ PRIMARY TEXT — crisp, no blur */
+.db-sectionTitle,
+.db-title h1,
+.db-statusTitle,
+.db-bankName,
+.db-k,
+.db-label{
+  color: #F5F8FF;
+  font-weight: 700;
+  text-shadow: 0 1px 0 rgba(0,0,0,.6); /* sharp, not glow */
+}
+
+/* 3️⃣ NUMBERS & IMPORTANT VALUES */
+.db-usd,
+.db-ref,
+.db-refMini,
+.db-v,
+.db-historyRow span{
+  color: #FFFFFF;
+  font-weight: 700;
+  text-shadow: 0 1px 1px rgba(0,0,0,.7);
+}
+
+/* 4️⃣ SECONDARY / HELPER TEXT */
+.db-mutedSmall,
+.db-bankType,
+.db-uploadName,
+.db-list li{
+  color: rgba(210,220,245,.85); /* cleaner than opacity */
+  font-weight: 500;
+  text-shadow: none;            /* remove blur */
+}
+
+/* 5️⃣ BUTTON TEXT — sharp & readable */
+.db-primaryBtn,
+.db-primarySmall,
+.db-secondaryBtn,
+.db-ghostBtn,
+.db-tab{
+  font-weight: 700;
+  text-shadow: 0 1px 0 rgba(0,0,0,.55);
+}
+
+/* 6️⃣ INPUT & SELECT TEXT */
+.db-input,
+.db-select{
+  color: #FFFFFF;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 8px 20px rgba(74, 144, 226, 0.3);
-  /* backdrop-filter: blur(10px); */
-  position: fixed;
-  bottom: 100px;
-  left: 20px;
-  right: 20px;
-  max-width: 380px;
-  margin: 0 auto;
+  text-shadow: none;
 }
 
-.nextButton:hover {
-  background: linear-gradient(135deg, #357abd, #2e5a87);
-  transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(74, 144, 226, 0.4);
+/* 7️⃣ HISTORY STATUS COLORS (clean, no glow) */
+.db-status.pending{
+  color: #FFC107;
+  text-shadow: 0 1px 0 rgba(0,0,0,.6);
+}
+.db-status.completed{
+  color: #3ddc97;
+  text-shadow: 0 1px 0 rgba(0,0,0,.6);
+}
+.db-status.failed{
+  color: #ff6b6b;
+  text-shadow: 0 1px 0 rgba(0,0,0,.6);
 }
 
-.nextButton:active {
-  transform: translateY(0);
-}
-
-/* Desktop Responsive */
-@media (min-width: 768px) {
-  .depositBankContainer {
-    max-width: 600px;
-    padding: 0 20px;
-  }
-  
-  .walletBalanceCard {
-    padding: 32px;
-  }
-  
-  .bankGrid {
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 20px;
-  }
-  
-  .bankOption {
-    padding: 20px;
-    min-height: 120px;
-  }
-  
-  .bankLogo {
-    width: 56px;
-    height: 56px;
-  }
-  
-  .nextButton {
-    position: static;
-    margin-top: 40px;
-  }
-}
-
-/* Mobile Responsive */
-@media (max-width: 480px) {
-  .depositBankPage {
-    padding: 16px;
-  }
-  
-  .walletBalanceCard {
-    padding: 20px;
-  }
-  
-  .amount {
-    font-size: 28px;
-  }
-  
-  .bankGrid {
-    gap: 12px;
-  }
-  
-  .bankOption {
-    padding: 12px;
-    min-height: 80px;
-  }
-  
-  .bankLogo {
-    width: 40px;
-    height: 40px;
-  }
-  
-  .bankName {
-    font-size: 12px;
-  }
-  
-  .bankDetails {
-    font-size: 10px;
-  }
-  
-  .recommendedBadge {
-    font-size: 8px;
-    padding: 1px 4px;
-  }
+/* 8️⃣ REMOVE any accidental glow from tabs */
+.db-tab{
+  box-shadow: none;
 }

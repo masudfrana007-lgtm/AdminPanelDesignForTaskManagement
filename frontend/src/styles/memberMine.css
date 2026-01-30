@@ -1,16 +1,20 @@
+/* src/styles/memberMine.css */
+
+/* =========================
+   OLD BG (KEEP THIS)
+   ========================= */
 .minePage {
   min-height: 100vh;
-  background: url('../assets/background.png') no-repeat center center fixed;
+  background: url("../assets/background.png") no-repeat center center fixed;
   background-size: cover;
-  padding: 18px 18px 84px;
+  padding: 18px 18px 110px; /* space for bottom nav */
   color: #eaf2ff;
   position: relative;
   overflow: hidden;
 }
 
-/* EXTRA CURVE + DEPTH */
 .minePage::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   background:
@@ -27,275 +31,249 @@
   pointer-events: none;
 }
 
-
-
-/* Main container with max-width like other pages */
+/* container */
 .mineContainer {
   max-width: 1000px;
   margin: 0 auto;
-}
-
-/* Header Section */
-.mineHeader {
-  display: flex;
-  align-items: center;
-  padding: 20px 0 0;
-  gap: 15px;
-}
-
-.profileIcon {
   position: relative;
+  z-index: 1; /* make sure content is above ::before */
+}
+
+/* =========================
+   NEW PAGE UI STYLES
+   ========================= */
+.mine-hero,
+.mine-actions-wrap,
+.mine-lists {
+  width: min(980px, 94vw);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.mine-hero {
+  margin-top: 18px;
+  padding: 22px 22px 16px;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 15% 25%, rgba(170, 235, 255, 0.18), transparent 55%),
+    radial-gradient(circle at 85% 30%, rgba(120, 205, 255, 0.14), transparent 55%),
+    linear-gradient(180deg, rgba(6, 44, 75, 0.55), rgba(6, 44, 75, 0.12));
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow:
+    0 22px 40px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+  overflow: hidden;
+  position: relative;
+}
+
+.mine-hero-top {
   display: flex;
+  gap: 14px;
   align-items: center;
-  flex-shrink: 0;
 }
 
-.avatarCircle {
-  width: 50px;
-  height: 50px;
+.mine-avatar {
+  width: 62px;
+  height: 62px;
   border-radius: 50%;
-  background: linear-gradient(45deg, #ff9a56, #ff6b35);
+  background: radial-gradient(circle at 30% 30%, #ffd36a, #ff9b00 65%, #d46f00);
+  box-shadow: 0 14px 26px rgba(0, 0, 0, 0.28);
 }
 
-.vipBadge {
-  position: absolute;
-  /* top: -5px;
-  right: -5px; */
-  background: #ffa500;
-  color: white;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 10px;
-  font-weight: bold;
+.mine-meta {
+  flex: 1;
+  min-width: 0;
 }
 
-.invitationCode {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.inviteLabel {
+.mine-vip-pill {
+  display: inline-block;
   font-size: 12px;
-  opacity: 0.8;
-  margin-bottom: 2px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ffbf5a, #ff7b19);
+  color: #fff;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.22);
 }
 
-.inviteCode {
-  background: rgba(0, 0, 0, 0.3);
-  padding: 5px 10px;
-  border-radius: 15px;
-  font-size: 12px;
-}
-
-/* Account Section */
-.accountSection {
-  padding: 30px 0 20px;
-    
-}
-
-.accountTitle {
-  font-size: 16px;
-  font-weight: 400;
-  margin-bottom: 8px;
-  opacity: 0.9;
-  color: #ffffff !important;
-}
-
-.balanceDisplay {
+.mine-ref {
+  margin-top: 10px;
   display: flex;
-  align-items: baseline;
   gap: 10px;
+  font-size: 13px;
+  align-items: center;
+}
+
+.mine-ref-code {
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(10px);
+}
+
+.mine-balance {
+  margin-top: 18px;
+}
+
+.mine-balance-title {
+  font-size: 22px;
+  margin-bottom: 10px;
   color: #fff;
 }
 
-/* Quick Actions */
-.quickActions {
+.mine-balance-row {
   display: flex;
-  justify-content: center;
-  padding: 6px 15px;
-  margin: 0 auto;
-  /* max-width: 700px; */
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 20px;
-  /* backdrop-filter: blur(25px); */
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 8px 32px rgba(0, 0, 0, 0.12);
+  gap: 14px;
+  align-items: baseline;
 }
 
-.actionItem {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  padding: 10px 25px;
-  flex: 1;
-  position: relative;
-}
-
-.actionItem:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 20%;
-  bottom: 20%;
-  width: 1px;
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    rgba(255, 255, 255, 0.3) 20%,
-    rgba(255, 255, 255, 0.3) 80%,
-    transparent
-  );
-}
-
-.actionItem:hover {
-  transform: translateY(-3px);
-}
-
-.actionIcon {
-  width: 70px;
-  height: 70px;
-  border-radius: 50%;
-  border: 1px solid #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 12px;
-  position: relative;
-  box-shadow: 
-    0 8px 25px rgba(0, 0, 0, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-}
-
-.actionIcon:hover {
-  box-shadow: 
-    0 12px 35px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.actionIcon.teams {
-  background: linear-gradient(135deg, #ff9a56 0%, #ff7a39 50%, #ff6b35 100%);
-}
-
-.actionIcon.record {
-  background: linear-gradient(135deg, #4ecdc4 0%, #46b8b0 50%, #44a08d 100%);
-}
-
-.actionIcon.wallet {
-  background: linear-gradient(135deg, #fc5c7d 0%, #e05a7a 50%, #c44569 100%);
-}
-
-.actionIcon.invite {
-  background: linear-gradient(135deg, #667eea 0%, #5a6fd8 50%, #764ba2 100%);
-}
-
-.actionLabel {
-  font-size: 13px;
-  text-align: center;
-  line-height: 1.2;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.95);
-  max-width: 90px;
-}
-
-/* Menu Section */
-.menuSection {
-  padding: 10px;
-  margin: 25px 0;
-  background: rgba(255, 255, 255, 0.612);
-  border-radius: 25px;
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.menuSubSection {
-  display: flex;
-  gap: 20px;
-  padding: 10px;
-  /* margin: 20px 0; */
-  background: rgba(255, 255, 255, 0.557);
-  border-radius: 25px;
-  backdrop-filter: blur(20px);
-  box-shadow: 
-    inset 2px 2px 0 rgba(255, 255, 255, 0.3),
-    0 8px 32px rgba(0, 0, 0, 0.1),
-    0 2px 8px rgba(0, 0, 0, 0.1);
-  /* max-width: 800px; */
-  margin-left: auto;
-  margin-right: auto;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.menuColumn {
-  flex: 1;
-}
-
-.menuItem {
-  display: flex;
-  align-items: center;
-  padding: 16px 8px;
-  cursor: pointer;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.2s ease;
-  border-radius: 12px;
-  margin-bottom: 4px;
-}
-
-.menuItem:hover {
-  background: rgba(255, 255, 255, 0.849);
-  transform: translateY(-1px);
-  box-shadow: #000000;
-}
-
-.menuItem:last-child {
-  border-bottom: none;
-  margin-bottom: 0;
-}
-
-.menuIcon {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 14px;
+.mine-balance-unit {
   font-size: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  color: rgba(255,255,255,0.9);
 }
 
-.menuIcon.profile {
-  background: rgba(108, 117, 125, 0.4);
+.mine-balance-val {
+  font-size: 36px;
+  font-weight: 800;
+  text-shadow: 0 12px 26px rgba(0, 0, 0, 0.28);
+  color: #fff;
 }
 
-.menuIcon.deposit {
-  background: rgba(23, 162, 184, 0.4);
+/* Quick actions */
+.mine-actions-wrap {
+  margin-top: 18px;
 }
 
-.menuIcon.withdraw {
-  background: rgba(40, 167, 69, 0.4);
+.mine-actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  padding: 18px 14px;
+  border-radius: 18px;
+  background: rgba(14, 70, 115, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.22);
 }
 
-.menuIcon.settings {
-  background: rgba(108, 117, 125, 0.4);
+.mine-action {
+  background: none;
+  border: none;
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  color: #fff;
+  cursor: pointer;
 }
 
-.menuLabel {
-  flex: 1;
+.mine-action-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  box-shadow:
+    0 14px 28px rgba(0, 0, 0, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+/* gradients behind icons */
+.mine-action:nth-child(1) .mine-action-icon { background: linear-gradient(180deg, #ffc87a, #ff8c1a); }
+.mine-action:nth-child(2) .mine-action-icon { background: linear-gradient(180deg, #9dffe8, #2bd2aa); }
+.mine-action:nth-child(3) .mine-action-icon { background: linear-gradient(180deg, #ffb2b2, #eb5050); }
+.mine-action:nth-child(4) .mine-action-icon { background: linear-gradient(180deg, #9ad3ff, #3a8cff); }
+
+.mine-action-label { font-size: 13px; }
+
+.custom-icon {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 12px rgba(0,0,0,0.18));
+}
+
+/* Lists */
+.mine-lists {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.mine-list {
+  border-radius: 18px;
+  background: rgba(245, 250, 255, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.40);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.14);
+  overflow: hidden;
+}
+
+.mine-item {
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #1f2d3a;
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.mine-item:hover {
+  background: rgba(247, 211, 74, 0.12);
+}
+
+.mine-item:active {
+  transform: scale(0.995);
+}
+
+.mine-item + .mine-item {
+  border-top: 1px solid rgba(15, 40, 70, 0.08);
+}
+
+.mine-item-left {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.mine-item-ico {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: rgba(20, 80, 130, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.list-icon-img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.mine-item-label {
   font-size: 14px;
-  font-weight: 500;
-  color: #000000;
+  font-weight: 800;
 }
 
-.menuArrow {
+.mine-item-arrow {
+  opacity: 0.55;
   font-size: 18px;
-  opacity: 0.6;
-  color: #000000;
+}
+
+/* responsive */
+@media (max-width: 520px) {
+  .mine-lists { grid-template-columns: 1fr; }
+}
+
+/* Button reset */
+.mine-action,
+.mine-item {
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
 }
