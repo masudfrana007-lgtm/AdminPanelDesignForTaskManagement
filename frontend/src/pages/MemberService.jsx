@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import "../styles/MemberService.css";
+import "../styles/memberService.css";
 import MemberBottomNav from "../components/MemberBottomNav";
 
 function pad2(x) {
@@ -456,7 +456,7 @@ export default function CustomerService() {
 
       {/* keep bottom bar exactly */}
       <MemberBottomNav active="menu" />
-      
+
     </div>
   );
 }
