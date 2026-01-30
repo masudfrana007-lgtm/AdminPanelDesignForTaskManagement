@@ -26,6 +26,75 @@ router.get("/", auth, allowRoles("owner"), async (req, res) => {
 });
 
 /**
+ * CREATE withdrawal request (owner only)
+ * Locks money immediately (balance -> locked_balance), then creates pending withdrawal.
+ */
+router.post("/", auth, allowRoles("owner"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const member_id = Number(req.body.member_id);
+    const amount = Number(req.body.amount || 0);
+    const method = String(req.body.method || "").trim();
+    const account_details = String(req.body.account_details || "").trim();
+
+    if (!member_id) return res.status(400).json({ message: "member_id required" });
+    if (!amount || amount <= 0) return res.status(400).json({ message: "Invalid amount" });
+    if (!method) return res.status(400).json({ message: "Method required" });
+    if (!account_details) return res.status(400).json({ message: "Account details required" });
+
+    // Ensure member exists (optional but recommended)
+    const m = await pool.query(`SELECT id FROM members WHERE id=$1`, [member_id]);
+    if (!m.rowCount) return res.status(404).json({ message: "Member not found" });
+
+    await client.query("BEGIN");
+
+    await client.query(
+      `INSERT INTO wallets(member_id) VALUES($1)
+       ON CONFLICT (member_id) DO NOTHING`,
+      [member_id]
+    );
+
+    const w = await client.query(
+      `SELECT balance, locked_balance FROM wallets WHERE member_id=$1 FOR UPDATE`,
+      [member_id]
+    );
+
+    const bal = Number(w.rows[0].balance || 0);
+    if (bal < amount) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ message: "Insufficient balance" });
+    }
+
+    // lock money
+    await client.query(
+      `UPDATE wallets
+       SET balance = balance - $1,
+           locked_balance = locked_balance + $1,
+           updated_at = now()
+       WHERE member_id = $2`,
+      [amount, member_id]
+    );
+
+    // create pending withdrawal
+    const wd = await client.query(
+      `INSERT INTO withdrawals (member_id, amount, method, account_details)
+       VALUES ($1,$2,$3,$4)
+       RETURNING *`,
+      [member_id, amount, method, account_details]
+    );
+
+    await client.query("COMMIT");
+    res.status(201).json(wd.rows[0]);
+  } catch (e) {
+    try { await client.query("ROLLBACK"); } catch {}
+    console.error(e);
+    res.status(500).json({ message: "Server error" });
+  } finally {
+    client.release();
+  }
+});
+
+/**
  * APPROVE withdrawal (owner only)
  */
 router.patch("/:id/approve", auth, allowRoles("owner"), async (req, res) => {

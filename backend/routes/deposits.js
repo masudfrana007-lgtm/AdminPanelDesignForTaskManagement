@@ -26,6 +26,40 @@ router.get("/", auth, allowRoles("owner"), async (req, res) => {
 });
 
 /**
+ * CREATE deposit request (owner only)
+ * Creates a pending deposit for a member (does NOT change wallet yet).
+ */
+router.post("/", auth, allowRoles("owner"), async (req, res) => {
+  try {
+    const member_id = Number(req.body.member_id);
+    const amount = Number(req.body.amount || 0);
+    const method = String(req.body.method || "").trim();
+    const tx_ref = String(req.body.tx_ref || "").trim();
+    const proof_url = String(req.body.proof_url || "").trim();
+
+    if (!member_id) return res.status(400).json({ message: "member_id required" });
+    if (!amount || amount <= 0) return res.status(400).json({ message: "Invalid amount" });
+    if (!method) return res.status(400).json({ message: "Method required" });
+
+    // Ensure member exists (optional but recommended)
+    const m = await pool.query(`SELECT id FROM members WHERE id=$1`, [member_id]);
+    if (!m.rowCount) return res.status(404).json({ message: "Member not found" });
+
+    const r = await pool.query(
+      `INSERT INTO deposits (member_id, amount, method, tx_ref, proof_url)
+       VALUES ($1,$2,$3,$4,$5)
+       RETURNING *`,
+      [member_id, amount, method, tx_ref || null, proof_url || null]
+    );
+
+    res.status(201).json(r.rows[0]);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/**
  * APPROVE deposit (owner only)
  */
 router.patch("/:id/approve", auth, allowRoles("owner"), async (req, res) => {

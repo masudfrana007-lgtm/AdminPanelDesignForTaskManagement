@@ -34,7 +34,17 @@ export default function Members() {
   const [wErr, setWErr] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const canReview = me?.role === "owner"; // only owner approves
+  const canReview = me?.role === "owner"; // only owner approves/creates
+
+  // create forms
+  const [depAmount, setDepAmount] = useState("");
+  const [depMethod, setDepMethod] = useState("Manual");
+  const [depTxRef, setDepTxRef] = useState("");
+  const [depProof, setDepProof] = useState("");
+
+  const [wdAmount, setWdAmount] = useState("");
+  const [wdMethod, setWdMethod] = useState("Manual");
+  const [wdAccount, setWdAccount] = useState("");
 
   const load = async () => {
     setErr("");
@@ -84,6 +94,15 @@ export default function Members() {
     setWErr("");
     setBusy(true);
 
+    // reset forms
+    setDepAmount("");
+    setDepMethod("Manual");
+    setDepTxRef("");
+    setDepProof("");
+    setWdAmount("");
+    setWdMethod("Manual");
+    setWdAccount("");
+
     try {
       const { data } = await api.get(`/members/${member.id}/wallet`);
       setWallet(data?.wallet || null);
@@ -105,13 +124,20 @@ export default function Members() {
     setBusy(false);
   };
 
+  const refreshAll = async () => {
+    // refresh drawer + table
+    if (openMember) {
+      await openWallet(openMember);
+    }
+    await load();
+  };
+
   const actDeposit = async (id, action) => {
     setWErr("");
     setBusy(true);
     try {
       await api.patch(`/deposits/${id}/${action}`, { admin_note: null });
-      await openWallet(openMember);
-      await load(); // update balances in table
+      await refreshAll();
     } catch (e) {
       setWErr(e?.response?.data?.message || `Deposit ${action} failed`);
     } finally {
@@ -124,10 +150,77 @@ export default function Members() {
     setBusy(true);
     try {
       await api.patch(`/withdrawals/${id}/${action}`, { admin_note: null });
-      await openWallet(openMember);
-      await load();
+      await refreshAll();
     } catch (e) {
       setWErr(e?.response?.data?.message || `Withdrawal ${action} failed`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const createDeposit = async () => {
+    if (!openMember) return;
+    setWErr("");
+
+    const amount = Number(depAmount || 0);
+    const method = String(depMethod || "").trim();
+    const tx_ref = String(depTxRef || "").trim();
+    const proof_url = String(depProof || "").trim();
+
+    if (!amount || amount <= 0) return setWErr("Deposit amount must be > 0");
+    if (!method) return setWErr("Deposit method required");
+
+    setBusy(true);
+    try {
+      await api.post("/deposits", {
+        member_id: openMember.id,
+        amount,
+        method,
+        tx_ref: tx_ref || null,
+        proof_url: proof_url || null,
+      });
+
+      // keep it convenient
+      setDepAmount("");
+      setDepTxRef("");
+      setDepProof("");
+
+      await refreshAll();
+    } catch (e) {
+      setWErr(e?.response?.data?.message || "Create deposit failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const createWithdrawal = async () => {
+    if (!openMember) return;
+    setWErr("");
+
+    const amount = Number(wdAmount || 0);
+    const method = String(wdMethod || "").trim();
+    const account_details = String(wdAccount || "").trim();
+
+    if (!amount || amount <= 0) return setWErr("Withdraw amount must be > 0");
+    if (!method) return setWErr("Withdraw method required");
+    if (!account_details) return setWErr("Account details required");
+
+    setBusy(true);
+    try {
+      // backend should lock immediately during POST
+      await api.post("/withdrawals", {
+        member_id: openMember.id,
+        amount,
+        method,
+        account_details,
+      });
+
+      setWdAmount("");
+      setWdAccount("");
+
+      await refreshAll();
+    } catch (e) {
+      setWErr(e?.response?.data?.message || "Create withdrawal failed");
     } finally {
       setBusy(false);
     }
@@ -300,9 +393,14 @@ export default function Members() {
                   </div>
                 </div>
 
-                <button className="btn" type="button" onClick={closeWallet}>
-                  Close
-                </button>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button className="btn" type="button" disabled={busy} onClick={refreshAll}>
+                    Refresh
+                  </button>
+                  <button className="btn" type="button" onClick={closeWallet}>
+                    Close
+                  </button>
+                </div>
               </div>
 
               <div style={{ padding: 14 }}>
@@ -337,6 +435,154 @@ export default function Members() {
                     </div>
                   </div>
                 </div>
+
+                {/* CREATE (owner only) */}
+                {canReview && (
+                  <div
+                    className="card"
+                    style={{
+                      margin: 0,
+                      marginBottom: 14,
+                      background: "var(--soft)",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <h3 style={{ margin: 0 }}>Create Requests</h3>
+                      <div className="small">Owner only</div>
+                    </div>
+                    <div className="hr" />
+
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                        gap: 12,
+                      }}
+                    >
+                      {/* Create Deposit */}
+                      <div
+                        style={{
+                          padding: 12,
+                          border: "1px solid var(--line)",
+                          borderRadius: 12,
+                          background: "var(--card)",
+                        }}
+                      >
+                        <div style={{ fontWeight: 800, marginBottom: 8 }}>Deposit (Pending)</div>
+
+                        <div className="small" style={{ marginBottom: 6 }}>
+                          Amount
+                        </div>
+                        <input
+                          className="input"
+                          value={depAmount}
+                          onChange={(e) => setDepAmount(e.target.value)}
+                          placeholder="e.g. 100"
+                          disabled={busy}
+                        />
+
+                        <div className="small" style={{ marginTop: 10, marginBottom: 6 }}>
+                          Method
+                        </div>
+                        <input
+                          className="input"
+                          value={depMethod}
+                          onChange={(e) => setDepMethod(e.target.value)}
+                          placeholder="Manual / USDT / Bank"
+                          disabled={busy}
+                        />
+
+                        <div className="small" style={{ marginTop: 10, marginBottom: 6 }}>
+                          TX Ref (optional)
+                        </div>
+                        <input
+                          className="input"
+                          value={depTxRef}
+                          onChange={(e) => setDepTxRef(e.target.value)}
+                          placeholder="Transaction reference"
+                          disabled={busy}
+                        />
+
+                        <div className="small" style={{ marginTop: 10, marginBottom: 6 }}>
+                          Proof URL (optional)
+                        </div>
+                        <input
+                          className="input"
+                          value={depProof}
+                          onChange={(e) => setDepProof(e.target.value)}
+                          placeholder="https://..."
+                          disabled={busy}
+                        />
+
+                        <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
+                          <button className="btn" type="button" disabled={busy} onClick={createDeposit}>
+                            Create Deposit
+                          </button>
+                        </div>
+
+                        <div className="small" style={{ marginTop: 8 }}>
+                          Wallet balance changes only after <b>Approve</b>.
+                        </div>
+                      </div>
+
+                      {/* Create Withdrawal */}
+                      <div
+                        style={{
+                          padding: 12,
+                          border: "1px solid var(--line)",
+                          borderRadius: 12,
+                          background: "var(--card)",
+                        }}
+                      >
+                        <div style={{ fontWeight: 800, marginBottom: 8 }}>Withdrawal (Pending)</div>
+
+                        <div className="small" style={{ marginBottom: 6 }}>
+                          Amount
+                        </div>
+                        <input
+                          className="input"
+                          value={wdAmount}
+                          onChange={(e) => setWdAmount(e.target.value)}
+                          placeholder="e.g. 50"
+                          disabled={busy}
+                        />
+
+                        <div className="small" style={{ marginTop: 10, marginBottom: 6 }}>
+                          Method
+                        </div>
+                        <input
+                          className="input"
+                          value={wdMethod}
+                          onChange={(e) => setWdMethod(e.target.value)}
+                          placeholder="Manual / Bank / USDT"
+                          disabled={busy}
+                        />
+
+                        <div className="small" style={{ marginTop: 10, marginBottom: 6 }}>
+                          Account details
+                        </div>
+                        <input
+                          className="input"
+                          value={wdAccount}
+                          onChange={(e) => setWdAccount(e.target.value)}
+                          placeholder="Bkash/Bank/USDT address"
+                          disabled={busy}
+                        />
+
+                        <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
+                          <button className="btn" type="button" disabled={busy} onClick={createWithdrawal}>
+                            Create Withdrawal
+                          </button>
+                        </div>
+
+                        <div className="small" style={{ marginTop: 8 }}>
+                          On create: <b>balance ↓</b> and <b>locked ↑</b> immediately.
+                          Reject returns it. Approve releases locked.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div
                   style={{
@@ -474,7 +720,7 @@ export default function Members() {
                 </div>
 
                 <div className="small" style={{ marginTop: 10 }}>
-                  This layout avoids clutter: approvals live inside the Wallet drawer, not inside the table.
+                  Approvals + creation live inside the Wallet drawer to avoid clutter in the main table.
                 </div>
               </div>
             </div>
