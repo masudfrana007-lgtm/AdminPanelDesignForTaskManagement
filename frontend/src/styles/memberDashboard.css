@@ -139,7 +139,8 @@
 }
 
 .vipTab.active {
-  background: linear-gradient(135deg, rgba(120,180,255,0.9), rgba(60,120,220,0.8));
+  /* background: linear-gradient(135deg, rgba(120,180,255,0.9), rgba(60,120,220,0.8)); */
+  background: linear-gradient(135deg, #ffd25a, #ffb300);
   border-color: rgba(180,220,255,0.6);
   box-shadow: 0 8px 25px rgba(60,120,220,0.4);
   color: #ffffff;

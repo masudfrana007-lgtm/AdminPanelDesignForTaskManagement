@@ -18,15 +18,11 @@ import MemberSignup from "./pages/MemberSignup";
 import MemberService from "./pages/MemberService";
 import MemberMenu from "./pages/MemberMenu";
 import MemberMine from "./pages/MemberMine";
+import Teams from "./pages/Teams";
 import MemberDeposit from "./pages/MemberDeposit";
 import MemberDepositCrypto from "./pages/MemberDepositCrypto";
 import MemberDepositUSDT from "./pages/MemberDepositUSDT";
 import MemberDepositBank from "./pages/MemberDepositBank";
-
-import MemberDeposit from "./pages/MemberDeposit";
-import MemberDepositBank from "./pages/MemberDepositBank";
-import MemberDepositCrypto from "./pages/MemberDepositCrypto";
-import MemberDepositUSDT from "./pages/MemberDepositUSDT";
 
 import DepositCrypto from "./pages/DepositCrypto";
 import Profile from "./pages/Profile";
@@ -160,6 +156,16 @@ export const router = createBrowserRouter([
       </MemberProtectedRoute>
     ),
   },
+
+  {
+    path: "/member/teams",
+    element: (
+      <MemberProtectedRoute>
+        <Teams />
+      </MemberProtectedRoute>
+    ),
+},
+
 
 {
   path: "/member/deposit",

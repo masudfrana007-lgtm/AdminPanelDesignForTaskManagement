@@ -1,0 +1,197 @@
+/* =====================
+   INVITE FRIENDS POPUP
+   ===================== */
+
+.invite-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(8px);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.invite-popup-content {
+  background: linear-gradient(135deg, #2d3748 0%, #4a5568 50%, #1a202c 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 25px;
+  padding: 35px 30px;
+  text-align: center;
+  max-width: 380px;
+  margin: 20px;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
+  position: relative;
+  backdrop-filter: blur(15px);
+  animation: invitePopupSlideIn 0.4s ease-out;
+}
+
+.invite-popup-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.invite-popup-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  transform: scale(1.1);
+}
+
+.invite-popup-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 25px;
+  font-size: 35px;
+  color: white;
+  box-shadow: 0 15px 40px rgba(255, 107, 107, 0.5);
+  animation: inviteIconBounce 0.6s ease-out 0.2s;
+}
+
+.invite-popup-title {
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 18px 0;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.invite-popup-message {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 0 0 30px 0;
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+  font-weight: 500;
+}
+
+.invite-popup-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.invite-popup-btn {
+  padding: 12px 25px;
+  border: none;
+  border-radius: 25px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 100px;
+}
+
+.invite-popup-btn.primary {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+}
+
+.invite-popup-btn.primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 35px rgba(16, 185, 129, 0.6);
+}
+
+.invite-popup-btn.secondary {
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  font-weight: 600;
+}
+
+.invite-popup-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+  transform: translateY(-3px);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes invitePopupSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes inviteIconBounce {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+  .invite-popup-content {
+    padding: 25px 20px;
+    max-width: 320px;
+    margin: 15px;
+  }
+
+  .invite-popup-title {
+    font-size: 20px;
+  }
+
+  .invite-popup-message {
+    font-size: 14px;
+  }
+
+  .invite-popup-actions {
+    flex-direction: column;
+  }
+
+  .invite-popup-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+
+  .invite-popup-icon {
+    width: 65px;
+    height: 65px;
+    font-size: 28px;
+  }
+}
