@@ -1,13 +1,8 @@
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import "../styles/memberDeposit.css";
 import MemberBottomNav from "../components/MemberBottomNav";
-
-const user = {
-  name: "User",
-  vip: 3,
-  inviteCode: "ABCD-1234",
-  balance: 97280.12,
-};
+import memberApi from "../services/memberApi";
 
 function money(n) {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n);
@@ -15,6 +10,25 @@ function money(n) {
 
 export default function DepositMethod() {
   const nav = useNavigate();
+
+  const [me, setMe] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const loadMe = async () => {
+      try {
+        setLoading(true);
+        const { data } = await memberApi.get("/member/me");
+        setMe(data);
+      } catch {
+        setMe(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadMe();
+  }, []);
+
 
   return (
     <div className="page deposit-method">
@@ -41,13 +55,13 @@ export default function DepositMethod() {
             <div className="dm-avatar" aria-hidden="true" />
             <div className="dm-profMeta">
               <div className="dm-profRow">
-                <span className="dm-profName">{user.name}</span>
-                <span className="dm-vip">VIP {user.vip}</span>
+                <span className="dm-profName">{me?.nickname || "—"}</span>
+                <span className="dm-vip">{me?.ranking || "—"}</span>                
               </div>
 
               <div className="dm-codeRow">
-                <span className="dm-codeLabel">Reference code:</span>
-                <span className="dm-codePill">{user.inviteCode}</span>
+                <span className="dm-codeLabel">Sponsor ID:</span>
+                <span className="dm-codePill">{me?.sponsor_short_id || "—"}</span>                
               </div>
             </div>
           </div>
@@ -56,7 +70,9 @@ export default function DepositMethod() {
             <div className="dm-balLabel">Current Balance</div>
             <div className="dm-balValue">
               <span className="dm-balUnit">USDT</span>
-              <span className="dm-balNum">{money(user.balance)}</span>
+              <span className="dm-balNum">
+                {loading ? "…" : money(me?.balance || 0)}
+              </span>              
             </div>
             <div className="dm-balHint">Available to deposit and trade</div>
           </div>

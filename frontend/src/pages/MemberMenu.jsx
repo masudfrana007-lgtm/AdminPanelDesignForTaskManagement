@@ -197,9 +197,6 @@ export default function MemberMenu() {
               <button className="mn-miniBtn" onClick={() => nav("/member/withdraw")}>
                 Withdraw
               </button>              
-              <button className="mn-miniBtn" onClick={() => setBalance((b) => b + 50)}>
-                + Test
-              </button>
             </div>
           </div>
 

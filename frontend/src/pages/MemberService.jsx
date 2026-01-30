@@ -1,397 +1,462 @@
-import { useMemo, useRef, useState } from "react";
-import "../styles/memberService.css";
+import { useEffect, useMemo, useRef, useState } from "react";
+import "../styles/MemberService.css";
 import MemberBottomNav from "../components/MemberBottomNav";
 
-const CATEGORIES = [
-  "Deposit Issue",
-  "Withdrawal Issue",
-  "Account & Verification",
-  "Security",
-  "Bonus & Promotions",
-  "Technical Support",
-  "Other",
-];
-
-const QUICK_REPLIES = [
-  "Deposit not received",
-  "Wrong network sent",
-  "Withdrawal pending",
-  "Account locked",
-  "KYC help",
-  "Change payment method",
-];
-
-const FAQ = [
-  { q: "How long does a deposit take?", a: "Usually credited after required confirmations. Time varies by network." },
-  { q: "What should I send for faster help?", a: "TXID, amount, network, and a screenshot if possible." },
-  { q: "Can I change the deposit network?", a: "No. Funds must be sent on the same network shown on deposit page." },
-];
-
-const DEMO_MESSAGES = [
-  { id: 1, from: "agent", text: "Hello! 👋 How can I help you today?", time: "09:12" },
-  { id: 2, from: "user", text: "My deposit is not showing yet.", time: "09:13", delivery: "Seen" },
-  { id: 3, from: "agent", text: "Please share TXID and network. A screenshot also helps.", time: "09:14" },
-];
-
+function pad2(x) {
+  return String(x).padStart(2, "0");
+}
 function nowTime() {
-  return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const d = new Date();
+  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 }
-function makeTicketId() {
-  const n = Math.floor(100000 + Math.random() * 900000);
-  return `CS-${n}`;
-}
+
+const LS_KEY = "customer_service_chat_pro_v1";
 
 export default function CustomerService() {
-  const [tab, setTab] = useState("chat");
-  const [category, setCategory] = useState(CATEGORIES[0]);
-  const [messages, setMessages] = useState(DEMO_MESSAGES);
-  const [draft, setDraft] = useState("");
-  const [search, setSearch] = useState("");
-  const [ticketId, setTicketId] = useState(makeTicketId());
-  const [ticketStatus, setTicketStatus] = useState("Open");
-  const [priority, setPriority] = useState("Normal");
+  const [channel, setChannel] = useState("direct"); // "direct" | "telegram"
+  const [message, setMessage] = useState("");
+  const [helpOpen, setHelpOpen] = useState(false);
 
-  const [agentTyping, setAgentTyping] = useState(false);
-  const [pendingFiles, setPendingFiles] = useState([]);
+  const chatRef = useRef(null);
+  const photoInputRef = useRef(null);
+  const fileInputRef = useRef(null);
 
-  const fileRef = useRef(null);
-  const imageRef = useRef(null);
-  const msgBoxRef = useRef(null);
+  const TELEGRAM_USERNAME = "@YourSupport";
+  const TELEGRAM_LINK = "https://t.me/YourSupport";
 
-  const agent = useMemo(
-    () => ({
-      name: "Royal Support",
-      status: "Online",
-      reply: "Usually replies in 3–10 min",
-      hours: "24/7 (VIP priority)",
-    }),
+  const faqs = useMemo(
+    () => [
+      {
+        q: "How long does a deposit take?",
+        a: "Deposits are credited after required network confirmations. Timing depends on the network and congestion.",
+      },
+      {
+        q: "What should I send for faster support?",
+        a: "Please provide TXID, amount, network, and a screenshot if possible.",
+      },
+      {
+        q: "Can I change the deposit network?",
+        a: "No. Funds must be sent on the same network shown on the deposit page.",
+      },
+      {
+        q: "Why is my withdrawal pending?",
+        a: "Withdrawals can be delayed by verification checks or network conditions. Share your withdrawal ID for review.",
+      },
+    ],
     []
   );
 
-  const filteredMessages = useMemo(() => {
-    if (!search.trim()) return messages;
-    const s = search.toLowerCase();
-    return messages.filter((m) => (m.text || "").toLowerCase().includes(s));
-  }, [messages, search]);
+  const seeded = useMemo(
+    () => [
+      {
+        id: "a1",
+        from: "agent",
+        kind: "text",
+        text: "Hello 👋 How can I help you today?",
+        time: "09:12",
+      },
+      {
+        id: "u1",
+        from: "user",
+        kind: "text",
+        text: "My deposit is not showing yet.",
+        time: "09:13",
+        status: "read", // sent | delivered | read
+      },
+      {
+        id: "a2",
+        from: "agent",
+        kind: "text",
+        text: "Please share TXID and network. A screenshot also helps.",
+        time: "09:14",
+      },
+    ],
+    []
+  );
 
-  const scrollToBottom = () => {
-    requestAnimationFrame(() => {
-      if (!msgBoxRef.current) return;
-      msgBoxRef.current.scrollTop = msgBoxRef.current.scrollHeight;
-    });
-  };
+  const [messages, setMessages] = useState(seeded);
+  const [agentTyping, setAgentTyping] = useState(false);
 
-  const openFilePicker = () => fileRef.current?.click();
-  const openImagePicker = () => imageRef.current?.click();
+  // Load chat
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) setMessages(parsed);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
-  const onPickFiles = (e) => {
-    const files = Array.from(e.target.files || []);
-    if (!files.length) return;
-    setPendingFiles((prev) => [...prev, ...files]);
-    e.target.value = "";
-  };
+  // Save chat
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify(messages));
+    } catch {
+      // ignore
+    }
+  }, [messages]);
 
-  const removePending = (idx) => {
-    setPendingFiles((prev) => prev.filter((_, i) => i !== idx));
-  };
+  // Auto scroll
+  useEffect(() => {
+    if (!chatRef.current) return;
+    chatRef.current.scrollTo({ top: chatRef.current.scrollHeight, behavior: "smooth" });
+  }, [messages, agentTyping]);
 
   const clearChat = () => {
-    setMessages([{ id: Date.now(), from: "agent", text: "Chat cleared. How can I help you now?", time: nowTime() }]);
-    setPendingFiles([]);
-    setDraft("");
-    setAgentTyping(false);
+    localStorage.removeItem(LS_KEY);
+    setMessages(seeded);
   };
 
-  const newTicket = () => {
-    setTicketId(makeTicketId());
-    setTicketStatus("Open");
-    setPriority("Normal");
-    setCategory(CATEGORIES[0]);
-    setMessages([{ id: Date.now(), from: "agent", text: "New ticket created ✅ Tell us your issue.", time: nowTime() }]);
-    setPendingFiles([]);
-    setDraft("");
-    setAgentTyping(false);
+  // Simulate user message status updates: sent -> delivered -> read
+  const simulateStatus = (msgId) => {
+    // delivered
+    setTimeout(() => {
+      setMessages((prev) =>
+        prev.map((m) => (m.id === msgId ? { ...m, status: "delivered" } : m))
+      );
+    }, 450);
+
+    // read
+    setTimeout(() => {
+      setMessages((prev) =>
+        prev.map((m) => (m.id === msgId ? { ...m, status: "read" } : m))
+      );
+    }, 1000);
   };
 
-  const updateDelivery = (id, value) => {
-    setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, delivery: value } : m)));
-  };
-
-  const send = () => {
-    const text = draft.trim();
-    if (!text && pendingFiles.length === 0) return;
-
-    const myId = Date.now();
-    const msg = {
-      id: myId,
-      from: "user",
-      text: text || "(Attachment sent)",
-      time: nowTime(),
-      delivery: "Sent",
-      attachments: pendingFiles.map((f) => ({ name: f.name, size: f.size })),
-    };
-
-    setMessages((prev) => [...prev, msg]);
-    setDraft("");
-    setPendingFiles([]);
-    scrollToBottom();
-
-    setTimeout(() => updateDelivery(myId, "Delivered"), 500);
-
+  const agentAutoReply = (text) => {
     setAgentTyping(true);
     setTimeout(() => {
       setAgentTyping(false);
-
       setMessages((prev) => [
         ...prev,
         {
-          id: Date.now() + 2,
+          id: "a-" + Date.now(),
           from: "agent",
-          text:
-            category === "Deposit Issue"
-              ? "Thanks. Please confirm the network and TXID. We’ll verify your deposit status now."
-              : "Thanks. We received your request. Please wait while we verify and respond.",
+          kind: "text",
+          text,
           time: nowTime(),
         },
       ]);
-
-      updateDelivery(myId, "Seen");
-      scrollToBottom();
     }, 1100);
   };
 
-  const onKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      send();
-    }
+  const sendText = () => {
+    const text = message.trim();
+    if (!text) return;
+
+    const id = "u-" + Date.now();
+    const userMsg = {
+      id,
+      from: "user",
+      kind: "text",
+      text,
+      time: nowTime(),
+      status: "sent",
+    };
+
+    setMessages((prev) => [...prev, userMsg]);
+    setMessage("");
+
+    simulateStatus(id);
+    agentAutoReply("Thanks. Please confirm the network (TRC20 / ERC20) and attach a screenshot if available.");
+  };
+
+  const addFileMessage = (file, kind) => {
+    if (!file) return;
+
+    const id = "f-" + Date.now();
+    const msg = {
+      id,
+      from: "user",
+      kind, // "photo" | "file"
+      name: file.name,
+      size: file.size,
+      time: nowTime(),
+      status: "sent",
+    };
+
+    setMessages((prev) => [...prev, msg]);
+    simulateStatus(id);
+
+    agentAutoReply("Received. We are reviewing your attachment now.");
+  };
+
+  const statusIcon = (status) => {
+    if (status === "sent") return "✓";
+    if (status === "delivered") return "✓✓";
+    if (status === "read") return "✓✓";
+    return "";
   };
 
   return (
-    <div className="cs-page cs-bgSupport">
-      <div className="cs-overlay" />
-
+    <div className="cs-page">
+      {/* Header */}
       <header className="cs-header">
-        <button className="cs-back" onClick={() => window.history.back()} type="button">
+        <button className="cs-back" type="button" aria-label="Back">
           ←
         </button>
 
-        <div className="cs-title">
+        <div className="cs-headerText">
           <h1>Customer Service</h1>
-          <p>Open a ticket, chat with support, or contact Telegram service.</p>
+          <p>Chat with support or use Telegram service</p>
         </div>
 
-        <div className="cs-headerActions">
-          <button className="cs-ghostBtn" type="button" onClick={newTicket}>
-            + New Ticket
+        <div className="cs-headerRight">
+          <span className="cs-statusDot" />
+          <span className="cs-statusText">Online</span>
+
+          <button className="cs-headBtn" type="button" onClick={() => setHelpOpen(true)}>
+            Help Center
           </button>
-          <button className="cs-ghostBtn" type="button" onClick={clearChat}>
-            Clear Chat
+
+          <button className="cs-headBtn" type="button" onClick={clearChat}>
+            Clear
           </button>
         </div>
       </header>
 
-      <main className="cs-wrap">
-        <section className="cs-grid">
-          <div className="cs-main">
-            <div className="cs-card cs-tabs">
-              <button className={"cs-tabBtn " + (tab === "chat" ? "is-active" : "")} onClick={() => setTab("chat")} type="button">
-                Direct Messaging <span className="cs-tabHint">In-app</span>
-              </button>
-              <button className={"cs-tabBtn " + (tab === "telegram" ? "is-active" : "")} onClick={() => setTab("telegram")} type="button">
-                Telegram Support <span className="cs-tabHint">@YourSupport</span>
-              </button>
-            </div>
+      {/* Switch */}
+      <section className="cs-switchWrap">
+        <div className="cs-switch">
+          <button
+            type="button"
+            className={"cs-switchBtn " + (channel === "direct" ? "is-active" : "")}
+            onClick={() => setChannel("direct")}
+          >
+            Direct Customer Service
+            <span className="cs-switchSub">In-app • Live chat</span>
+          </button>
 
-            {tab === "chat" ? (
-              <>
-                <div className="cs-card cs-ticket">
-                  <div className="cs-ticketLeft">
-                    <div className="cs-ticketTop">
-                      <div className="cs-ticketId">{ticketId}</div>
-                      <span className={"cs-pill " + (ticketStatus === "Open" ? "is-open" : "")}>{ticketStatus}</span>
-                      <span className="cs-pill is-priority">{priority}</span>
-                    </div>
+          <button
+            type="button"
+            className={"cs-switchBtn " + (channel === "telegram" ? "is-active" : "")}
+            onClick={() => setChannel("telegram")}
+          >
+            Telegram Customer Service
+            <span className="cs-switchSub">{TELEGRAM_USERNAME}</span>
+          </button>
+        </div>
+      </section>
 
-                    <div className="cs-ticketBottom">
-                      <div className="cs-field">
-                        <div className="cs-label">Category</div>
-                        <select className="cs-select" value={category} onChange={(e) => setCategory(e.target.value)}>
-                          {CATEGORIES.map((c) => (
-                            <option key={c} value={c}>{c}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="cs-field">
-                        <div className="cs-label">Search in chat</div>
-                        <input className="cs-search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search messages..." />
-                      </div>
-                    </div>
+      {/* Body */}
+      <main className="cs-content">
+        <section className="cs-main">
+          {channel === "direct" ? (
+            <>
+              {/* ✅ Agent profile header */}
+              <div className="cs-agentBar">
+                <div className="cs-agentAvatar">RS</div>
+                <div className="cs-agentMeta">
+                  <div className="cs-agentNameRow">
+                    <span className="cs-agentName">Royal Support</span>
+                    <span className="cs-verified" title="Verified">
+                      ✓ Verified
+                    </span>
                   </div>
-
-                  <div className="cs-ticketRight">
-                    <div className="cs-agent">
-                      <div className="cs-agentAvatar">RS</div>
-                      <div className="cs-agentMeta">
-                        <div className="cs-agentName">
-                          {agent.name} <span className="cs-onlineDot" /> <span className="cs-onlineText">{agent.status}</span>
-                        </div>
-                        <div className="cs-mutedSmall">{agent.reply}</div>
-                        <div className="cs-mutedSmall">Hours: {agent.hours}</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="cs-chipRow">
-                  {QUICK_REPLIES.map((c) => (
-                    <button key={c} className="cs-chip" type="button" onClick={() => setDraft((d) => (d ? d + "\n" + c : c))}>
-                      {c}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="cs-card cs-chat">
-                  <div className="cs-messages" ref={msgBoxRef}>
-                    {filteredMessages.map((m) => (
-                      <div key={m.id} className={"cs-msg " + (m.from === "user" ? "is-user" : "is-agent")}>
-                        <div className="cs-bubble">
-                          <div className="cs-text">{m.text}</div>
-
-                          {m.attachments?.length ? (
-                            <div className="cs-attachList">
-                              {m.attachments.map((a, idx) => (
-                                <div key={idx} className="cs-attachItem">
-                                  <span className="cs-attachIcon">📎</span>
-                                  <span className="cs-attachName">{a.name}</span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : null}
-
-                          <div className="cs-metaRow">
-                            <div className="cs-time">{m.time}</div>
-                            {m.from === "user" && (
-                              <div className={"cs-delivery " + (m.delivery === "Seen" ? "is-seen" : "")}>
-                                {m.delivery === "Sent" && "✓ Sent"}
-                                {m.delivery === "Delivered" && "✓✓ Delivered"}
-                                {m.delivery === "Seen" && "✓✓ Seen"}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-
-                    {agentTyping && (
-                      <div className="cs-msg is-agent">
-                        <div className="cs-bubble cs-typingBubble">
-                          <div className="cs-typing">
-                            <span className="dot" />
-                            <span className="dot" />
-                            <span className="dot" />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {pendingFiles.length > 0 && (
-                    <div className="cs-pending">
-                      {pendingFiles.map((f, idx) => (
-                        <div className="cs-fileChip" key={idx}>
-                          <span className="cs-fileIcon">📎</span>
-                          <span className="cs-fileName">{f.name}</span>
-                          <button className="cs-fileX" type="button" onClick={() => removePending(idx)}>✕</button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="cs-inputRow">
-                    <div className="cs-tools">
-                      <button className="cs-toolBtn" type="button" onClick={openImagePicker} title="Add image">📷</button>
-                      <button className="cs-toolBtn" type="button" onClick={openFilePicker} title="Add file">📎</button>
-
-                      <input ref={imageRef} type="file" accept="image/*" style={{ display: "none" }} onChange={onPickFiles} />
-                      <input ref={fileRef} type="file" style={{ display: "none" }} onChange={onPickFiles} />
-                    </div>
-
-                    <textarea
-                      className="cs-input"
-                      value={draft}
-                      onChange={(e) => setDraft(e.target.value)}
-                      onKeyDown={onKeyDown}
-                      placeholder="Write your message… (Enter to send, Shift+Enter new line)"
-                    />
-                    <button className="cs-sendBtn" type="button" onClick={send}>Send</button>
-                  </div>
-
-                  <div className="cs-note">
-                    For deposit/withdraw issues: include <b>TXID</b>, <b>amount</b>, <b>network</b>, and screenshot if available.
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="cs-card cs-telegram">
-                <div className="cs-tgTop">
-                  <div>
-                    <div className="cs-tgTitle">Telegram Customer Support</div>
-                    <div className="cs-mutedSmall">Use Telegram for urgent issues. Never share passwords or OTP codes.</div>
-                  </div>
-                  <div className="cs-badgeGold">Official</div>
-                </div>
-
-                <div className="cs-tgGrid">
-                  <div className="cs-tgCard">
-                    <div className="cs-label">Support Handle</div>
-                    <div className="cs-tgHandle">@YourSupport</div>
-                    <div className="cs-mutedSmall">Replace this with your official Telegram handle.</div>
-                    <button className="cs-primaryBtn" type="button" onClick={() => alert("Open Telegram link (wire later)")}>
-                      Open Telegram
-                    </button>
-                  </div>
-
-                  <div className="cs-tgCard">
-                    <div className="cs-label">Guidelines</div>
-                    <ul className="cs-list">
-                      <li>Never share your password or OTP.</li>
-                      <li>Provide TXID for transaction issues.</li>
-                      <li>Verify official handle inside the app.</li>
-                    </ul>
+                  <div className="cs-agentSub">
+                    Reply time: <b>3–10 min</b> • Available 24/7
                   </div>
                 </div>
               </div>
-            )}
-          </div>
 
-          <aside className="cs-side">
-            <div className="cs-card cs-sideCard">
-              <div className="cs-sideTitle">FAQ & Tips</div>
-              {FAQ.map((f, idx) => (
-                <div key={idx} className="cs-faq">
-                  <div className="cs-faqQ">{f.q}</div>
-                  <div className="cs-faqA">{f.a}</div>
+              <div className="cs-chat" ref={chatRef}>
+                {messages.map((m) => (
+                  <div key={m.id} className={"cs-msg " + (m.from === "user" ? "user" : "agent")}>
+                    <div className="cs-bubble cs-pop">
+                      {m.kind === "text" && <div className="cs-text">{m.text}</div>}
+
+                      {m.kind === "photo" && (
+                        <div className="cs-file">
+                          <div className="cs-fileIcon">🖼️</div>
+                          <div className="cs-fileBody">
+                            <div className="cs-fileName">{m.name}</div>
+                            <div className="cs-fileMeta">
+                              Photo • {(m.size / 1024).toFixed(1)} KB
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {m.kind === "file" && (
+                        <div className="cs-file">
+                          <div className="cs-fileIcon">📄</div>
+                          <div className="cs-fileBody">
+                            <div className="cs-fileName">{m.name}</div>
+                            <div className="cs-fileMeta">
+                              Document • {(m.size / 1024).toFixed(1)} KB
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="cs-metaRow">
+                        <span className="cs-time">{m.time}</span>
+
+                        {/* ✅ Read status only for user */}
+                        {m.from === "user" && (
+                          <span className={"cs-read " + (m.status === "read" ? "is-read" : "")}>
+                            {statusIcon(m.status)}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* bubble tail */}
+                      <span className="cs-tail" aria-hidden="true" />
+                    </div>
+                  </div>
+                ))}
+
+                {agentTyping && (
+                  <div className="cs-msg agent">
+                    <div className="cs-bubble cs-typing cs-pop">
+                      <span className="cs-dot" />
+                      <span className="cs-dot" />
+                      <span className="cs-dot" />
+                      <span className="cs-typingText">Support is typing…</span>
+                      <span className="cs-tail" aria-hidden="true" />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ✅ Sticky input + safe area */}
+              <footer className="cs-inputBar">
+                <button className="cs-iconBtn" type="button" title="Upload photo" onClick={() => photoInputRef.current?.click()}>
+                  📷
+                </button>
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={(e) => addFileMessage(e.target.files?.[0], "photo")}
+                />
+
+                <button className="cs-iconBtn" type="button" title="Upload document" onClick={() => fileInputRef.current?.click()}>
+                  📎
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                  style={{ display: "none" }}
+                  onChange={(e) => addFileMessage(e.target.files?.[0], "file")}
+                />
+
+                <input
+                  className="cs-input"
+                  type="text"
+                  placeholder="Message…"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && sendText()}
+                />
+
+                <button className="cs-sendBtn" disabled={!message.trim()} onClick={sendText} type="button">
+                  Send
+                </button>
+              </footer>
+            </>
+          ) : (
+            <div className="cs-telegramCardWrap">
+              {/* ✅ Verified channel card */}
+              <div className="cs-tgCard">
+                <div className="cs-tgTop">
+                  <div className="cs-tgLogo">✈️</div>
+                  <div className="cs-tgInfo">
+                    <div className="cs-tgNameRow">
+                      <div className="cs-tgName">Telegram Support</div>
+                      <div className="cs-tgBadge">Verified</div>
+                    </div>
+                    <div className="cs-tgUser">{TELEGRAM_USERNAME}</div>
+                  </div>
                 </div>
-              ))}
-              <div className="cs-divider" />
-              <div className="cs-sideTitle">Security</div>
-              <ul className="cs-list">
-                <li>Support will never ask for your password.</li>
-                <li>Do not share OTP or 2FA codes.</li>
-                <li>Use official channels only.</li>
-              </ul>
-            </div>
-          </aside>
-        </section>
 
-        {/* ✅ spacer so the bottom nav doesn't cover content */}
-        <div className="csNavSpacer" />
+                <div className="cs-tgRows">
+                  <div className="cs-tgRow">
+                    <span>Typical reply time</span>
+                    <b>3–10 minutes</b>
+                  </div>
+                  <div className="cs-tgRow">
+                    <span>Availability</span>
+                    <b>24/7 (VIP priority)</b>
+                  </div>
+                  <div className="cs-tgRow">
+                    <span>Security</span>
+                    <b>Never share password/OTP</b>
+                  </div>
+                </div>
+
+                <div className="cs-tgTips">
+                  <div className="cs-tgTipsTitle">Before you message:</div>
+                  <ul>
+                    <li>Prepare TXID / Order ID and a screenshot.</li>
+                    <li>Confirm network (TRC20 / ERC20).</li>
+                    <li>Use only the official link below.</li>
+                  </ul>
+                </div>
+
+                <a className="cs-tgBtn" href={TELEGRAM_LINK} target="_blank" rel="noreferrer">
+                  Open Official Telegram Support
+                </a>
+
+                <div className="cs-tgFoot">
+                  If Telegram does not open, search the username and verify it matches exactly.
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
       </main>
 
-      {/* ✅ KEEP your existing bottom nav */}
-      <MemberBottomNav active="service" />
+      {/* ✅ Help Center Modal */}
+      {helpOpen && (
+        <div className="cs-modalOverlay" role="dialog" aria-modal="true">
+          <div className="cs-modal">
+            <div className="cs-modalTop">
+              <div>
+                <div className="cs-modalTitle">Help Center</div>
+                <div className="cs-modalSub">FAQ, tips, and security guidance</div>
+              </div>
+              <button className="cs-modalClose" type="button" onClick={() => setHelpOpen(false)}>
+                ✕
+              </button>
+            </div>
+
+            <div className="cs-modalBody">
+              <div className="cs-helpSectionTitle">FAQ</div>
+
+              {faqs.map((f, i) => (
+                <details key={i} className="cs-helpItem">
+                  <summary className="cs-helpQ">{f.q}</summary>
+                  <div className="cs-helpA">{f.a}</div>
+                </details>
+              ))}
+
+              <div className="cs-helpSectionTitle">Security</div>
+              <ul className="cs-helpList">
+                <li>Support will never ask for your password.</li>
+                <li>Do not share OTP or 2FA codes.</li>
+                <li>Use only official channels.</li>
+              </ul>
+            </div>
+
+            <div className="cs-modalBottom">
+              <button className="cs-modalBtn" type="button" onClick={() => setHelpOpen(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* keep bottom bar exactly */}
+      <MemberBottomNav active="menu" />
+      
     </div>
   );
 }
