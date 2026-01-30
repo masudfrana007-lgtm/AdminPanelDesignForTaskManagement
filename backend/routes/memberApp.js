@@ -20,9 +20,13 @@ router.get("/me", memberAuth, async (req, res) => {
         m.phone,
         m.ranking,
         m.withdraw_privilege,
-        u.short_id AS sponsor_short_id
+        u.short_id AS sponsor_short_id,
+
+        COALESCE(w.balance, 0)::numeric(12,2)        AS balance,
+        COALESCE(w.locked_balance, 0)::numeric(12,2) AS locked_balance
       FROM members m
       JOIN users u ON u.id = m.sponsor_id
+      LEFT JOIN wallets w ON w.member_id = m.id
       WHERE m.id = $1
       `,
       [req.member.member_id]
@@ -153,24 +157,31 @@ router.get("/active-set", memberAuth, async (req, res) => {
  * POST /member/complete-task
  */
 router.post("/complete-task", memberAuth, async (req, res) => {
+  const client = await pool.connect();
   try {
     const memberId = req.member.member_id;
 
-    const msRes = await pool.query(
+    await client.query("BEGIN");
+
+    const msRes = await client.query(
       `
       SELECT *
       FROM member_sets
       WHERE member_id = $1 AND status = 'active'
       ORDER BY id DESC
       LIMIT 1
+      FOR UPDATE
       `,
       [memberId]
     );
 
     const ms = msRes.rows[0];
-    if (!ms) return res.status(400).json({ message: "No active set" });
+    if (!ms) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ message: "No active set" });
+    }
 
-    const totalsRes = await pool.query(
+    const totalsRes = await client.query(
       `
       SELECT COUNT(*)::int AS total_tasks
       FROM set_tasks
@@ -180,21 +191,18 @@ router.post("/complete-task", memberAuth, async (req, res) => {
     );
 
     const totalTasks = totalsRes.rows[0]?.total_tasks || 0;
-
     if (totalTasks === 0) {
+      await client.query("ROLLBACK");
       return res.status(400).json({ message: "This set has no tasks" });
     }
 
-    // ✅ current task index BEFORE increment
     const currentIndex = Number(ms.current_task_index || 0);
-
-    // ✅ guard: already beyond last task
     if (currentIndex >= totalTasks) {
+      await client.query("ROLLBACK");
       return res.status(400).json({ message: "Set already completed" });
     }
 
-    // ✅ fetch the task that is being completed right now
-    const taskRes = await pool.query(
+    const taskRes = await client.query(
       `
       SELECT t.id, t.price, t.commission_rate
       FROM set_tasks st
@@ -208,26 +216,61 @@ router.post("/complete-task", memberAuth, async (req, res) => {
     );
 
     const t = taskRes.rows[0];
-    if (!t) return res.status(400).json({ message: "No current task" });
+    if (!t) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ message: "No current task" });
+    }
 
-    const commissionAmount =
-      Number(t.price) * (Number(t.commission_rate) / 100);
+    const commissionAmount = Number(t.price) * (Number(t.commission_rate) / 100);
 
-    // ✅ log this task completion (must have member_task_history table)
-    await pool.query(
+    // 1) log task completion
+    const histRes = await client.query(
       `
       INSERT INTO member_task_history (member_id, member_set_id, set_id, task_id, commission_amount)
       VALUES ($1, $2, $3, $4, $5)
+      RETURNING id
       `,
       [memberId, ms.id, ms.set_id, t.id, commissionAmount]
     );
 
-    // ✅ now move progress forward
+    const historyId = histRes.rows[0].id;
+
+    // 2) ensure wallet exists
+    await client.query(
+      `INSERT INTO wallets(member_id) VALUES($1)
+       ON CONFLICT (member_id) DO NOTHING`,
+      [memberId]
+    );
+
+    // 3) ledger insert (prevents double credit if API called twice)
+    const led = await client.query(
+      `
+      INSERT INTO wallet_ledger (member_id, type, direction, amount, ref_type, ref_id, note)
+      VALUES ($1, 'commission', 'credit', $2, 'task', $3, 'Task commission')
+      ON CONFLICT (ref_type, ref_id) DO NOTHING
+      RETURNING id
+      `,
+      [memberId, commissionAmount, historyId]
+    );
+
+    // 4) only credit wallet if ledger row was inserted
+    if (led.rowCount > 0) {
+      await client.query(
+        `
+        UPDATE wallets
+        SET balance = balance + $1,
+            updated_at = now()
+        WHERE member_id = $2
+        `,
+        [commissionAmount, memberId]
+      );
+    }
+
+    // progress forward
     const nextIndex = currentIndex + 1;
 
-    // if finishing last task => mark set completed
     if (nextIndex >= totalTasks) {
-      const done = await pool.query(
+      const done = await client.query(
         `
         UPDATE member_sets
         SET status = 'completed',
@@ -239,6 +282,7 @@ router.post("/complete-task", memberAuth, async (req, res) => {
         [ms.id, totalTasks]
       );
 
+      await client.query("COMMIT");
       return res.json({
         message: "Set completed",
         assignment: done.rows[0],
@@ -247,7 +291,7 @@ router.post("/complete-task", memberAuth, async (req, res) => {
       });
     }
 
-    const upd = await pool.query(
+    const upd = await client.query(
       `
       UPDATE member_sets
       SET current_task_index = $2,
@@ -258,6 +302,7 @@ router.post("/complete-task", memberAuth, async (req, res) => {
       [ms.id, nextIndex]
     );
 
+    await client.query("COMMIT");
     res.json({
       message: "Task completed",
       assignment: upd.rows[0],
@@ -265,10 +310,14 @@ router.post("/complete-task", memberAuth, async (req, res) => {
       commission_amount: commissionAmount,
     });
   } catch (e) {
+    try { await client.query("ROLLBACK"); } catch {}
     console.error(e);
     res.status(500).json({ message: "Server error" });
+  } finally {
+    client.release();
   }
 });
+
 
 /**
  * GET /member/history
@@ -357,6 +406,151 @@ router.get("/history-summary", memberAuth, async (req, res) => {
         lifetime_commission: "0.00",
       }
     );
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// MEMBER: create deposit request
+router.post("/deposits", memberAuth, async (req, res) => {
+  try {
+    const memberId = req.member.member_id;
+
+    const amount = Number(req.body.amount || 0);
+    const method = String(req.body.method || "").trim();
+    const tx_ref = String(req.body.tx_ref || "").trim();
+    const proof_url = String(req.body.proof_url || "").trim();
+
+    if (!amount || amount <= 0) return res.status(400).json({ message: "Invalid amount" });
+    if (!method) return res.status(400).json({ message: "Method required" });
+
+    const m = await pool.query(`SELECT approval_status FROM members WHERE id=$1`, [memberId]);
+    if (!m.rowCount) return res.status(404).json({ message: "Member not found" });
+    if (m.rows[0].approval_status !== "approved") {
+      return res.status(403).json({ message: "Account not approved yet" });
+    }
+
+    const r = await pool.query(
+      `INSERT INTO deposits (member_id, amount, method, tx_ref, proof_url)
+       VALUES ($1,$2,$3,$4,$5)
+       RETURNING *`,
+      [memberId, amount, method, tx_ref || null, proof_url || null]
+    );
+
+    res.status(201).json(r.rows[0]);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// MEMBER: list my deposits
+router.get("/deposits", memberAuth, async (req, res) => {
+  try {
+    const memberId = req.member.member_id;
+
+    const r = await pool.query(
+      `SELECT id, amount, method, tx_ref, proof_url, status, admin_note, created_at, reviewed_at
+       FROM deposits
+       WHERE member_id = $1
+       ORDER BY id DESC`,
+      [memberId]
+    );
+
+    res.json(r.rows);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// MEMBER: create withdrawal request (locks money immediately)
+router.post("/withdrawals", memberAuth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const memberId = req.member.member_id;
+
+    const amount = Number(req.body.amount || 0);
+    const method = String(req.body.method || "").trim();
+    const account_details = String(req.body.account_details || "").trim();
+
+    if (!amount || amount <= 0) return res.status(400).json({ message: "Invalid amount" });
+    if (!method) return res.status(400).json({ message: "Method required" });
+    if (!account_details) return res.status(400).json({ message: "Account details required" });
+
+    const m = await pool.query(
+      `SELECT approval_status, withdraw_privilege FROM members WHERE id=$1`,
+      [memberId]
+    );
+    if (!m.rowCount) return res.status(404).json({ message: "Member not found" });
+    if (m.rows[0].approval_status !== "approved") {
+      return res.status(403).json({ message: "Account not approved yet" });
+    }
+    if (!m.rows[0].withdraw_privilege) {
+      return res.status(403).json({ message: "Withdraw not allowed" });
+    }
+
+    await client.query("BEGIN");
+
+    await client.query(
+      `INSERT INTO wallets(member_id) VALUES($1)
+       ON CONFLICT (member_id) DO NOTHING`,
+      [memberId]
+    );
+
+    const w = await client.query(
+      `SELECT balance, locked_balance FROM wallets WHERE member_id=$1 FOR UPDATE`,
+      [memberId]
+    );
+
+    const bal = Number(w.rows[0].balance || 0);
+    if (bal < amount) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ message: "Insufficient balance" });
+    }
+
+    await client.query(
+      `UPDATE wallets
+       SET balance = balance - $1,
+           locked_balance = locked_balance + $1,
+           updated_at = now()
+       WHERE member_id = $2`,
+      [amount, memberId]
+    );
+
+    const wd = await client.query(
+      `INSERT INTO withdrawals (member_id, amount, method, account_details)
+       VALUES ($1,$2,$3,$4)
+       RETURNING *`,
+      [memberId, amount, method, account_details]
+    );
+
+    await client.query("COMMIT");
+    res.status(201).json(wd.rows[0]);
+  } catch (e) {
+    try { await client.query("ROLLBACK"); } catch {}
+    console.error(e);
+    res.status(500).json({ message: "Server error" });
+  } finally {
+    client.release();
+  }
+});
+
+// MEMBER: list my withdrawals
+router.get("/withdrawals", memberAuth, async (req, res) => {
+  try {
+    const memberId = req.member.member_id;
+
+    const r = await pool.query(
+      `SELECT id, amount, method, account_details, status, admin_note, created_at, reviewed_at
+       FROM withdrawals
+       WHERE member_id = $1
+       ORDER BY id DESC`,
+      [memberId]
+    );
+
+    res.json(r.rows);
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: "Server error" });

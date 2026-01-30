@@ -14,6 +14,8 @@ import membersRouter from "./routes/members.js";
 import memberSetRoutes from "./routes/memberSets.js";
 import memberAuthRoutes from "./routes/memberAuth.js";
 import memberAppRoutes from "./routes/memberApp.js";
+import depositsRoutes from "./routes/deposits.js";
+import withdrawalsRoutes from "./routes/withdrawals.js";
 
 const app = express();
 app.use(cors({
@@ -46,6 +48,8 @@ app.use("/members", membersRouter);
 app.use("/member-sets", memberSetRoutes);
 app.use("/member-auth", memberAuthRoutes);
 app.use("/member", memberAppRoutes);
+app.use("/deposits", depositsRoutes);
+app.use("/withdrawals", withdrawalsRoutes);
 
 const port = process.env.PORT || 5000;
 app.listen(port, "0.0.0.0", () => {
