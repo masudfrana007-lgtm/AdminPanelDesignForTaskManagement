@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/memberDepositCrypto.css";
 import MemberBottomNav from "../components/MemberBottomNav";
+import memberApi from "../services/memberApi"; // ✅ your member axios instance (adds token)
 
 const ASSETS = [
   {
@@ -35,7 +36,7 @@ const ASSETS = [
 ];
 
 function money(n) {
-  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n);
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(Number(n || 0));
 }
 function shortAddr(addr) {
   if (!addr) return "";
@@ -87,9 +88,39 @@ export default function MemberDepositCrypto() {
     window.__toastTimer = window.setTimeout(() => setToast(""), 2200);
   };
 
-  // demo numbers (replace with real API later)
-  const walletUsd = 1280.45;
-  const walletUsdt = 1245.32;
+  // ✅ REAL wallet data from API
+  const [me, setMe] = useState(null);
+  const [depPending, setDepPending] = useState(0);
+  const [depCompleted, setDepCompleted] = useState(0);
+
+  const loadMe = async () => {
+    try {
+      const { data } = await memberApi.get("/member/me");
+      setMe(data || null);
+    } catch (e) {
+      console.error("GET /member/me failed:", e?.response?.data || e?.message || e);
+      setMe(null);
+    }
+  };
+
+  const loadDepositStats = async () => {
+    try {
+      const { data } = await memberApi.get("/member/deposits");
+      const rows = Array.isArray(data) ? data : [];
+      setDepPending(rows.filter((x) => x.status === "pending").length);
+      setDepCompleted(rows.filter((x) => x.status === "approved").length);
+    } catch (e) {
+      console.error("GET /member/deposits failed:", e?.response?.data || e?.message || e);
+      setDepPending(0);
+      setDepCompleted(0);
+    }
+  };
+
+  useEffect(() => {
+    loadMe();
+    loadDepositStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onChangeAsset = (sym) => {
     setAsset(sym);
@@ -120,8 +151,9 @@ export default function MemberDepositCrypto() {
     showToast("New address generated");
   };
 
+  // ✅ deposit request creation is skipped for now (as requested)
   const markPaid = () => {
-    showToast("Submitted. We are checking your deposit...");
+    alert("✅ Submitted (UI only). Deposit request form will be added later.");
   };
 
   return (
@@ -156,20 +188,28 @@ export default function MemberDepositCrypto() {
                 <div className="dc-balanceTitle">Wallet Balance</div>
               </div>
 
+              {/* ✅ ONLY USDT (real) */}
               <div className="dc-balanceAmounts">
                 <div className="dc-balanceMain">
-                  <span className="dc-balanceUsd">${money(walletUsd)}</span>
-                  <span className="dc-balanceUnit">USD</span>
+                  <span className="dc-balanceUsd">{money(me?.balance || 0)}</span>
+                  <span className="dc-balanceUnit">USDT</span>
                 </div>
-                <div className="dc-balanceSub">≈ {money(walletUsdt)} USDT</div>
+                <div className="dc-balanceSub">Locked: {money(me?.locked_balance || 0)} USDT</div>
               </div>
             </div>
 
             <div className="dc-balanceActions">
-              <button className="dc-miniBtn" onClick={() => showToast("Opening deposit history...")}>
+              <button className="dc-miniBtn" onClick={() => showToast("History will be added later")}>
                 View History
               </button>
-              <button className="dc-miniBtn" onClick={() => showToast("Refreshing balance...")}>
+              <button
+                className="dc-miniBtn"
+                onClick={() => {
+                  loadMe();
+                  loadDepositStats();
+                  showToast("Updated");
+                }}
+              >
                 Refresh
               </button>
             </div>
@@ -178,8 +218,9 @@ export default function MemberDepositCrypto() {
           <div className="dc-card dc-status">
             <div className="dc-statusTitle">Deposit Status</div>
             <div className="dc-statusRow">
-              <div className="dc-chip">Pending: 0</div>
-              <div className="dc-chip">Completed: 12</div>
+              {/* ✅ REAL counts */}
+              <div className="dc-chip">Pending: {depPending}</div>
+              <div className="dc-chip">Completed: {depCompleted}</div>
             </div>
             <div className="dc-mutedSmall">Deposits are credited after required confirmations.</div>
           </div>
@@ -390,7 +431,7 @@ export default function MemberDepositCrypto() {
               <button className="dc-secondaryBtn w100" onClick={() => copy(address)} type="button">
                 Copy Address
               </button>
-              <button className="dc-ghostBtn w100" onClick={() => showToast("Opening history...")} type="button">
+              <button className="dc-ghostBtn w100" onClick={() => showToast("History will be added later")} type="button">
                 Deposit History
               </button>
             </div>
@@ -404,7 +445,6 @@ export default function MemberDepositCrypto() {
       <div className="memberBottomNavFixed">
         <MemberBottomNav active="mine" />
       </div>
-      
     </div>
   );
 }
