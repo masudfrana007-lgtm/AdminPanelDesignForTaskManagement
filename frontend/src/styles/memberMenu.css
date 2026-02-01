@@ -62,13 +62,16 @@
 /* Balance */
 .mn-card.mn-balance{
   background:
+    linear-gradient(135deg, #ffe082ab, #ffc1078c);
+  border: 1px solid rgba(248, 237, 237, 0.966);
+  /* background:
     linear-gradient(
       135deg,
       rgba(255,193,7,.22),
       rgba(255,152,0,.14),
       rgba(0,0,0,.22)
     );
-  border: 1px solid rgba(255,193,7,.55);
+  border: 1px solid rgba(255,193,7,.55); */
   box-shadow:
     inset 0 0 0 1px rgba(255,193,7,.22),
     inset 0 20px 40px rgba(255,193,7,.18),
@@ -117,7 +120,7 @@
 .mn-balanceSub{
   margin-top:10px;
   font-size:12px;
-  color: var(--muted);
+  /* color: var(--muted); */
 }
 
 .mn-balanceActions{

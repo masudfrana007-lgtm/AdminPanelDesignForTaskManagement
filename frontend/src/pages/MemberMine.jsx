@@ -9,14 +9,14 @@ import "../styles/memberMine.css";
 
 /* ✅ icons (adjust path if your structure is different) */
 import teamIcon from "../assets/icons/Team.jpg";
-import depositIcon from "../assets/icons/deposit-new.jpg";
-import withdrawalIcon from "../assets/icons/withdrawal.png";
+import depositIcon from "../assets/icons/deposit-new.PNG";
+import withdrawalIcon from "../assets/icons/withdrawal-new.PNG";
 
-import profileIcon from "../assets/icons/profile.png";
-import securityIcon from "../assets/icons/Security.png";
-import settingsIcon from "../assets/icons/settings.png";
-import depositRec1Icon from "../assets/icons/DepositR.png";
-import depositRec2Icon from "../assets/icons/DepositRR.png";
+import profileIcon from "../assets/icons/profile.PNG";
+import securityIcon from "../assets/icons/Security.PNG";
+import settingsIcon from "../assets/icons/settings.PNG";
+import depositRec1Icon from "../assets/icons/DepositR.PNG";
+import depositRec2Icon from "../assets/icons/DepositRR.PNG";
 
 const user = {
   vip: 3,

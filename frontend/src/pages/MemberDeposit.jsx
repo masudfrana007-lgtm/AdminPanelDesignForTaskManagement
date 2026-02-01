@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import "../styles/memberDeposit.css";
 import MemberBottomNav from "../components/MemberBottomNav";
+import usdtIcon from "../assets/icons/usdt.PNG";
 
 const user = {
   name: "User",
@@ -67,9 +68,9 @@ export default function DepositMethod() {
           {/* Crypto */}
           <div className="dm-card" onClick={() => nav("/member/deposit/crypto")} role="button" tabIndex={0}>
             <div className="dm-cardHead">
-             <div className="dm-icon crypto usdt-badge">
-  USDT
-</div>
+              <div className="dm-icon crypto usdt-badge">
+                <img src={usdtIcon} alt="USDT" className="dm-icon-img" width={"35px" } />
+              </div>
 
               <div className="dm-cardText">
                 <div className="dm-cardTitle">Deposit by Crypto</div>

@@ -73,13 +73,8 @@
 /* ✅ Balance finance-style */
 .db-card.db-balance{
   background:
-    linear-gradient(
-      135deg,
-      rgba(0,180,140,.35),
-      rgba(0,120,110,.22),
-      rgba(0,0,0,.32)
-    );
-  border:1px solid rgba(0,220,180,.42);
+    linear-gradient(135deg, #ffe082ab, #ffc1078c);
+  border: 1px solid rgba(248, 237, 237, 0.966);
   box-shadow:
     inset 0 0 0 1px rgba(0,220,180,.20),
     0 30px 60px rgba(0,0,0,.50);
