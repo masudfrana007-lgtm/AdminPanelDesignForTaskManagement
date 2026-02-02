@@ -77,3 +77,13 @@ select:disabled {
   color: #94a3b8;
   cursor: not-allowed;
 }
+
+.btn.small.secondary {
+  background: #e5e7eb;
+  color: #020617;
+}
+
+.btn.small.danger {
+  background: var(--danger);
+  color: #fff;
+}
