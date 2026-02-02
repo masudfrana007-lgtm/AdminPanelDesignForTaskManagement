@@ -1,192 +1,119 @@
-import { useEffect, useMemo, useState } from "react";
 import "../styles/memberDashboard.css";
-import memberApi from "../services/memberApi";
-import { getMember, memberLogout } from "../memberAuth";
-import { useNavigate } from "react-router-dom";
-import MemberBottomNav from "../components/MemberBottomNav";
+import MemberBottomNav from "../components/MemberBottomNav"; // ✅ add this
 
-export default function MemberDashboard() {
-  const nav = useNavigate();
-  const me = getMember();
+// After-login user (replace with API later)
+const user = {
+  name: "Lyndsey",
+  vip: 3,
+  photoUrl: "/home/user.jpg",
+  lastLogin: "Today • 09:12",
+};
 
-  const [data, setData] = useState(null);
-  const [err, setErr] = useState("");
+export default function Home() {
+  const stats = [
+    { label: "Account status", value: "Active", tone: "good" },
+    { label: "Verification", value: "Verified", tone: "info" },
+    { label: "Withdraw processing", value: "Normal", tone: "info" },
+    { label: "Support response", value: "Fast", tone: "good" },
+  ];
 
-  const load = async () => {
-    setErr("");
-    try {
-      const res = await memberApi.get("/member/active-set");
-      setData(res.data);
-    } catch (e) {
-      setErr(e?.response?.data?.message || "Failed to load dashboard");
-    }
-  };
+  const howItWorks = [
+    {
+      t: "Complete your profile",
+      d: "Keep phone/email accurate for verification & withdrawals.",
+      icon: "👤",
+      photo: "/home/hero-4.png",
+      actionLabel: "Open Profile",
+      onClick: () => alert("Later: Open Profile page /profile"),
+    },
+    {
+      t: "Read rules & instructions",
+      d: "Understand what is allowed before starting tasks.",
+      icon: "📘",
+      photo: "/home/hero-1.png",
+      actionLabel: "Read Rules",
+      onClick: () => alert("Later: Open Rules page /rules"),
+    },
+    {
+      t: "Do tasks correctly",
+      d: "Follow order and submit required proof (if needed).",
+      icon: "🧩",
+      photo: "/home/profile.png",
+      actionLabel: "View Tasks",
+      onClick: () => alert("Later: Open Tasks page /tasks"),
+    },
+    {
+      t: "Request withdrawal",
+      d: "Choose Bank or Crypto and track the status timeline.",
+      icon: "⬇️",
+      photo: "/home/winwin.png",
+      actionLabel: "Withdraw",
+      onClick: () => alert("Later: Open Withdraw page /withdraw"),
+    },
+  ];
 
-  useEffect(() => {
-    load();
-  }, []);
+  const readingBlocks = [
+    {
+      title: "Platform Profile",
+      icon: "🏢",
+      desc:
+        "A structured workflow platform designed to be clear, trackable, and secure — so users understand what to do and trust the results.",
+      bullets: [
+        "Transparent task → review → status → withdrawal flow",
+        "Clear rules to protect the system",
+        "Security checks to keep accounts safe",
+      ],
+      photo: "/home/hero-1.png",
+      tag: "Trusted Process",
+    },
+    {
+      title: "Platform Rules",
+      icon: "📜",
+      desc: "Rules exist to protect users and keep the platform fair.",
+      bullets: [
+        "One account per user (duplicate accounts may be restricted).",
+        "Never share login/withdraw password.",
+        "Incorrect submissions may affect ranking or review.",
+        "Verification may happen if device/IP changes are detected.",
+      ],
+      photo: "/home/hero-3.png",
+      tag: "Important",
+    },
+    {
+      title: "Security & Account Safety",
+      icon: "🛡️",
+      desc: "Simple habits that protect your account and speed up processing.",
+      bullets: [
+        "Use strong passwords and keep them private",
+        "Avoid unknown devices/networks",
+        "Keep profile data consistent to reduce verification delays",
+      ],
+      photo: "/home/hero-4.png",
+      tag: "Secure",
+    },
+  ];
 
-  const logout = () => {
-    memberLogout();
-    nav("/member/login");
-  };
-
-  // ✅ map backend/member data into the new UI model
-  const user = useMemo(() => {
-    const name = me?.nickname || me?.name || "Member";
-    const vip = Number(me?.vip || me?.vip_level || 1);
-    const photoUrl =
-      me?.photoUrl ||
-      me?.photo_url ||
-      me?.avatar ||
-      "/home/user.jpg";
-
-    const lastLogin =
-      me?.lastLogin ||
-      me?.last_login ||
-      data?.lastLogin ||
-      data?.last_login ||
-      "Today • --:--";
-
-    return { name, vip, photoUrl, lastLogin };
-  }, [me, data]);
-
-  // ✅ status tiles driven by backend where possible
-  const stats = useMemo(() => {
-    const accountStatus =
-      me?.status ||
-      (me ? "Active" : "—");
-
-    const verification =
-      me?.kyc_status ||
-      me?.verification ||
-      (me?.verified ? "Verified" : "Unverified") ||
-      "—";
-
-    const withdrawProcessing =
-      data?.withdraw?.processing ||
-      data?.withdraw_processing ||
-      "Normal";
-
-    const supportResponse =
-      data?.support?.response ||
-      "Fast";
-
-    return [
-      { label: "Account status", value: String(accountStatus), tone: "good" },
-      { label: "Verification", value: String(verification), tone: "info" },
-      { label: "Withdraw processing", value: String(withdrawProcessing), tone: "info" },
-      { label: "Support response", value: String(supportResponse), tone: "good" },
-    ];
-  }, [me, data]);
-
-  // Clickable blocks (now using routes instead of alert)
-  const howItWorks = useMemo(
-    () => [
-      {
-        t: "Complete your profile",
-        d: "Keep phone/email accurate for verification & withdrawals.",
-        icon: "👤",
-        photo: "/home/hero-4.png",
-        actionLabel: "Open Profile",
-        onClick: () => nav("/member/profile"),
-      },
-      {
-        t: "Read rules & instructions",
-        d: "Understand what is allowed before starting tasks.",
-        icon: "📘",
-        photo: "/home/hero-1.png",
-        actionLabel: "Read Rules",
-        onClick: () => nav("/member/rules"),
-      },
-      {
-        t: "Do tasks correctly",
-        d: "Follow order and submit required proof (if needed).",
-        icon: "🧩",
-        photo: "/home/profile.png",
-        actionLabel: "View Tasks",
-        onClick: () => nav("/member/tasks"),
-      },
-      {
-        t: "Request withdrawal",
-        d: "Choose Bank or Crypto and track the status timeline.",
-        icon: "⬇️",
-        photo: "/home/winwin.png",
-        actionLabel: "Withdraw",
-        onClick: () => nav("/member/withdraw"),
-      },
-    ],
-    [nav]
-  );
-
-  const readingBlocks = useMemo(
-    () => [
-      {
-        title: "Platform Profile",
-        icon: "🏢",
-        desc:
-          "A structured workflow platform designed to be clear, trackable, and secure — so users understand what to do and trust the results.",
-        bullets: [
-          "Transparent task → review → status → withdrawal flow",
-          "Clear rules to protect the system",
-          "Security checks to keep accounts safe",
-        ],
-        photo: "/home/hero-1.png",
-        tag: "Trusted Process",
-      },
-      {
-        title: "Platform Rules",
-        icon: "📜",
-        desc: "Rules exist to protect users and keep the platform fair.",
-        bullets: [
-          "One account per user (duplicate accounts may be restricted).",
-          "Never share login/withdraw password.",
-          "Incorrect submissions may affect ranking or review.",
-          "Verification may happen if device/IP changes are detected.",
-        ],
-        photo: "/home/hero-3.png",
-        tag: "Important",
-      },
-      {
-        title: "Security & Account Safety",
-        icon: "🛡️",
-        desc: "Simple habits that protect your account and speed up processing.",
-        bullets: [
-          "Use strong passwords and keep them private",
-          "Avoid unknown devices/networks",
-          "Keep profile data consistent to reduce verification delays",
-        ],
-        photo: "/home/hero-4.png",
-        tag: "Secure",
-      },
-    ],
-    []
-  );
-
-  const faqs = useMemo(
-    () => [
-      {
-        q: "Why does verification happen sometimes?",
-        a: "Verification may happen when the system detects risk signals like new device login, IP changes, or unusual activity.",
-      },
-      {
-        q: "How can I reduce withdrawal delays?",
-        a: "Keep your profile accurate, maintain consistent login behavior, and follow rules and task instructions.",
-      },
-      {
-        q: "Where can I get help?",
-        a: "Use Support/Ticket options to contact the team. Include screenshots or details to get faster solutions.",
-      },
-    ],
-    []
-  );
+  const faqs = [
+    {
+      q: "Why does verification happen sometimes?",
+      a: "Verification may happen when the system detects risk signals like new device login, IP changes, or unusual activity.",
+    },
+    {
+      q: "How can I reduce withdrawal delays?",
+      a: "Keep your profile accurate, maintain consistent login behavior, and follow rules and task instructions.",
+    },
+    {
+      q: "Where can I get help?",
+      a: "Use Support/Ticket options to contact the team. Include screenshots or details to get faster solutions.",
+    },
+  ];
 
   return (
     <div className="homeClean">
       <div className="bgLayer" aria-hidden="true" />
 
       <div className="wrap">
-        {/* TOP: Welcome + profile */}
+        {/* TOP: Welcome + profile (color improved) */}
         <header className="topHeader premiumHeader fadeIn">
           <div className="profileLeft">
             <div className="avatarWrap">
@@ -207,26 +134,11 @@ export default function MemberDashboard() {
                 {user.name} <span className="vip">VIP {user.vip}</span>
               </div>
               <div className="welcomeMeta">Last login: {user.lastLogin}</div>
-
-              {/* optional: show active set info from backend */}
-              {data?.active && (
-                <div className="welcomeMeta">
-                  Active Package: <b>{data?.set?.name}</b> · Status{" "}
-                  <b>{data?.assignment?.status}</b>
-                </div>
-              )}
             </div>
           </div>
 
-          <div className="headerRight">
-            <button className="logoutBtn" type="button" onClick={logout}>
-              Logout
-            </button>
-            <div className="headerMiniPhoto" />
-          </div>
+          <div className="headerMiniPhoto" />
         </header>
-
-        {err && <div className="dashError">{err}</div>}
 
         {/* Status summary */}
         <section className="section">
@@ -247,7 +159,9 @@ export default function MemberDashboard() {
         <section className="section">
           <div className="sectionHead">
             <h2 className="h2">How It Works</h2>
-            <p className="p">Click an option to open the next step.</p>
+            <p className="p">
+              Click an option to open the next step (later you’ll connect routes).
+            </p>
           </div>
 
           <div className="howGrid">
@@ -281,7 +195,7 @@ export default function MemberDashboard() {
           </div>
         </section>
 
-        {/* Reading blocks */}
+        {/* Reading blocks with photos */}
         <section className="section">
           <div className="sectionHead">
             <h2 className="h2">Understand the Platform</h2>
@@ -290,8 +204,14 @@ export default function MemberDashboard() {
 
           <div className="grid3">
             {readingBlocks.map((b, idx) => (
-              <article className={`infoPanel lift enter enter-${(idx % 4) + 1}`} key={b.title}>
-                <div className="infoPanelPhoto" style={{ backgroundImage: `url("${b.photo}")` }} />
+              <article
+                className={`infoPanel lift enter enter-${(idx % 4) + 1}`}
+                key={b.title}
+              >
+                <div
+                  className="infoPanelPhoto"
+                  style={{ backgroundImage: `url("${b.photo}")` }}
+                />
                 <div className="infoPanelBody">
                   <div className="infoPanelHead">
                     <div className="panelIconSm">{b.icon}</div>
@@ -338,12 +258,14 @@ export default function MemberDashboard() {
           </div>
         </footer>
 
-        {/* spacer so page never hides behind bottom nav */}
-        <div className="bottomNavSpacer" />
+        {/* ✅ spacer so content doesn't hide behind bottom nav */}
+        <div className="homeNavSpacer" />
       </div>
 
-      {/* ✅ KEEP BOTTOM BAR EXACTLY AS-IS */}
-      <MemberBottomNav active="home" />
+      {/* ✅ bottom nav fixed area */}
+      <div className="homeBottomNav">
+        <MemberBottomNav active="home" />
+      </div>
     </div>
   );
 }

@@ -31,7 +31,7 @@
 }
 
 .mn-title h1{ margin:0; font-size:22px; letter-spacing:.2px; color:white; }
-.mn-title p{ margin:4px 0 0; font-size:13px; opacity:.85; color:black; }
+.mn-title p{ margin:4px 0 0; font-size:13px; opacity:.85; color:white; }
 
 .mn-wrap{
   max-width:1100px;

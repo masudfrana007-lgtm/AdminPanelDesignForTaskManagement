@@ -179,90 +179,89 @@ export default function Tasks() {
           <h3>Create Task (Owner)</h3>
           <div className="hr" />
 
-          <form onSubmit={create} style={{ display: "grid", gap: 12 }}>
-            <div>
-              <div className="small">Title</div>
-              <input
-                value={form.title}
-                onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
-              />
-            </div>
-
-            <div>
-              <div className="small">Description</div>
-              <textarea
-                value={form.description}
-                onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
-              />
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <form onSubmit={create} className="taskFormCompact">
+            {/* Left column */}
+            <div className="taskFormMain">
               <div>
-                <div className="small">Quantity</div>
+                <div className="small">Title</div>
                 <input
-                  type="number"
-                  value={form.quantity}
-                  onChange={(e) => setForm((p) => ({ ...p, quantity: e.target.value }))}
+                  value={form.title}
+                  onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
                 />
               </div>
 
               <div>
-                <div className="small">Rate</div>
+                <div className="small">Description</div>
+                <textarea
+                  value={form.description}
+                  onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+                />
+              </div>
+
+              <div className="taskFormGrid2">
+                <div>
+                  <div className="small">Quantity</div>
+                  <input
+                    type="number"
+                    value={form.quantity}
+                    onChange={(e) => setForm((p) => ({ ...p, quantity: e.target.value }))}
+                  />
+                </div>
+
+                <div>
+                  <div className="small">Rate</div>
+                  <input
+                    type="number"
+                    value={form.rate}
+                    onChange={(e) => setForm((p) => ({ ...p, rate: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="small">Commission Rate (%)</div>
                 <input
                   type="number"
-                  value={form.rate}
-                  onChange={(e) => setForm((p) => ({ ...p, rate: e.target.value }))}
+                  value={form.commission_rate}
+                  onChange={(e) => setForm((p) => ({ ...p, commission_rate: e.target.value }))}
                 />
               </div>
             </div>
 
-            <div>
-              <div className="small">Commission Rate (%)</div>
-              <input
-                type="number"
-                value={form.commission_rate}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, commission_rate: e.target.value }))
-                }
-              />
+            {/* Right column */}
+            <div className="taskFormSide">
+              <div className="taskMiniCard">
+                <div className="small">Auto Calculated Price</div>
+                <div className="taskPrice">{previewPrice.toFixed(2)}</div>
+              </div>
+
+              <div>
+                <div className="small">Image</div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setForm((p) => ({ ...p, image: e.target.files?.[0] || null }))}
+                />
+              </div>
+
+              {form.image && (
+                <img
+                  className="taskThumb"
+                  src={URL.createObjectURL(form.image)}
+                  alt=""
+                />
+              )}
+
+              <button className="btn taskCreateBtn" type="submit">
+                Create
+              </button>
+
+              {err && <div className="error">{err}</div>}
+              {ok && <div className="ok">{ok}</div>}
             </div>
-
-            <div className="card" style={{ background: "#f9fafb", padding: 10 }}>
-              <div className="small">Auto Calculated Price</div>
-              <h3 style={{ margin: 0 }}>{previewPrice.toFixed(2)}</h3>
-            </div>
-
-            <div>
-              <div className="small">Image</div>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, image: e.target.files?.[0] || null }))
-                }
-              />
-            </div>
-
-            {form.image && (
-              <img
-                src={URL.createObjectURL(form.image)}
-                alt=""
-                style={{
-                  width: 120,
-                  marginTop: 6,
-                  borderRadius: 8,
-                  border: "1px solid #ddd",
-                }}
-              />
-            )}
-
-            {err && <div className="error">{err}</div>}
-            {ok && <div className="ok">{ok}</div>}
-
-            <button className="btn" type="submit">
-              Create
-            </button>
           </form>
+
+          
         </div>
 
         {/* LIST TABLE BELOW */}

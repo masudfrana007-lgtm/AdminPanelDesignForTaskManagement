@@ -154,3 +154,73 @@
   .tblActions{ justify-content: flex-start; }
   .tblActions .btn{ width: 100%; }
 }
+
+/* ===== Compact Create Task Form ===== */
+.taskFormCompact{
+  display: grid;
+  grid-template-columns: 1.4fr .8fr;
+  gap: 12px;
+  align-items: start;
+}
+
+/* reduce big default card padding feeling inside */
+.taskFormCompact input,
+.taskFormCompact textarea{
+  padding: 9px 10px;
+  border-radius: 10px;
+}
+
+.taskFormCompact textarea{
+  min-height: 72px;      /* smaller */
+}
+
+.taskFormMain{
+  display: grid;
+  gap: 10px;
+}
+
+.taskFormGrid2{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.taskFormSide{
+  display: grid;
+  gap: 10px;
+}
+
+.taskMiniCard{
+  background: #f9fafb;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.taskPrice{
+  font-weight: 800;
+  font-size: 20px;
+  margin-top: 4px;
+}
+
+.taskThumb{
+  width: 100%;
+  max-width: 220px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+}
+
+.taskCreateBtn{
+  width: 100%;
+  padding: 10px 12px;
+}
+
+/* Mobile: stack */
+@media (max-width: 860px){
+  .taskFormCompact{
+    grid-template-columns: 1fr;
+  }
+  .taskThumb{
+    max-width: 100%;
+  }
+}
