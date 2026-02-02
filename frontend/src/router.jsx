@@ -34,6 +34,12 @@ import WithdrawCrypto from "./pages/WithdrawCrypto";
 import TaskList from "./pages/TaskList";
 import TaskDetail from "./pages/TaskDetail";
 
+import AmazonVip1 from "./pages/AmazonVip1";
+import AlibabaVip2 from "./pages/AlibabaVip2";
+import AliexpressVip3 from "./pages/AliexpressVip3";
+
+import MemberTasks from "./pages/MemberTasks";
+
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
   
@@ -243,6 +249,42 @@ export const router = createBrowserRouter([
   element: (
     <MemberProtectedRoute>
       <TaskDetail />
+    </MemberProtectedRoute>
+  ),
+},
+
+{
+  path: "/member/vip/amazon",
+  element: (
+    <MemberProtectedRoute>
+      <AmazonVip1 />
+    </MemberProtectedRoute>
+  ),
+},
+
+{
+  path: "/member/vip/alibaba",
+  element: (
+    <MemberProtectedRoute>
+      <AlibabaVip2 />
+    </MemberProtectedRoute>
+  ),
+},
+
+{
+  path: "/member/vip/aliexpress",
+  element: (
+    <MemberProtectedRoute>
+      <AliexpressVip3 />
+    </MemberProtectedRoute>
+  ),
+},
+
+{
+  path: "/member/tasks-set",
+  element: (
+    <MemberProtectedRoute>
+      <MemberTasks />
     </MemberProtectedRoute>
   ),
 },
