@@ -1,12 +1,15 @@
 // src/pages/MemberMine.jsx
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaUserFriends } from "react-icons/fa";
 import MemberBottomNav from "../components/MemberBottomNav";
+import TeamJoinPopup from "../components/TeamJoinPopup";
+import InviteFriendsPopup from "../components/InviteFriendsPopup";
 import "../styles/memberMine.css";
 
 /* ✅ icons (adjust path if your structure is different) */
 import teamIcon from "../assets/icons/Team.jpg";
-import depositIcon from "../assets/icons/Deposit.png";
+import depositIcon from "../assets/icons/deposit-new.jpg";
 import withdrawalIcon from "../assets/icons/withdrawal.png";
 
 import profileIcon from "../assets/icons/profile.png";
@@ -48,6 +51,8 @@ function ListItem({ icon, label, onClick }) {
 
 export default function MemberMine() {
   const nav = useNavigate();
+  const [showTeamPopup, setShowTeamPopup] = useState(false);
+  const [showInvitePopup, setShowInvitePopup] = useState(false);
 
   return (
     <div className="minePage">
@@ -83,7 +88,7 @@ export default function MemberMine() {
             <CardButton
               icon={<img src={teamIcon} alt="Teams" className="custom-icon" />}
               label="Teams"
-              onClick={() => nav("/teams")}
+              onClick={() => setShowTeamPopup(true)}
             />
             <CardButton
               icon={<img src={depositIcon} alt="Deposit" className="custom-icon" />}
@@ -104,7 +109,7 @@ export default function MemberMine() {
             <CardButton
               icon={<FaUserFriends />}
               label="Invite friends"
-              onClick={() => nav("/invite")}
+              onClick={() => setShowInvitePopup(true)}
             />
           </div>
         </div>
@@ -169,6 +174,18 @@ export default function MemberMine() {
 
       {/* ✅ OLD bottom bar (reusable) */}
       <MemberBottomNav active="mine" />
+
+      {/* ✅ Team Join Popup */}
+      <TeamJoinPopup 
+        isOpen={showTeamPopup} 
+        onClose={() => setShowTeamPopup(false)} 
+      />
+
+      {/* ✅ Invite Friends Popup */}
+      <InviteFriendsPopup 
+        isOpen={showInvitePopup} 
+        onClose={() => setShowInvitePopup(false)} 
+      />
     </div>
   );
 }
