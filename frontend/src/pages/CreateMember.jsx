@@ -4,7 +4,7 @@ import { getUser } from "../auth";
 import "../styles/app.css";
 import AppLayout from "../components/AppLayout";
 
-const RANKS = ["Trial", "VIP1", "VIP2", "VIP3", "V4", "V5", "V6"];
+const RANKS = ["Trial", "V1", "V2", "V3", "V4", "V5", "V6"];
 
 function extractDialCode(countryLabel) {
   // e.g. "United States of America (+1)" -> "+1"

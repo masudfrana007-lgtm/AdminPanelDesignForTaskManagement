@@ -536,11 +536,12 @@ export default function Members() {
                       disabled={busy}
                     >
                       <option value="Trial">Trial</option>
-                      <option value="VIP 1">VIP 1</option>
-                      <option value="VIP 2">VIP 2</option>
-                      <option value="VIP 3">VIP 3</option>
-                      <option value="VIP 4">VIP 4</option>
-                      <option value="VIP 5">VIP 5</option>
+                      <option value="V1">VIP 1</option>
+                      <option value="V2">VIP 2</option>
+                      <option value="V3">VIP 3</option>
+                      <option value="V4">VIP 4</option>
+                      <option value="V5">VIP 5</option>
+                      <option value="V6">VIP 6</option>
                     </select>
                   </div>
 

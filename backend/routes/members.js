@@ -175,7 +175,7 @@ router.patch("/:id", auth, allowRoles("owner"), async (req, res) => {
 
     // ✅ only allow safe values (prevent random status/ranking)
     const allowedStatuses = ["pending", "approved", "rejected"];
-    const allowedRankings = ["Trial", "VIP 1", "VIP 2", "VIP 3", "VIP 4", "VIP 5"];
+    const allowedRankings = ["Trial", "V1", "V2", "V3", "V4", "V5", "V6"];
 
     if (approval_status && !allowedStatuses.includes(approval_status)) {
       return res.status(400).json({ message: "Invalid approval_status" });
