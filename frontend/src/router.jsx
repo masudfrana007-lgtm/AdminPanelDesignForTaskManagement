@@ -40,6 +40,10 @@ import AliexpressVip3 from "./pages/AliexpressVip3";
 
 import MemberTasks from "./pages/MemberTasks";
 
+import MemberWallet from "./pages/MemberWallet";
+import CreateMemberDeposit from "./pages/CreateMemberDeposit";
+import CreateMemberWithdrawal from "./pages/CreateMemberWithdrawal";
+
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
   
@@ -96,6 +100,31 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute roles={["owner","agent"]}>
         <CreateMember />
+      </ProtectedRoute>
+    )
+  },
+
+  {
+    path: "/members/:memberId/wallet",
+    element: (
+      <ProtectedRoute roles={["owner","agent"]}>
+        <MemberWallet />
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/members/:memberId/wallet/deposit/new",
+    element: (
+      <ProtectedRoute roles={["owner","agent"]}>
+        <CreateMemberDeposit />
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/members/:memberId/wallet/withdraw/new",
+    element: (
+      <ProtectedRoute roles={["owner","agent"]}>
+        <CreateMemberWithdrawal />
       </ProtectedRoute>
     )
   },

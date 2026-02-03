@@ -1,21 +1,41 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/memberDeposit.css";
 import MemberBottomNav from "../components/MemberBottomNav";
+import memberApi from "../services/memberApi";
 import usdtIcon from "../assets/icons/usdt.png";
 
-const user = {
-  name: "User",
-  vip: 3,
-  inviteCode: "ABCD-1234",
-  balance: 97280.12,
-};
-
 function money(n) {
-  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n);
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(Number(n || 0));
+}
+
+function vipLabel(ranking) {
+  if (!ranking) return "-";
+  if (/^V\d+$/.test(ranking)) {
+    return "VIP " + ranking.slice(1);
+  }
+  return ranking;
 }
 
 export default function DepositMethod() {
   const nav = useNavigate();
+
+  const [me, setMe] = useState(null);
+  const [err, setErr] = useState("");
+
+  const load = async () => {
+    setErr("");
+    try {
+      const r = await memberApi.get("/member/me");
+      setMe(r.data || null);
+    } catch (e) {
+      setErr(e?.response?.data?.message || "Failed to load profile");
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
 
   return (
     <div className="page deposit-method">
@@ -36,19 +56,21 @@ export default function DepositMethod() {
       </div>
 
       <div className="dm-wrap">
+        {err && <div className="dm-error">{err}</div>}
+
         {/* Profile + Balance card */}
         <div className="dm-profileCard">
           <div className="dm-profLeft">
             <div className="dm-avatar" aria-hidden="true" />
             <div className="dm-profMeta">
               <div className="dm-profRow">
-                <span className="dm-profName">{user.name}</span>
-                <span className="dm-vip">VIP {user.vip}</span>
+                <span className="dm-profName">{me?.nickname || "Member"}</span>
+                <span className="dm-vip">{vipLabel(me?.ranking)}</span>
               </div>
 
               <div className="dm-codeRow">
                 <span className="dm-codeLabel">Reference code:</span>
-                <span className="dm-codePill">{user.inviteCode}</span>
+                <span className="dm-codePill">{me?.sponsor_short_id || "-"}</span>
               </div>
             </div>
           </div>
@@ -57,7 +79,7 @@ export default function DepositMethod() {
             <div className="dm-balLabel">Current Balance</div>
             <div className="dm-balValue">
               <span className="dm-balUnit">USDT</span>
-              <span className="dm-balNum">{money(user.balance)}</span>
+              <span className="dm-balNum">{money(me?.balance)}</span>
             </div>
             <div className="dm-balHint">Available to deposit and trade</div>
           </div>
@@ -66,10 +88,15 @@ export default function DepositMethod() {
         {/* Deposit Options */}
         <div className="dm-options">
           {/* Crypto */}
-          <div className="dm-card" onClick={() => nav("/member/deposit/crypto")} role="button" tabIndex={0}>
+          <div
+            className="dm-card"
+            onClick={() => nav("/member/deposit/crypto")}
+            role="button"
+            tabIndex={0}
+          >
             <div className="dm-cardHead">
               <div className="dm-icon crypto usdt-badge">
-                <img src={usdtIcon} alt="USDT" className="dm-icon-img" width={"35px" } />
+                <img src={usdtIcon} alt="USDT" className="dm-icon-img" width="35" />
               </div>
 
               <div className="dm-cardText">
@@ -88,13 +115,25 @@ export default function DepositMethod() {
               Tip: Select the correct network. Wrong network deposits may not be recoverable.
             </div>
 
-            <button className="dm-btn" type="button" onClick={(e) => { e.stopPropagation(); nav("/member/deposit/crypto"); }}>
+            <button
+              className="dm-btn"
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                nav("/member/deposit/crypto");
+              }}
+            >
               Continue
             </button>
           </div>
 
           {/* Bank */}
-          <div className="dm-card" onClick={() => nav("/member/deposit/bank")} role="button" tabIndex={0}>
+          <div
+            className="dm-card"
+            onClick={() => nav("/member/deposit/bank")}
+            role="button"
+            tabIndex={0}
+          >
             <div className="dm-cardHead">
               <div className="dm-icon bank">🏦</div>
               <div className="dm-cardText">
@@ -142,7 +181,6 @@ export default function DepositMethod() {
         </div>
       </div>
 
-      {/* ✅ OLD bottom bar (reusable) */}
       <MemberBottomNav active="mine" />
     </div>
   );

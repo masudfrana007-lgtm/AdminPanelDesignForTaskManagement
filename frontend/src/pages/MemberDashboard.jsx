@@ -4,6 +4,14 @@ import memberApi from "../services/memberApi";
 import { getMember } from "../memberAuth";
 import MemberBottomNav from "../components/MemberBottomNav"; // ✅ add this
 
+function vipLabel(ranking) {
+  if (!ranking) return "-";
+  if (/^V\d+$/.test(ranking)) {
+    return "VIP " + ranking.slice(1);
+  }
+  return ranking;
+}
+
 export default function Home() {
 
   const me = getMember(); // from local storage (logged in member)
@@ -148,7 +156,7 @@ useEffect(() => {
               <div className="welcomeSmall">Welcome back</div>
               <div className="welcomeName">
                 {profile?.nickname || profile?.name || "—"}
-                <span className="vip">{profile?.ranking ? profile.ranking : "Trial"}</span>
+                <span className="vip">{vipLabel(profile?.ranking)}</span>
               </div>
               <div className="welcomeMeta">ID: {profile?.short_id || me?.short_id || "-"}</div>
             </div>

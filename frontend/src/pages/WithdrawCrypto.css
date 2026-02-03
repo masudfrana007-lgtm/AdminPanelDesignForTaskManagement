@@ -1,0 +1,494 @@
+:root{
+  --bg:#d9e1ef;
+  --top:#ecf7f787;
+  --panel:#b8c5d7;
+  --panel2:#dde3ec;
+  --text:#0f172a;
+  --muted:#4b5563;
+  --line:#bed4f7;
+
+  --brand:#f5b301;
+  --brandSoft:rgba(245,179,1,.12);
+
+  --success:#16a34a;
+  --danger:#ef4444;
+
+  --shadow:0 14px 30px rgba(15, 23, 42, .18);
+}
+
+/* Page */
+.wcPage{
+  min-height:100vh;
+  background:var(--bg);
+  color:var(--text);
+  font-family:system-ui, Segoe UI, Roboto, Arial;
+}
+
+/* Header */
+.wcTop{
+  display:grid;
+  grid-template-columns:44px 1fr 84px;
+  align-items:center;
+  padding:12px 16px;
+  background:var(--top);
+  border-bottom:1px solid rgba(15,23,42,.12);
+}
+
+.wcBack,
+.wcHistoryBtn{
+  height:40px;
+  border-radius:12px;
+  border:1px solid rgba(15,23,42,.18);
+  background:rgba(8,166,214,.28);
+  color:var(--text);
+  cursor:pointer;
+  font-weight:600;
+}
+
+.wcTitle{
+  text-align:center;
+  font-weight:700;
+  font-size:15px;
+}
+
+/* professional width */
+.wcContainer{
+  max-width:980px;
+  margin:0 auto;
+  padding-bottom:24px;
+}
+
+/* =========================
+   BALANCE (AliExpressVip3 style + shine)
+   ========================= */
+.wcBalance{
+  margin:16px;
+  padding:20px;
+  border-radius:18px;
+  position:relative;
+  overflow:hidden;
+
+  background: linear-gradient(
+    135deg,
+    #572903 0%,
+    #88560096 55%,
+    #e8f7ff 100%
+  );
+
+  box-shadow:
+    0 14px 34px rgba(43,124,255,.30),
+    inset 0 0 0 1px rgba(255,255,255,.40);
+}
+
+/* Shine */
+.wcBalance::after{
+  content:"";
+  position:absolute;
+  top:-60%;
+  left:-40%;
+  width:60%;
+  height:220%;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.35) 45%,
+    rgba(255,255,255,0) 100%
+  );
+  transform: rotate(18deg);
+  animation: wcShine 3s ease-in-out infinite;
+  pointer-events:none;
+}
+
+@keyframes wcShine{
+  0%{ transform: translateX(-60%) rotate(18deg); opacity:.0; }
+  20%{ opacity:.55; }
+  45%{ transform: translateX(220%) rotate(18deg); opacity:.0; }
+  100%{ transform: translateX(220%) rotate(18deg); opacity:0; }
+}
+
+.wcBalanceLabel{
+  font-size:12px;
+  color:rgba(15,23,42,.78);
+  font-weight:600;
+}
+
+.wcBalanceValue{
+  margin-top:6px;
+  font-size:26px;
+  font-weight:800;
+  letter-spacing:.2px;
+  color:#0f172a;
+}
+
+.wcBalanceMeta{
+  margin-top:6px;
+  font-size:12px;
+  color:rgba(15,23,42,.72);
+}
+
+/* Coins */
+.wcCoins{
+  padding:0 16px;
+}
+
+.wcCoinsTitle{
+  font-size:13px;
+  margin:10px 0 8px;
+  color:rgba(15,23,42,.70);
+  font-weight:700;
+}
+
+.wcCoinRow{
+  display:flex;
+  gap:12px;
+  overflow-x:auto;
+  padding-bottom:6px;
+  -webkit-overflow-scrolling:touch;
+}
+
+.wcCoin{
+  min-width:160px;
+  padding:12px;
+  border-radius:16px;
+  border:1px solid rgba(15,23,42,.14);
+  background:var(--panel2);
+  color:var(--text);
+  cursor:pointer;
+  text-align:left;
+  box-shadow:0 10px 18px rgba(15,23,42,.06);
+}
+
+.wcCoin.active{
+  border-color:rgba(245,179,1,.65);
+  background:rgba(245,179,1,.14);
+}
+
+.wcCoinTop{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.wcCoinIcon{
+  width:30px;
+  height:30px;
+  object-fit:contain;
+  border-radius:8px;
+  background:rgba(255,255,255,.55);
+  padding:4px;
+  box-shadow:0 8px 14px rgba(15,23,42,.10);
+}
+
+.wcCoinTexts{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+
+.wcCoinCode{ font-weight:800; }
+.wcCoinName{
+  font-size:12px;
+  color:rgba(15,23,42,.60);
+}
+
+.wcHelper{
+  margin-top:8px;
+  font-size:12px;
+  color:rgba(15,23,42,.62);
+}
+
+/* Wallet */
+.wcWallet{
+  margin:16px;
+}
+
+.wcWalletHead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:10px;
+}
+
+.wcWalletTitle{
+  font-size:13px;
+  color:rgba(15,23,42,.70);
+  font-weight:700;
+}
+
+.wcAddWallet{
+  border:none;
+  background:none;
+  color:#0b4eb3de;
+  font-size:12px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.wcWalletList{
+  display:grid;
+  gap:10px;
+}
+
+.wcSavedWallet{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px;
+  border-radius:16px;
+  border:1px solid rgba(15,23,42,.14);
+  background:var(--panel2);
+  cursor:pointer;
+  box-shadow:0 10px 18px rgba(15,23,42,.06);
+}
+
+.wcSavedWallet.active{
+  border-color:rgba(245,179,1,.65);
+  background:rgba(245,179,1,.12);
+}
+
+.wcWalletLeft{ text-align:left; }
+.wcWalletLabel{
+  font-size:13px;
+  font-weight:800;
+}
+
+.wcWalletAddr{
+  font-size:12px;
+  color:rgba(15,23,42,.60);
+  margin-top:2px;
+}
+
+.wcWalletNet{
+  font-size:12px;
+  color:#0b4fb3;
+  font-weight:900;
+}
+
+/* Card */
+.wcCard{
+  margin:16px;
+  padding:18px;
+  border-radius:18px;
+  background:var(--panel2);
+  border:1px solid rgba(15,23,42,.14);
+  box-shadow:var(--shadow);
+}
+
+.wcGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+
+.wcField{
+  margin-bottom:14px;
+}
+
+.wcField label{
+  display:block;
+  font-size:12px;
+  color:rgba(15,23,42,.70);
+  font-weight:800;
+  margin-bottom:6px;
+}
+
+.wcField input,
+.wcField select{
+  width:100%;
+  height:44px;
+  border-radius:12px;
+  border:1px solid rgba(15,23,42,.16);
+  background:#b2cde8;
+  color:#0f172a;
+  padding:0 14px;
+  outline:none;
+}
+
+.wcField input:focus,
+.wcField select:focus{
+  border-color:rgba(245,179,1,.75);
+  box-shadow:0 0 0 4px rgba(245,179,1,.18);
+}
+
+.wcAmountRow{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+.wcAmountRow button{
+  height:44px;
+  padding:0 16px;
+  border-radius:12px;
+  border:1px solid rgba(245,179,1,.75);
+  background:rgba(245,179,1,.16);
+  color:#0f172a;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.wcCalc{
+  margin-top:8px;
+  font-size:12px;
+  color:rgba(15,23,42,.70);
+}
+
+.wcCalc span{
+  color:var(--success);
+  font-weight:900;
+}
+
+.wcHint{
+  margin-top:7px;
+  font-size:12px;
+  color:rgba(15,23,42,.62);
+}
+
+.wcError{
+  margin-top:8px;
+  font-size:12px;
+  color:var(--danger);
+  font-weight:800;
+}
+
+/* Submit */
+.wcSubmit{
+  width:100%;
+  height:48px;
+  margin-top:8px;
+  border-radius:16px;
+  border:none;
+  background:var(--brand);
+  color:#f8f8f8;
+  font-weight:900;
+  cursor:pointer;
+  box-shadow:0 12px 24px rgba(245,179,1,.25);
+}
+
+.wcSubmit:disabled{
+  opacity:.55;
+  cursor:not-allowed;
+  box-shadow:none;
+}
+
+/* Rules */
+.wcRules{
+  margin-top:14px;
+  font-size:12px;
+  color:rgba(15,23,42,.70);
+  line-height:1.7;
+}
+
+/* Responsive */
+@media (max-width:820px){
+  .wcGrid{ grid-template-columns:1fr; }
+  .wcContainer{ max-width:100%; }
+  .wcCoin{ min-width:150px; }
+}
+
+@media (max-width:520px){
+  .wcTop{ grid-template-columns:44px 1fr 76px; }
+  .wcHistoryBtn{ font-size:12px; }
+  .wcBalanceValue{ font-size:22px; }
+  .wcCoin{ min-width:140px; }
+  .wcCard, .wcBalance{ margin:12px; padding:14px; }
+}
+
+/* =========================
+   ADD WALLET MODAL
+   ========================= */
+.wcModalOverlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.45);
+  display:grid;
+  place-items:center;
+  z-index:1000;
+  padding:16px;
+}
+
+.wcModal{
+  width:min(460px, 100%);
+  background:var(--panel2);
+  border-radius:18px;
+  box-shadow:0 24px 60px rgba(0,0,0,.25);
+  border:1px solid rgba(15,23,42,.14);
+  overflow:hidden;
+}
+
+.wcModalHead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:14px 14px;
+  background:rgba(255,255,255,.30);
+  border-bottom:1px solid rgba(15,23,42,.12);
+}
+
+.wcModalTitle{
+  font-weight:900;
+  color:#0f172a;
+}
+
+.wcModalClose{
+  width:36px;
+  height:36px;
+  border-radius:12px;
+  border:1px solid rgba(15,23,42,.16);
+  background:rgba(255,255,255,.40);
+  cursor:pointer;
+  font-weight:900;
+}
+
+.wcModalBody{
+  padding:14px;
+}
+
+.wcModalLabel{
+  display:block;
+  font-size:12px;
+  font-weight:800;
+  color:rgba(15,23,42,.70);
+  margin:10px 0 6px;
+}
+
+.wcModalInput{
+  width:100%;
+  height:42px;
+  border-radius:12px;
+  border:1px solid rgba(15,23,42,.16);
+  background:#8cbef0;
+  color:#0f172a;
+  padding:0 12px;
+  outline:none;
+}
+
+.wcModalInput:focus{
+  border-color:rgba(245,179,1,.75);
+  box-shadow:0 0 0 4px rgba(245,179,1,.18);
+}
+
+.wcModalSave{
+  width:100%;
+  height:46px;
+  margin-top:12px;
+  border-radius:14px;
+  border:none;
+  background:var(--brand);
+  color:#111827;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.wcModalSave:disabled{
+  opacity:.55;
+  cursor:not-allowed;
+}
+
+.wcModalTip{
+  margin-top:10px;
+  font-size:12px;
+  color:rgba(15,23,42,.62);
+}

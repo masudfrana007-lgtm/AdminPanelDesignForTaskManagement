@@ -233,24 +233,39 @@ router.patch("/:id", auth, allowRoles("owner"), async (req, res) => {
 
 /**
  * GET /members/:id/wallet
- * wallet + last 3 deposits + last 3 withdrawals
+ * wallet + ALL deposits + ALL withdrawals
  */
 router.get("/:id/wallet", auth, allowRoles("owner", "agent"), async (req, res) => {
   try {
     const memberId = Number(req.params.id);
     if (!memberId) return res.status(400).json({ message: "Invalid member id" });
 
-    const m = await pool.query(`SELECT id, sponsor_id FROM members WHERE id=$1`, [memberId]);
+    // Load member + sponsor info (for header UI)
+    const m = await pool.query(
+      `
+      SELECT
+        m.id,
+        m.short_id,
+        m.nickname,
+        m.phone,
+        m.approval_status,
+        m.sponsor_id,
+        s.short_id AS sponsor_short_id
+      FROM members m
+      LEFT JOIN members s ON s.id = m.sponsor_id
+      WHERE m.id = $1
+      `,
+      [memberId]
+    );
+
     const member = m.rows[0];
     if (!member) return res.status(404).json({ message: "Member not found" });
 
-    // permission check
+    // permission check: agent can only view their own members
     if (req.user.role === "agent") {
       if (member.sponsor_id !== req.user.id) {
         return res.status(403).json({ message: "Not allowed for this member" });
       }
-    } else {
-      //
     }
 
     // ensure wallet exists
@@ -261,32 +276,63 @@ router.get("/:id/wallet", auth, allowRoles("owner", "agent"), async (req, res) =
     );
 
     const walletRes = await pool.query(
-      `SELECT member_id, balance::numeric(12,2), locked_balance::numeric(12,2), updated_at
-       FROM wallets
-       WHERE member_id=$1`,
+      `
+      SELECT
+        member_id,
+        balance::numeric(12,2),
+        locked_balance::numeric(12,2),
+        updated_at
+      FROM wallets
+      WHERE member_id = $1
+      `,
       [memberId]
     );
 
+    // ✅ ALL deposits (no LIMIT)
     const depositsRes = await pool.query(
-      `SELECT id, amount, method, tx_ref, proof_url, status, admin_note, created_at, reviewed_at
-       FROM deposits
-       WHERE member_id = $1
-       ORDER BY id DESC
-       LIMIT 3`,
+      `
+      SELECT
+        id,
+        amount::numeric(12,2) AS amount,
+        method,
+        asset,
+        network,
+        tx_ref,
+        proof_url,
+        status,
+        admin_note,
+        created_at,
+        reviewed_at
+      FROM deposits
+      WHERE member_id = $1
+      ORDER BY id DESC
+      `,
       [memberId]
     );
 
+    // ✅ ALL withdrawals (no LIMIT)
     const withdrawalsRes = await pool.query(
-      `SELECT id, amount, method, account_details, status, admin_note, created_at, reviewed_at
-       FROM withdrawals
-       WHERE member_id = $1
-       ORDER BY id DESC
-       LIMIT 3`,
+      `
+      SELECT
+        id,
+        amount::numeric(12,2) AS amount,
+        method,
+        account_details,
+        status,
+        admin_note,
+        created_at,
+        reviewed_at
+      FROM withdrawals
+      WHERE member_id = $1
+      ORDER BY id DESC
+      `,
       [memberId]
     );
 
     res.json({
-      wallet: walletRes.rows[0] || { member_id: memberId, balance: "0.00", locked_balance: "0.00" },
+      member, // ✅ now your MemberWallet.jsx can show nickname/short_id/phone/sponsor/status
+      wallet:
+        walletRes.rows[0] || { member_id: memberId, balance: "0.00", locked_balance: "0.00" },
       deposits: depositsRes.rows,
       withdrawals: withdrawalsRes.rows,
     });
@@ -295,6 +341,7 @@ router.get("/:id/wallet", auth, allowRoles("owner", "agent"), async (req, res) =
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 /**
  * APPROVE / REJECT (owner only)

@@ -294,12 +294,17 @@
 
 .td-hint{
   font-size: 12px;
-  color: var(--muted);
+  color: black;
+}
+
+.td-hint-insuffucient{
+  font-size: 12px;
+  color: red;
 }
 
 .td-hint{
   font-size: 12px;
-  color: var(--muted);
+  color: black;
 }
 
 /* Bottom navigation bar */

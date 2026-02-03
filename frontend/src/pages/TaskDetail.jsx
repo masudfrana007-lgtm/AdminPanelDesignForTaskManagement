@@ -408,7 +408,7 @@ export default function TaskDetail() {
               {!isCurrentTask ? (
                 <div className="td-hint">Submit is enabled only for the current order.</div>
               ) : balance < orderAmount ? (
-                <div className="td-hint">
+                <div className="td-hint-insuffucient">
                   Insufficient balance — you will be redirected to Deposit.
                 </div>
               ) : (

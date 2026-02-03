@@ -504,23 +504,54 @@ router.post("/deposits", memberAuth, async (req, res) => {
 
     const amount = Number(req.body.amount || 0);
     const method = String(req.body.method || "").trim();
+
+    // ✅ NEW
+    const asset = String(req.body.asset || "USDT").trim();
+    const network = String(req.body.network || "").trim();
+
     const tx_ref = String(req.body.tx_ref || "").trim();
     const proof_url = String(req.body.proof_url || "").trim();
 
-    if (!amount || amount <= 0) return res.status(400).json({ message: "Invalid amount" });
-    if (!method) return res.status(400).json({ message: "Method required" });
+    if (!amount || amount <= 0)
+      return res.status(400).json({ message: "Invalid amount" });
 
-    const m = await pool.query(`SELECT approval_status FROM members WHERE id=$1`, [memberId]);
-    if (!m.rowCount) return res.status(404).json({ message: "Member not found" });
+    if (!method)
+      return res.status(400).json({ message: "Method required" });
+
+    // ✅ crypto validation
+    if (method.toLowerCase().includes("crypto") && !network) {
+      return res.status(400).json({ message: "Network required for crypto deposit" });
+    }
+
+    const m = await pool.query(
+      `SELECT approval_status FROM members WHERE id=$1`,
+      [memberId]
+    );
+
+    if (!m.rowCount)
+      return res.status(404).json({ message: "Member not found" });
+
     if (m.rows[0].approval_status !== "approved") {
       return res.status(403).json({ message: "Account not approved yet" });
     }
 
     const r = await pool.query(
-      `INSERT INTO deposits (member_id, amount, method, tx_ref, proof_url)
-       VALUES ($1,$2,$3,$4,$5)
-       RETURNING *`,
-      [memberId, amount, method, tx_ref || null, proof_url || null]
+      `
+      INSERT INTO deposits
+        (member_id, amount, method, asset, network, tx_ref, proof_url, source)
+      VALUES
+        ($1,$2,$3,$4,$5,$6,$7,'member')
+      RETURNING *
+      `,
+      [
+        memberId,
+        amount,
+        method,
+        asset,
+        network || null,
+        tx_ref || null,
+        proof_url || null,
+      ]
     );
 
     res.status(201).json(r.rows[0]);
@@ -536,10 +567,22 @@ router.get("/deposits", memberAuth, async (req, res) => {
     const memberId = req.member.member_id;
 
     const r = await pool.query(
-      `SELECT id, amount, method, tx_ref, proof_url, status, admin_note, created_at, reviewed_at
-       FROM deposits
-       WHERE member_id = $1
-       ORDER BY id DESC`,
+      `SELECT
+        id,
+        amount,
+        method,
+        asset,
+        network,
+        tx_ref,
+        proof_url,
+        source,
+        status,
+        admin_note,
+        created_at,
+        reviewed_at
+        FROM deposits      
+        WHERE member_id = $1
+        ORDER BY id DESC`,
       [memberId]
     );
 

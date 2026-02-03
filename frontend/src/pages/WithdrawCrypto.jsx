@@ -1,284 +1,301 @@
-// frontend/src/pages/WithdrawCrypto.jsx
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "../styles/WithdrawCrypto.css"; // ✅ place css in styles folder
-import withdrawBg from "../assets/bg/withdraw.png"; // ✅ correct for /src/pages
+import "./WithdrawCrypto.css";
 
-import MemberBottomNav from "../components/MemberBottomNav"; // ✅ bottom bar
-
-const user = {
-  name: "User",
-  vip: 3,
-  inviteCode: "ABCD-1234",
-  balance: 97280.12,
-};
+const coins = [
+  {
+    code: "USDT",
+    name: "Tether",
+    icon: "/coins/usdt.png",
+    networks: ["TRC20", "ERC20", "BEP20"],
+  },
+  { code: "BTC", name: "Bitcoin", icon: "/coins/btc.png", networks: ["BTC"] },
+  { code: "ETH", name: "Ethereum", icon: "/coins/eth.png", networks: ["ERC20"] },
+  { code: "BNB", name: "BNB", icon: "/coins/bnb.png", networks: ["BEP20"] },
+  { code: "TRX", name: "TRON", icon: "/coins/trx.png", networks: ["TRC20"] },
+];
 
 function money(n) {
-  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n);
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 8 }).format(n);
 }
-
-const NETWORKS = [
-  { key: "TRC20", label: "TRC20 (USDT)", fee: 1.0, min: 10 },
-  { key: "ERC20", label: "ERC20 (USDT)", fee: 8.0, min: 20 },
-  { key: "BEP20", label: "BEP20 (USDT)", fee: 0.8, min: 10 },
-];
 
 export default function WithdrawCrypto() {
   const nav = useNavigate();
 
-  const [boundWallet, setBoundWallet] = useState({
-    label: "My E-Wallet",
-    address: "TQ8v...A1c9 (Bound)",
-  });
+  // demo values (replace with API later)
+  const balance = 97280.12; // shown as USDT here for demo
+  const fee = 1.0;
+  const minWithdraw = 10;
 
-  const [network, setNetwork] = useState("TRC20");
-  const [useBound, setUseBound] = useState(true);
+  const [coin, setCoin] = useState(coins[0]);
+  const [network, setNetwork] = useState(coins[0].networks[0]);
   const [address, setAddress] = useState("");
   const [amount, setAmount] = useState("");
 
-  const net = useMemo(() => NETWORKS.find((n) => n.key === network), [network]);
+  const [wallets, setWallets] = useState([
+    {
+      id: 1,
+      label: "Main Wallet",
+      address: "TQ9L7Pp9D9dY2fQ7QpA1dYpFfR9D9A",
+      network: "TRC20",
+    },
+  ]);
+  const [activeWallet, setActiveWallet] = useState(null);
 
-  const amountNum = Number(amount || 0);
-  const fee = net?.fee ?? 0;
-  const received = Math.max(0, amountNum - fee);
+  const [showAdd, setShowAdd] = useState(false);
+  const [newWallet, setNewWallet] = useState({
+    label: "",
+    network: "TRC20",
+    address: "",
+  });
 
-  const canSubmit = useMemo(() => {
-    if (!net) return false;
-    if (!amountNum || amountNum <= 0) return false;
-    if (amountNum < net.min) return false;
-    if (amountNum > user.balance) return false;
+  const amountNum = useMemo(() => {
+    const n = Number(amount);
+    return Number.isFinite(n) ? n : 0;
+  }, [amount]);
 
-    if (useBound) return Boolean(boundWallet?.address);
-    return address.trim().length >= 8;
-  }, [net, amountNum, useBound, address, boundWallet]);
+  const receive = useMemo(() => Math.max(0, amountNum - fee), [amountNum, fee]);
 
-  const finalAddress = useBound ? boundWallet?.address : address;
+  const canSubmit =
+    address.trim() && amountNum >= minWithdraw && amountNum <= balance;
 
-  function onBindWallet() {
-    const newAddr = prompt("Enter your E-Wallet address to bind (example):");
-    if (!newAddr) return;
-    setBoundWallet({ label: "Bound E-Wallet", address: newAddr.trim() });
-    setUseBound(true);
-  }
-
-  function onSubmit() {
-    if (!canSubmit) return;
-    alert(
-      `Withdrawal submitted!\n\nNetwork: ${network}\nAddress: ${finalAddress}\nAmount: ${amountNum}\nFee: ${fee}\nYou will receive: ${received}`
-    );
+  function saveWallet() {
+    setWallets((prev) => [...prev, { ...newWallet, id: Date.now() }]);
+    setShowAdd(false);
+    setNewWallet({ label: "", network: coin.networks[0], address: "" });
   }
 
   return (
-    <div className="page wc" style={{ backgroundImage: `url(${withdrawBg})` }}>
-      <div className="wc-header">
-        <button className="wc-back" onClick={() => nav(-1)} type="button">
+    <div className="wcPage">
+      {/* Header */}
+      <header className="wcTop">
+        <button className="wcBack" onClick={() => nav(-1)} aria-label="Back">
           ←
         </button>
-
-        <div className="wc-header-title">
-          <div className="wc-title">Withdraw by Crypto</div>
-          <div className="wc-sub">Secure USDT withdrawal to your E-Wallet</div>
-        </div>
-
-        {/* ✅ your real route */}
-        <button className="wc-help" onClick={() => nav("/member/service")} type="button">
-          Support
+        <div className="wcTitle">Withdraw Crypto</div>
+        <button
+          className="wcHistoryBtn"
+          onClick={() => nav("/withdraw/records")}
+        >
+          History
         </button>
-      </div>
+      </header>
 
-      <div className="wc-wrap">
-        {/* Profile + Balance */}
-        <div className="wc-profileCard">
-          <div className="wc-profLeft">
-            <div className="wc-avatar" aria-hidden="true" />
-            <div className="wc-profMeta">
-              <div className="wc-profRow">
-                <span className="wc-profName">{user.name}</span>
-                <span className="wc-vip">VIP {user.vip}</span>
-              </div>
-
-              <div className="wc-codeRow">
-                <span className="wc-codeLabel">Reference code:</span>
-                <span className="wc-codePill">{user.inviteCode}</span>
-              </div>
-            </div>
+      <div className="wcContainer">
+        {/* Balance (AliExpressVip3 style) */}
+        <section className="wcBalance">
+          <div className="wcBalanceLabel">Wallet Balance</div>
+          <div className="wcBalanceValue">{money(balance)} USDT</div>
+          <div className="wcBalanceMeta">
+            Min {minWithdraw} • Fee {fee} • Secure withdrawal
           </div>
+        </section>
 
-          <div className="wc-balanceBox">
-            <div className="wc-balLabel">Available Balance</div>
-            <div className="wc-balValue">
-              <span className="wc-balUnit">USDT</span>
-              <span className="wc-balNum">{money(user.balance)}</span>
-            </div>
-            <div className="wc-balHint">Crypto withdrawals require correct network & address</div>
-          </div>
-        </div>
-
-        <div className="wc-grid">
-          {/* Bind E-Wallet */}
-          <div className="wc-card glass">
-            <div className="wc-cardHead">
-              <div className="wc-cardTitle">Bind E-Wallet</div>
-              <span className="wc-badge">Required</span>
-            </div>
-
-            <div className="wc-bindBox">
-              <div className="wc-bindLeft">
-                <div className="wc-bindLabel">Bound wallet</div>
-                <div className="wc-bindValue">
-                  {boundWallet?.address ? (
-                    <>
-                      <span className="wc-bindName">{boundWallet.label}</span>
-                      <span className="wc-bindAddr">{boundWallet.address}</span>
-                    </>
-                  ) : (
-                    <span className="wc-bindEmpty">No wallet bound yet</span>
-                  )}
+        {/* Select Asset (with logos) */}
+        <section className="wcCoins">
+          <div className="wcCoinsTitle">Select Asset</div>
+          <div className="wcCoinRow">
+            {coins.map((c) => (
+              <button
+                key={c.code}
+                className={`wcCoin ${coin.code === c.code ? "active" : ""}`}
+                onClick={() => {
+                  setCoin(c);
+                  setNetwork(c.networks[0]);
+                  setActiveWallet(null);
+                  setAddress("");
+                  // keep amount as is (or clear if you want)
+                }}
+                type="button"
+              >
+                <div className="wcCoinTop">
+                  <img className="wcCoinIcon" src={c.icon} alt={c.code} />
+                  <div className="wcCoinTexts">
+                    <div className="wcCoinCode">{c.code}</div>
+                    <div className="wcCoinName">{c.name}</div>
+                  </div>
                 </div>
-              </div>
-
-              <button className="wc-btn" type="button" onClick={onBindWallet}>
-                {boundWallet?.address ? "Update Wallet" : "Bind Wallet"}
               </button>
-            </div>
+            ))}
+          </div>
+          <div className="wcHelper">
+            Tip: choose coin first, then select the correct network.
+          </div>
+        </section>
 
-            <div className="wc-note">
-              Tip: Bind your own wallet only. Third-party wallets may be rejected for security reasons.
-            </div>
+        {/* Bind Wallet */}
+        <section className="wcWallet">
+          <div className="wcWalletHead">
+            <div className="wcWalletTitle">Bind Wallet</div>
+            <button className="wcAddWallet" onClick={() => {
+              setNewWallet({ label: "", network: coin.networks[0], address: "" });
+              setShowAdd(true);
+            }}>
+              + Add New
+            </button>
           </div>
 
-          {/* Withdraw Form */}
-          <div className="wc-card glass">
-            <div className="wc-cardHead">
-              <div className="wc-cardTitle">Withdraw Operation</div>
-              <span className="wc-badge soft">USDT</span>
-            </div>
-
-            <div className="wc-toggleRow">
+          <div className="wcWalletList">
+            {wallets.map((w) => (
               <button
+                key={w.id}
+                className={`wcSavedWallet ${
+                  activeWallet?.id === w.id ? "active" : ""
+                }`}
+                onClick={() => {
+                  setActiveWallet(w);
+                  setAddress(w.address);
+                  setNetwork(w.network);
+                }}
                 type="button"
-                className={`wc-pill ${useBound ? "active" : ""}`}
-                onClick={() => setUseBound(true)}
-                disabled={!boundWallet?.address}
-                title={!boundWallet?.address ? "Bind wallet first" : ""}
               >
-                Use Bound E-Wallet
+                <div className="wcWalletLeft">
+                  <div className="wcWalletLabel">{w.label}</div>
+                  <div className="wcWalletAddr">
+                    {w.address.slice(0, 10)}…{w.address.slice(-6)}
+                  </div>
+                </div>
+                <div className="wcWalletNet">{w.network}</div>
               </button>
+            ))}
+          </div>
+        </section>
 
-              <button
-                type="button"
-                className={`wc-pill ${!useBound ? "active" : ""}`}
-                onClick={() => setUseBound(false)}
-              >
-                Enter Address Manually
-              </button>
-            </div>
-
-            <div className="wc-field">
-              <label className="wc-label">Network</label>
-              <select
-                className="wc-select"
-                value={network}
-                onChange={(e) => setNetwork(e.target.value)}
-              >
-                {NETWORKS.map((n) => (
-                  <option key={n.key} value={n.key}>
-                    {n.label}
+        {/* Form */}
+        <section className="wcCard">
+          <div className="wcGrid">
+            <div className="wcField">
+              <label>Network</label>
+              <select value={network} onChange={(e) => setNetwork(e.target.value)}>
+                {coin.networks.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
                   </option>
                 ))}
               </select>
-              <div className="wc-hint">
-                Minimum: <b>{net.min} USDT</b> • Fee: <b>{fee} USDT</b>
-              </div>
+              <div className="wcHint">Make sure it matches your wallet network.</div>
             </div>
 
-            <div className="wc-field">
-              <label className="wc-label">Wallet Address</label>
-
-              {useBound ? (
-                <div className={`wc-readonly ${boundWallet?.address ? "" : "disabled"}`}>
-                  {boundWallet?.address || "Bind E-Wallet first"}
-                </div>
-              ) : (
+            <div className="wcField">
+              <label>Amount</label>
+              <div className="wcAmountRow">
                 <input
-                  className="wc-input"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Paste your USDT wallet address"
-                />
-              )}
-
-              <div className="wc-hint">
-                Make sure address matches the selected network. Wrong network/address may cause permanent loss.
-              </div>
-            </div>
-
-            <div className="wc-field">
-              <label className="wc-label">Amount (USDT)</label>
-              <div className="wc-amountRow">
-                <input
-                  className="wc-input"
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))}
-                  placeholder={`Minimum ${net.min} USDT`}
+                  onChange={(e) => setAmount(e.target.value)}
+                  inputMode="decimal"
+                  placeholder={`Min ${minWithdraw}`}
                 />
-                <button type="button" className="wc-miniBtn" onClick={() => setAmount(String(user.balance))}>
+                <button type="button" onClick={() => setAmount(String(balance))}>
                   Max
                 </button>
               </div>
 
-              <div className="wc-summary">
-                <div className="wc-sumRow">
-                  <span>Fee</span>
-                  <b>{money(fee)} USDT</b>
-                </div>
-                <div className="wc-sumRow">
-                  <span>You will receive</span>
-                  <b>{money(received)} USDT</b>
-                </div>
-                <div className="wc-sumRow dim">
-                  <span>Available</span>
-                  <span>{money(user.balance)} USDT</span>
-                </div>
+              <div className="wcCalc">
+                Fee {fee} {coin.code} • Receive{" "}
+                <span>
+                  {money(receive)} {coin.code}
+                </span>
               </div>
 
-              {amountNum > user.balance && <div className="wc-alert">Amount exceeds your available balance.</div>}
-              {amountNum > 0 && amountNum < net.min && (
-                <div className="wc-alert">Amount is below minimum for {network}.</div>
+              {amountNum > 0 && amountNum < minWithdraw && (
+                <div className="wcError">Minimum withdrawal is {minWithdraw}.</div>
+              )}
+              {amountNum > balance && (
+                <div className="wcError">Amount exceeds available balance.</div>
               )}
             </div>
+          </div>
 
-            <button
-              className={`wc-cta ${canSubmit ? "" : "disabled"}`}
-              type="button"
-              onClick={onSubmit}
-            >
-              Submit Withdrawal
-            </button>
+          <div className="wcField">
+            <label>Wallet Address</label>
+            <input
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder={`Enter ${coin.code} address`}
+              autoComplete="off"
+            />
+          </div>
 
-            <div className="wc-footNote">
-              By submitting, you confirm the address and network are correct and accept the withdrawal rules.
+          <button
+            className="wcSubmit"
+            disabled={!canSubmit}
+            onClick={() => alert("Withdrawal submitted")}
+          >
+            Submit Withdrawal
+          </button>
+
+          <div className="wcRules">
+            <ul>
+              <li>Crypto withdrawals are irreversible.</li>
+              <li>Wrong network/address may cause permanent loss.</li>
+              <li>Processing time depends on blockchain congestion.</li>
+            </ul>
+          </div>
+        </section>
+      </div>
+
+      {/* Add Wallet Modal */}
+      {showAdd && (
+        <div className="wcModalOverlay" onClick={() => setShowAdd(false)}>
+          <div className="wcModal" onClick={(e) => e.stopPropagation()}>
+            <div className="wcModalHead">
+              <div className="wcModalTitle">Add New Wallet</div>
+              <button className="wcModalClose" onClick={() => setShowAdd(false)}>
+                ✕
+              </button>
+            </div>
+
+            <div className="wcModalBody">
+              <label className="wcModalLabel">Wallet Label</label>
+              <input
+                className="wcModalInput"
+                placeholder="e.g. My TRC20 wallet"
+                value={newWallet.label}
+                onChange={(e) =>
+                  setNewWallet((p) => ({ ...p, label: e.target.value }))
+                }
+              />
+
+              <label className="wcModalLabel">Network</label>
+              <select
+                className="wcModalInput"
+                value={newWallet.network}
+                onChange={(e) =>
+                  setNewWallet((p) => ({ ...p, network: e.target.value }))
+                }
+              >
+                {coin.networks.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+
+              <label className="wcModalLabel">Wallet Address</label>
+              <input
+                className="wcModalInput"
+                placeholder="Paste wallet address"
+                value={newWallet.address}
+                onChange={(e) =>
+                  setNewWallet((p) => ({ ...p, address: e.target.value }))
+                }
+              />
+
+              <button
+                className="wcModalSave"
+                disabled={!newWallet.label || !newWallet.address}
+                onClick={saveWallet}
+              >
+                Save Wallet
+              </button>
+
+              <div className="wcModalTip">
+                Make sure the address matches the selected network.
+              </div>
             </div>
           </div>
         </div>
-
-        <div className="wc-card glass wc-instructions">
-          <div className="wc-cardHead">
-            <div className="wc-cardTitle">Important Instructions</div>
-            <span className="wc-badge">Security</span>
-          </div>
-
-          <ul className="wc-instList">
-            <li>Withdrawals may require additional verification based on account security level.</li>
-            <li>Processing time: usually 5–30 minutes (depends on network congestion).</li>
-            <li>Do not withdraw to smart contract addresses unless you are sure they support USDT deposits.</li>
-            <li>If your withdrawal is delayed, contact Customer Service with your TXID (if available).</li>
-          </ul>
-        </div>
-      </div>
-
-      {/* ✅ bottom bar */}
-      <MemberBottomNav active="mine" />
+      )}
     </div>
   );
 }
