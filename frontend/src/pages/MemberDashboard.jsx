@@ -1,15 +1,31 @@
+import { useEffect, useState } from "react";
 import "../styles/memberDashboard.css";
+import memberApi from "../services/memberApi";
+import { getMember } from "../memberAuth";
 import MemberBottomNav from "../components/MemberBottomNav"; // ✅ add this
 
-// After-login user (replace with API later)
-const user = {
-  name: "Lyndsey",
-  vip: 3,
-  photoUrl: "/home/user.jpg",
-  lastLogin: "Today • 09:12",
-};
-
 export default function Home() {
+
+  const me = getMember(); // from local storage (logged in member)
+const [profile, setProfile] = useState(null);
+const [pErr, setPErr] = useState("");
+
+useEffect(() => {
+  (async () => {
+    try {
+      // ✅ pick ONE that you already have in backend:
+      // If you already have: GET /member/me or /members/me
+      const { data } = await memberApi.get("/member/me");
+      setProfile(data);
+    } catch (e) {
+      // fallback to local storage values if API not ready
+      setProfile(me || null);
+      setPErr(e?.response?.data?.message || "");
+    }
+  })();
+}, []);
+
+
   const stats = [
     { label: "Account status", value: "Active", tone: "good" },
     { label: "Verification", value: "Verified", tone: "info" },
@@ -119,7 +135,7 @@ export default function Home() {
             <div className="avatarWrap">
               <img
                 className="avatar"
-                src={user.photoUrl}
+                src={profile?.photo_url || "/user.png"}
                 alt="Profile"
                 onError={(e) => {
                   e.currentTarget.src = "https://placehold.co/100x100/png";
@@ -131,9 +147,10 @@ export default function Home() {
             <div className="welcomeText">
               <div className="welcomeSmall">Welcome back</div>
               <div className="welcomeName">
-                {user.name} <span className="vip">VIP {user.vip}</span>
+                {profile?.nickname || profile?.name || "—"}
+                <span className="vip">{profile?.ranking ? profile.ranking : "Trial"}</span>
               </div>
-              <div className="welcomeMeta">Last login: {user.lastLogin}</div>
+              <div className="welcomeMeta">ID: {profile?.short_id || me?.short_id || "-"}</div>
             </div>
           </div>
 

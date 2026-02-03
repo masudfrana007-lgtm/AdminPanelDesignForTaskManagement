@@ -26,7 +26,7 @@ export default function Members() {
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
 
-  // drawer state
+  // wallet drawer state
   const [openMember, setOpenMember] = useState(null);
   const [wallet, setWallet] = useState(null);
   const [deps, setDeps] = useState([]);
@@ -34,9 +34,9 @@ export default function Members() {
   const [wErr, setWErr] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const canReview = me?.role === "owner"; // only owner approves/creates
+  const canReview = me?.role === "owner"; // only owner approves/creates/edits
 
-  // create forms
+  // create forms (wallet drawer)
   const [depAmount, setDepAmount] = useState("");
   const [depMethod, setDepMethod] = useState("Manual");
   const [depTxRef, setDepTxRef] = useState("");
@@ -45,6 +45,21 @@ export default function Members() {
   const [wdAmount, setWdAmount] = useState("");
   const [wdMethod, setWdMethod] = useState("Manual");
   const [wdAccount, setWdAccount] = useState("");
+
+  // ✅ EDIT MODAL state
+  const [editOpen, setEditOpen] = useState(false);
+  const [editErr, setEditErr] = useState("");
+  const [editForm, setEditForm] = useState({
+    id: null,
+    short_id: "",
+    nickname: "",
+    phone: "",
+    country: "",
+    ranking: "Trial",
+    withdraw_privilege: true,
+    approval_status: "pending",
+    gender: "male",
+  });
 
   const load = async () => {
     setErr("");
@@ -125,7 +140,6 @@ export default function Members() {
   };
 
   const refreshAll = async () => {
-    // refresh drawer + table
     if (openMember) {
       await openWallet(openMember);
     }
@@ -180,7 +194,6 @@ export default function Members() {
         proof_url: proof_url || null,
       });
 
-      // keep it convenient
       setDepAmount("");
       setDepTxRef("");
       setDepProof("");
@@ -207,7 +220,6 @@ export default function Members() {
 
     setBusy(true);
     try {
-      // backend should lock immediately during POST
       await api.post("/withdrawals", {
         member_id: openMember.id,
         amount,
@@ -221,6 +233,67 @@ export default function Members() {
       await refreshAll();
     } catch (e) {
       setWErr(e?.response?.data?.message || "Create withdrawal failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // ✅ EDIT MODAL handlers
+  const openEdit = (m) => {
+    setEditErr("");
+    setEditForm({
+      id: m.id,
+      short_id: m.short_id || "",
+      nickname: m.nickname || "",
+      phone: m.phone || "",
+      country: m.country || "",
+      ranking: m.ranking || "Trial",
+      withdraw_privilege: !!m.withdraw_privilege,
+      approval_status: m.approval_status || "pending",
+      gender: m.gender || "male",
+    });
+    setEditOpen(true);
+  };
+
+  const closeEdit = () => {
+    setEditOpen(false);
+    setEditErr("");
+  };
+
+  const saveEdit = async () => {
+    setEditErr("");
+    if (!editForm.id) return;
+
+    const payload = {
+      nickname: editForm.nickname.trim(),
+      phone: editForm.phone.trim(),
+      country: editForm.country.trim(),
+      ranking: editForm.ranking,
+      withdraw_privilege: editForm.withdraw_privilege,
+      approval_status: editForm.approval_status,
+      gender: editForm.gender,
+    };
+
+    if (!payload.nickname) return setEditErr("Nickname is required");
+    if (!payload.phone) return setEditErr("Phone is required");
+    if (!payload.country) return setEditErr("Country is required");
+
+    setBusy(true);
+    try {
+      await api.patch(`/members/${editForm.id}`, payload);
+
+      setOk("Member updated");
+      setTimeout(() => setOk(""), 1500);
+
+      closeEdit();
+      await load();
+
+      // if wallet drawer is open for same member, refresh it too
+      if (openMember?.id === editForm.id) {
+        await openWallet({ ...openMember, ...payload });
+      }
+    } catch (e) {
+      setEditErr(e?.response?.data?.message || "Update failed");
     } finally {
       setBusy(false);
     }
@@ -252,101 +325,295 @@ export default function Members() {
           {err && <div className="error">{err}</div>}
           {ok && <div className="ok">{ok}</div>}
 
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Member ID</th>
-                <th>Nickname</th>
-                <th>Phone</th>
-                <th>Ranking</th>
-                <th>Withdraw</th>
-                <th>Balance</th>
-                <th>Locked</th>
-                <th>Sponsor</th>
-                <th>Status</th>
-                <th>Wallet</th>
-              </tr>
-            </thead>
+          <div className="tableWrap">
+            <table className="table tableNoCut">
+              <thead>
+                <tr>
+                  <th>Member ID</th>
+                  <th>Nickname</th>
+                  <th>Phone</th>
+                  <th>Ranking</th>
+                  <th>Withdraw</th>
+                  <th>Balance</th>
+                  <th>Locked</th>
+                  <th>Sponsor</th>
+                  <th>Status</th>
+                  <th>Wallet</th>
+                  <th>Edit</th>
+                </tr>
+              </thead>
 
-            <tbody>
-              {list.map((m) => (
-                <tr key={m.short_id || m.id}>
-                  <td>{m.short_id}</td>
-                  <td>{m.nickname}</td>
-                  <td>{m.phone}</td>
+              <tbody>
+                {list.map((m) => (
+                  <tr key={m.short_id || m.id}>
+                    <td>{m.short_id}</td>
+                    <td>{m.nickname}</td>
+                    <td>{m.phone}</td>
 
-                  <td>
-                    <span className="badge">{m.ranking}</span>
-                  </td>
+                    <td>
+                      <span className="badge">{m.ranking}</span>
+                    </td>
 
-                  <td>
-                    <span className="badge">
-                      {m.withdraw_privilege ? "Enabled" : "Disabled"}
-                    </span>
-                  </td>
+                    <td>
+                      <span className="badge">
+                        {m.withdraw_privilege ? "Enabled" : "Disabled"}
+                      </span>
+                    </td>
 
-                  <td>
-                    <span className="badge">{fmtMoney(m.balance)}</span>
-                  </td>
+                    <td>
+                      <span className="badge">{fmtMoney(m.balance)}</span>
+                    </td>
 
-                  <td>
-                    <span className="badge">{fmtMoney(m.locked_balance)}</span>
-                  </td>
+                    <td>
+                      <span className="badge">{fmtMoney(m.locked_balance)}</span>
+                    </td>
 
-                  <td>{m.sponsor_short_id || "-"}</td>
+                    <td>{m.sponsor_short_id || "-"}</td>
 
-                  <td>
-                    <span className="badge">{m.approval_status}</span>
+                    <td>
+                      <span className="badge">{m.approval_status}</span>
 
-                    {me?.role === "owner" && m.approval_status === "pending" && (
-                      <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
+                      {me?.role === "owner" && m.approval_status === "pending" && (
+                        <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                          <button
+                            className="btn"
+                            type="button"
+                            onClick={() => approveMember(m.id)}
+                            style={{ padding: "6px 10px" }}
+                          >
+                            Approve
+                          </button>
+
+                          <button
+                            className="btn"
+                            type="button"
+                            onClick={() => rejectMember(m.id)}
+                            style={{
+                              padding: "6px 10px",
+                              background: "#dc2626",
+                            }}
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      )}
+                    </td>
+
+                    <td>
+                      <button
+                        className="btn"
+                        type="button"
+                        onClick={() => openWallet(m)}
+                        style={{ padding: "6px 10px" }}
+                      >
+                        Wallet
+                      </button>
+                    </td>
+
+                    <td>
+                      {canReview ? (
                         <button
                           className="btn"
                           type="button"
-                          onClick={() => approveMember(m.id)}
+                          onClick={() => openEdit(m)}
                           style={{ padding: "6px 10px" }}
                         >
-                          Approve
+                          Edit
                         </button>
+                      ) : (
+                        <span className="small">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
 
-                        <button
-                          className="btn"
-                          type="button"
-                          onClick={() => rejectMember(m.id)}
-                          style={{
-                            padding: "6px 10px",
-                            background: "#dc2626",
-                          }}
-                        >
-                          Reject
-                        </button>
-                      </div>
-                    )}
-                  </td>
-
-                  <td>
-                    <button
-                      className="btn"
-                      type="button"
-                      onClick={() => openWallet(m)}
-                      style={{ padding: "6px 10px" }}
-                    >
-                      Wallet
-                    </button>
-                  </td>
-                </tr>
-              ))}
-
-              {!list.length && (
-                <tr>
-                  <td colSpan="10" className="small">
-                    No members yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                {!list.length && (
+                  <tr>
+                    <td colSpan="11" className="small">
+                      No members yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
+
+        {/* ✅ EDIT MODAL */}
+        {editOpen && (
+          <div
+            onClick={closeEdit}
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(15,23,42,.55)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              padding: 14,
+              zIndex: 2600,
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: "min(680px, 98vw)",
+                background: "var(--card)",
+                border: "1px solid var(--line)",
+                borderRadius: 14,
+                boxShadow: "var(--shadow)",
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  padding: 14,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  background: "var(--soft)",
+                  borderBottom: "1px solid var(--line)",
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: 900 }}>
+                    Edit Member — {editForm.nickname || "-"} ({editForm.short_id || "-"})
+                  </div>
+                  <div className="small">Update basic profile and permissions.</div>
+                </div>
+
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button className="btn" type="button" onClick={closeEdit} disabled={busy}>
+                    Close
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ padding: 14, display: "grid", gap: 10 }}>
+                {editErr && <div className="error">{editErr}</div>}
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div>
+                    <div className="small">Nickname</div>
+                    <input
+                      className="input"
+                      value={editForm.nickname}
+                      onChange={(e) =>
+                        setEditForm((p) => ({ ...p, nickname: e.target.value }))
+                      }
+                      disabled={busy}
+                    />
+                  </div>
+
+                  <div>
+                    <div className="small">Phone</div>
+                    <input
+                      className="input"
+                      value={editForm.phone}
+                      onChange={(e) => setEditForm((p) => ({ ...p, phone: e.target.value }))}
+                      disabled={busy}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="small">Country</div>
+                  <input
+                    className="input"
+                    value={editForm.country}
+                    onChange={(e) => setEditForm((p) => ({ ...p, country: e.target.value }))}
+                    disabled={busy}
+                  />
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div>
+                    <div className="small">Ranking</div>
+                    <select
+                      className="input"
+                      value={editForm.ranking}
+                      onChange={(e) => setEditForm((p) => ({ ...p, ranking: e.target.value }))}
+                      disabled={busy}
+                    >
+                      <option value="Trial">Trial</option>
+                      <option value="VIP 1">VIP 1</option>
+                      <option value="VIP 2">VIP 2</option>
+                      <option value="VIP 3">VIP 3</option>
+                      <option value="VIP 4">VIP 4</option>
+                      <option value="VIP 5">VIP 5</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <div className="small">Approval status</div>
+                    <select
+                      className="input"
+                      value={editForm.approval_status}
+                      onChange={(e) =>
+                        setEditForm((p) => ({ ...p, approval_status: e.target.value }))
+                      }
+                      disabled={busy}
+                    >
+                      <option value="pending">pending</option>
+                      <option value="approved">approved</option>
+                      <option value="rejected">rejected</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div>
+                    <div className="small">Gender</div>
+                    <select
+                      className="input"
+                      value={editForm.gender}
+                      onChange={(e) => setEditForm((p) => ({ ...p, gender: e.target.value }))}
+                      disabled={busy}
+                    >
+                      <option value="male">male</option>
+                      <option value="female">female</option>
+                      <option value="other">other</option>
+                    </select>
+                  </div>
+
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "10px 12px",
+                      border: "1px solid var(--line)",
+                      borderRadius: 12,
+                      background: "var(--bg)",
+                      marginTop: 18,
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={editForm.withdraw_privilege}
+                      onChange={(e) =>
+                        setEditForm((p) => ({ ...p, withdraw_privilege: e.target.checked }))
+                      }
+                      disabled={busy}
+                    />
+                    <span className="small" style={{ margin: 0 }}>
+                      Withdraw enabled
+                    </span>
+                  </label>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                  <button className="btn" type="button" onClick={closeEdit} disabled={busy}>
+                    Cancel
+                  </button>
+                  <button className="btn" type="button" onClick={saveEdit} disabled={busy}>
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Wallet Drawer */}
         {openMember && (
@@ -515,7 +782,12 @@ export default function Members() {
                         />
 
                         <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
-                          <button className="btn" type="button" disabled={busy} onClick={createDeposit}>
+                          <button
+                            className="btn"
+                            type="button"
+                            disabled={busy}
+                            onClick={createDeposit}
+                          >
                             Create Deposit
                           </button>
                         </div>
@@ -570,7 +842,12 @@ export default function Members() {
                         />
 
                         <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
-                          <button className="btn" type="button" disabled={busy} onClick={createWithdrawal}>
+                          <button
+                            className="btn"
+                            type="button"
+                            disabled={busy}
+                            onClick={createWithdrawal}
+                          >
                             Create Withdrawal
                           </button>
                         </div>
@@ -720,7 +997,8 @@ export default function Members() {
                 </div>
 
                 <div className="small" style={{ marginTop: 10 }}>
-                  Approvals + creation live inside the Wallet drawer to avoid clutter in the main table.
+                  Approvals + creation live inside the Wallet drawer to avoid clutter in the main
+                  table.
                 </div>
               </div>
             </div>
