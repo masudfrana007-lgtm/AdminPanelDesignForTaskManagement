@@ -45,6 +45,7 @@ import CreateMemberDeposit from "./pages/CreateMemberDeposit";
 import CreateMemberWithdrawal from "./pages/CreateMemberWithdrawal";
 
 import DepositRecord from "./pages/DepositRecord";
+import WithdrawalRecord from "./pages/WithdrawalRecord";
 
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
@@ -325,6 +326,15 @@ export const router = createBrowserRouter([
   element: (
     <MemberProtectedRoute>
       <DepositRecord />
+    </MemberProtectedRoute>
+  ),
+},
+
+{
+  path: "/member/withdraw/records",
+  element: (
+    <MemberProtectedRoute>
+      <WithdrawalRecord />
     </MemberProtectedRoute>
   ),
 },

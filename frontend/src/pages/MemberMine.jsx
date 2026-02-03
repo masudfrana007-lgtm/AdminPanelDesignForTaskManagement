@@ -156,12 +156,12 @@ export default function MemberMine() {
               icon={
                 <img
                   src={depositRec2Icon}
-                  alt="Deposit Records"
+                  alt="Withdrawal Records"
                   className="list-icon-img"
                 />
               }
-              label="Deposit Records"
-              onClick={() => nav("/deposit-records")}
+              label="Withdrawal Records"
+              onClick={() => nav("/member/withdraw/records")}
             />
             <ListItem
               icon={<img src={securityIcon} alt="Security" className="list-icon-img" />}

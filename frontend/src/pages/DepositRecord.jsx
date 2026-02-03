@@ -76,6 +76,8 @@ export default function DepositRecord() {
   const [search, setSearch] = useState("");
   const [active, setActive] = useState(null);
 
+  const [toast, setToast] = useState("");
+
   const load = async () => {
     setErr("");
     setBusy(true);
@@ -245,7 +247,11 @@ export default function DepositRecord() {
               {active.txHash !== "-" && (
                 <button
                   className="dpBtnPrimary"
-                  onClick={() => navigator.clipboard.writeText(active.txHash)}
+                  onClick={() => {
+                    navigator.clipboard.writeText(active.txHash);
+                    setToast("TX Hash copied to clipboard");
+                    setTimeout(() => setToast(""), 2000);
+                  }}
                   type="button"
                 >
                   Copy TX Hash
@@ -253,6 +259,12 @@ export default function DepositRecord() {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className="dpToast">
+          {toast}
         </div>
       )}
 

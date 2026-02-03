@@ -229,3 +229,23 @@
   font-size:13px;
   cursor:pointer;
 }
+
+.dpToast{
+  position: fixed;
+  bottom: 90px; /* above bottom nav */
+  left: 50%;
+  transform: translateX(-50%);
+  background: #111827;
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  box-shadow: 0 10px 25px rgba(0,0,0,.25);
+  z-index: 9999;
+  animation: fadeUp .2s ease-out;
+}
+
+@keyframes fadeUp{
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
