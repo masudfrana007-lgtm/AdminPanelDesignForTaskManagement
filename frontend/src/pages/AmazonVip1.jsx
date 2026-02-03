@@ -64,6 +64,10 @@ export default function AmazonVip1() {
     nav("/member/tasks-set");
   };
 
+  const { data } = await memberApi.get("/member/dashboard");
+  console.log(data.me);      // balance, locked_balance, ranking, etc
+  console.log(data.summary); // today_tasks, today_commission, week_*, lifetime_*
+
   return (
     <div className="vipWhite">
       {/* Top Bar */}

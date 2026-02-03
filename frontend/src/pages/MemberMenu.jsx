@@ -63,8 +63,16 @@ export default function MemberMenu() {
   const load = async () => {
     setErr("");
     try {
-      const res = await memberApi.get("/member/active-set");
-      setData(res.data);
+      // ✅ get both active set + member profile (ranking)
+      const [activeSetRes, meRes] = await Promise.all([
+        memberApi.get("/member/active-set"),
+        memberApi.get("/member/me"),
+      ]);
+
+      setData({
+        ...(activeSetRes.data || {}),
+        me: meRes.data || null, // ✅ contains ranking
+      });
     } catch (e) {
       setErr(e?.response?.data?.message || "Failed to load dashboard");
     }
@@ -82,7 +90,27 @@ export default function MemberMenu() {
 
   const active = data?.active;
 
+  // ✅ ranking -> eligible VIP tier
+  const ranking = data?.me?.ranking || null;
+
+  const rankToVipTier = (r) => {
+    const x = String(r || "").trim().toUpperCase();
+    if (x === "V1") return "VIP 1";
+    if (x === "V2") return "VIP 2";
+    if (x === "V3") return "VIP 3";
+    return null; // Trial / V4 / V5 / V6 etc (not used here)
+  };
+
+  const eligibleTier = rankToVipTier(ranking);
+
   const goToVip = (card) => {
+    // ✅ block non-eligible VIP
+    if (eligibleTier && card.tier !== eligibleTier) {
+      setErr("You are not eligible");
+      setTimeout(() => setErr(""), 1800);
+      return;
+    }
+
     switch (card.logoType) {
       case "amazon":
         nav("/member/vip/amazon");
@@ -101,7 +129,6 @@ export default function MemberMenu() {
     }
   };
 
-
   return (
     <div className="vipPage">
       {/* Top Area */}
@@ -113,6 +140,11 @@ export default function MemberMenu() {
               <div className="vipBrandTitle">TK Branding</div>
               <div className="vipBrandSub">
                 Welcome, <b>{me?.nickname || "Member"}</b>
+              </div>
+
+              {/* ✅ show ranking */}
+              <div className="vipBrandSub">
+                Rank: <b>{ranking || "-"}</b>
               </div>
             </div>
           </div>
@@ -136,7 +168,9 @@ export default function MemberMenu() {
           {TABS.map((t) => (
             <button
               key={t}
-              className={`vipTab ${activeTab === t ? "active" : ""}`}
+              className={`vipTab ${activeTab === t ? "active" : ""} ${
+                eligibleTier && t === eligibleTier ? "eligible" : ""
+              }`}
               onClick={() => setActiveTab(t)}
               type="button"
             >
@@ -151,7 +185,9 @@ export default function MemberMenu() {
         {visibleCards.map((c) => (
           <div
             key={c.tier}
-            className={`vipCard ${c.theme}`}
+            className={`vipCard ${c.theme} ${
+              eligibleTier && c.tier === eligibleTier ? "eligibleCard" : ""
+            } ${eligibleTier && c.tier !== eligibleTier ? "notEligibleCard" : ""}`}
             role="button"
             tabIndex={0}
             onClick={() => goToVip(c)}
