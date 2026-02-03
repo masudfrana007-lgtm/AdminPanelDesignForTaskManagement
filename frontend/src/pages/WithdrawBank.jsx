@@ -1,9 +1,7 @@
-// src/pages/WithdrawBank.jsx
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import MemberBottomNav from "../components/MemberBottomNav";
 import "../styles/WithdrawBank.css";
-import withdrawBg from "../assets/bg/withdraw.png";
+import MemberBottomNav from "../components/MemberBottomNav"; // ✅ bottom bar
 
 function money(n) {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n);
@@ -42,29 +40,6 @@ function canCancel(status) {
   return status === "Submitted" || status === "Reviewing" || status === "Processing";
 }
 
-const INITIAL_BENEFICIARIES = [
-  {
-    id: "B-1",
-    label: "My Main Account",
-    country: "KH",
-    bank: "ABA Bank",
-    accountName: "John Doe",
-    accountNumber: "012-345-678",
-    routingNumber: "",
-    branchNumber: "001",
-  },
-  {
-    id: "B-2",
-    label: "Savings",
-    country: "TH",
-    bank: "SCB",
-    accountName: "John Doe",
-    accountNumber: "998-221-445",
-    routingNumber: "1100",
-    branchNumber: "",
-  },
-];
-
 const INITIAL_HISTORY = [
   {
     id: "WD-10021",
@@ -89,11 +64,30 @@ const INITIAL_HISTORY = [
   },
 ];
 
-export default function WithdrawBank() {
+/**
+ * Put these logo images in: public/partners/
+ * - visa.png, mastercard.png, unionpay.png, paypal.png, stripe.png
+ * - swift.png, hsbc.png, citi.png, standardchartered.png, barclays.png
+ */
+const PARTNER_LOGOS = [
+  { name: "Visa", src: "/partners/visa.png" },
+  { name: "Mastercard", src: "/partners/mastercard.png" },
+  { name: "UnionPay", src: "/partners/unionpay.png" },
+  { name: "PayPal", src: "/partners/paypal.png" },
+  { name: "Stripe", src: "/partners/stripe.png" },
+  { name: "SWIFT", src: "/partners/swift.png" },
+  { name: "HSBC", src: "/partners/hsbc.png" },
+  { name: "Citi", src: "/partners/citi.png" },
+  { name: "Standard Chartered", src: "/partners/standardchartered.png" },
+  { name: "Barclays", src: "/partners/barclays.png" },
+];
+
+export default function WithdrawBankV3() {
   const nav = useNavigate();
 
   const balance = 97280.12;
   const feeRate = 0.01;
+  const MIN_WITHDRAW = 10;
 
   const countries = useMemo(() => getAllCountries(), []);
   const [country, setCountry] = useState("KH");
@@ -108,69 +102,42 @@ export default function WithdrawBank() {
 
   const [amount, setAmount] = useState("");
 
-  const [beneficiaries, setBeneficiaries] = useState(INITIAL_BENEFICIARIES);
-  const [selectedBeneficiaryId, setSelectedBeneficiaryId] = useState("");
-  const [benefLabel, setBenefLabel] = useState("");
-
   const [history, setHistory] = useState(INITIAL_HISTORY);
+
+  // Inline validation + submit lock
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fee = useMemo(() => Number(amount || 0) * feeRate, [amount]);
   const receive = useMemo(() => Math.max(0, Number(amount || 0) - fee), [amount, fee]);
 
-  const applyBeneficiary = (id) => {
-    const b = beneficiaries.find((x) => x.id === id);
-    if (!b) return;
+  const validateWithdrawal = () => {
+    const next = {};
 
-    setSelectedBeneficiaryId(id);
-    setCountry(b.country);
-    setBank(b.bank);
-    setAccountName(b.accountName);
-    setAccountNumber(b.accountNumber);
-    setRoutingNumber(b.routingNumber || "");
-    setBranchNumber(b.branchNumber || "");
+    if (!country) next.country = "Please select a country.";
+    if (!bank) next.bank = "Please select a bank.";
+    if (!accountName.trim()) next.accountName = "Please enter account holder name.";
+    if (!accountNumber.trim()) next.accountNumber = "Please enter account number.";
+
+    const amt = Number(amount || 0);
+    if (!amount || isNaN(amt) || amt <= 0) next.amount = "Enter a valid amount.";
+    else if (amt < MIN_WITHDRAW) next.amount = `Minimum withdrawal is ${MIN_WITHDRAW} USD.`;
+    else if (amt > balance) next.amount = "Amount exceeds available balance.";
+
+    return next;
   };
 
-  const deleteBeneficiary = (id) => {
-    const b = beneficiaries.find((x) => x.id === id);
-    if (!b) return;
+  const isReadyToSubmit = () => Object.keys(validateWithdrawal()).length === 0;
 
-    const ok = window.confirm(`Delete beneficiary "${b.label}"?`);
-    if (!ok) return;
+  const submit = async () => {
+    if (isSubmitting) return;
 
-    setBeneficiaries((prev) => prev.filter((x) => x.id !== id));
-    if (selectedBeneficiaryId === id) setSelectedBeneficiaryId("");
-  };
+    const next = validateWithdrawal();
+    setErrors(next);
+    if (Object.keys(next).length) return;
 
-  const saveBeneficiary = () => {
-    if (!benefLabel.trim()) return alert("Please enter a beneficiary label.");
-    if (!country) return alert("Select country.");
-    if (!bank) return alert("Select bank.");
-    if (!accountName.trim()) return alert("Enter account holder name.");
-    if (!accountNumber.trim()) return alert("Enter account number.");
-
-    const newB = {
-      id: "B-" + Math.floor(1000 + Math.random() * 9000),
-      label: benefLabel.trim(),
-      country,
-      bank,
-      accountName: accountName.trim(),
-      accountNumber: accountNumber.trim(),
-      routingNumber: routingNumber.trim(),
-      branchNumber: branchNumber.trim(),
-    };
-
-    setBeneficiaries((prev) => [newB, ...prev]);
-    setSelectedBeneficiaryId(newB.id);
-    setBenefLabel("");
-    alert("Beneficiary saved ✅");
-  };
-
-  const submit = () => {
-    if (!country) return alert("Please select a country.");
-    if (!bank) return alert("Please select a bank.");
-    if (!accountName.trim()) return alert("Please enter account holder name.");
-    if (!accountNumber.trim()) return alert("Please enter account number.");
-    if (!amount || Number(amount) <= 0) return alert("Please enter a valid amount.");
+    setIsSubmitting(true);
+    await new Promise((r) => setTimeout(r, 900)); // simulate API
 
     const newId = "WD-" + Math.floor(10000 + Math.random() * 90000);
     const now = new Date();
@@ -186,7 +153,10 @@ export default function WithdrawBank() {
 
     setHistory((prev) => [newItem, ...prev]);
     setAmount("");
-    alert("Withdrawal submitted ✅");
+    setIsSubmitting(false);
+
+    setErrors((prev) => ({ ...prev, form: "Withdrawal submitted ✅" }));
+    setTimeout(() => setErrors((p) => ({ ...p, form: "" })), 2500);
   };
 
   const cancelWithdrawal = (id) => {
@@ -206,112 +176,127 @@ export default function WithdrawBank() {
       })
     );
 
-    alert("Withdrawal cancelled ✅");
+    setErrors((prev) => ({ ...prev, form: "Withdrawal cancelled ✅" }));
+    setTimeout(() => setErrors((p) => ({ ...p, form: "" })), 2500);
   };
 
+  const statusKey = (s) => String(s || "").toLowerCase();
+
   return (
-	  <div
-	    className="wb-page"
-	    style={{ backgroundImage: `url(${withdrawBg})` }}
-	  >    	
-      <header className="wb-header">
-        <button className="wb-back" onClick={() => nav(-1)} type="button">
+    <div className="vipWhite wb3">
+      {/* Top bar */}
+      <header className="topbarW">
+        <button className="backIcon" onClick={() => nav(-1)} aria-label="Back">
           ←
         </button>
 
-        <div className="wb-headerText">
-          <h1>Withdraw by Bank</h1>
-          <p>Withdraw securely to your personal bank account</p>
+        <div className="topTitle">
+          <div className="topBrandRow">
+            <span className="topBrand">Withdraw by Bank</span>
+            <span className="vipBadge vipBadgeAx">Secure</span>
+          </div>
+          <div className="topSub">Withdraw securely to your personal bank account</div>
         </div>
 
-        <button className="wb-secondaryBtn" type="button" onClick={() => nav("/member/service")}>
-          Support
+        <button className="homeBtn" onClick={() => nav("/")} aria-label="Home">
+          Home
         </button>
       </header>
 
-      <main className="wb-wrap">
-        {/* Balance */}
-        <section className="wb-card wb-balance">
-          <div className="wb-balanceHead">
-            <span>Available Balance</span>
-            <span className="wb-pill">USD</span>
-          </div>
-          <div className="wb-balanceAmount">${money(balance)}</div>
-          <div className="wb-infoText">
-            Processing time: up to <b>24 hours</b>. Compliance checks may apply.
-          </div>
-        </section>
-
-        {/* Saved Beneficiaries */}
-        <section className="wb-card">
-          <div className="wb-rowHead">
-            <h3>Saved Beneficiaries</h3>
-            <span className="wb-muted">Tap one to autofill your bank details.</span>
+      {/* ✅ Frozen supported networks block */}
+      <section className="wb3-netSticky" aria-label="Supported networks">
+        <div className="wb3-netInner">
+          <div className="wb3-netTitle">
+            Supported Networks <span className="wb3-netChip">Verified</span>
           </div>
 
-          <div className="wb-benefList">
-            {beneficiaries.map((b) => (
-              <div
-                key={b.id}
-                className={"wb-benefCard " + (selectedBeneficiaryId === b.id ? "is-active" : "")}
-              >
-                <button
-                  type="button"
-                  className="wb-benefMain"
-                  onClick={() => applyBeneficiary(b.id)}
-                  title="Use this beneficiary"
-                >
-                  <div className="wb-benefTitle">{b.label}</div>
-                  <div className="wb-benefSub">
-                    {b.bank} • {b.country} • {b.accountNumber}
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  className="wb-dangerBtn"
-                  onClick={() => deleteBeneficiary(b.id)}
-                  title="Delete beneficiary"
-                >
-                  Delete
-                </button>
-              </div>
-            ))}
-
-            {!beneficiaries.length && <div className="wb-empty">No saved beneficiaries yet.</div>}
+          <div className="wb3-marquee" aria-label="Partner logos">
+            <div className="wb3-track">
+              {[...PARTNER_LOGOS, ...PARTNER_LOGOS].map((l, idx) => (
+                <div key={l.name + idx} className="wb3-logoPill" title={l.name}>
+                  <img className="wb3-logoImg" src={l.src} alt={l.name} loading="lazy" />
+                </div>
+              ))}
+            </div>
           </div>
-        </section>
 
-        {/* Add Beneficiary */}
-        <section className="wb-card wb-addBeneficiary">
-          <h3>Add Beneficiary</h3>
-          <p className="wb-muted">Save an account for faster withdrawals next time.</p>
+          <div className="wb3-netNote">
+            Processing is handled via trusted networks. Provider list is display-only (demo).
+          </div>
+        </div>
+      </section>
 
-          <div className="wb-grid">
-            <div className="wb-field">
-              <label>Beneficiary Label</label>
-              <input
-                value={benefLabel}
-                onChange={(e) => setBenefLabel(e.target.value)}
-                placeholder='Example: "My Main Account"'
-              />
-              <div className="wb-help">This name is only for your reference.</div>
+      <main className="wrapW">
+        {/* Balance block (same as AliexpressVip3) */}
+        <section className="balanceCardAx">
+          <div className="balanceLeft">
+            <div className="balanceLabelAx">Available Balance</div>
+
+            <div className="balanceValueW">
+              {money(balance)} <span className="unitW">USD</span>
             </div>
 
-            <div className="wb-field">
+            <div className="metaRowW">
+              <span className="pillW pillAx">Fee 1%</span>
+              <span className="pillW pillAx">Processing up to 24h</span>
+              <span className="pillW pillAx">Compliance checks</span>
+            </div>
+          </div>
+
+          <div className="balanceRightW balanceRightAx">
+            <div className="miniInfo">
+              <div className="miniLabelAx">Fee Rate</div>
+              <div className="miniValue">1%</div>
+            </div>
+
+            <div className="miniInfo">
+              <div className="miniLabelAx">Minimum</div>
+              <div className="miniValue">{MIN_WITHDRAW} USD</div>
+            </div>
+          </div>
+        </section>
+
+        {/* Withdrawal Request (highlighted) */}
+        <section className="cardW wb3-requestCard" id="withdraw-request">
+          <div className="wb3-cardHead">
+            <h2 className="h2W">Withdrawal Request</h2>
+            <span className="smallMutedW">Verify details carefully</span>
+          </div>
+
+          {errors.form ? <div className="wb3-banner">{errors.form}</div> : null}
+
+          <div className="wb3-grid">
+            <div className="wb3-field">
               <label>Country</label>
-              <select value={country} onChange={(e) => setCountry(e.target.value)}>
+              <select
+                value={country}
+                onChange={(e) => {
+                  setCountry(e.target.value);
+                  setErrors((p) => ({ ...p, country: "" }));
+                }}
+              >
                 {countries.map((c) => (
                   <option key={c.code} value={c.code}>
                     {c.name}
                   </option>
                 ))}
               </select>
+              {errors.country ? (
+                <div className="wb3-error">{errors.country}</div>
+              ) : (
+                <div className="wb3-help">Select your bank country/region.</div>
+              )}
             </div>
 
-            <div className="wb-field">
+            <div className="wb3-field">
               <label>Bank</label>
-              <select value={bank} onChange={(e) => setBank(e.target.value)}>
+              <select
+                value={bank}
+                onChange={(e) => {
+                  setBank(e.target.value);
+                  setErrors((p) => ({ ...p, bank: "" }));
+                }}
+              >
                 <option value="">Select bank</option>
                 {banks.length ? (
                   banks.map((b) => (
@@ -321,123 +306,74 @@ export default function WithdrawBank() {
                   ))
                 ) : (
                   <option value="" disabled>
-                    No banks configured (backend needed)
+                    Bank list will appear after selecting a supported country.
                   </option>
                 )}
               </select>
+              {errors.bank ? (
+                <div className="wb3-error">{errors.bank}</div>
+              ) : (
+                <div className="wb3-help">Banks load by selected country (demo list).</div>
+              )}
             </div>
 
-            <div className="wb-field">
+            <div className="wb3-field">
               <label>Account Holder Name</label>
               <input
                 value={accountName}
-                onChange={(e) => setAccountName(e.target.value)}
-                placeholder="Account holder name"
+                onChange={(e) => {
+                  setAccountName(e.target.value);
+                  setErrors((p) => ({ ...p, accountName: "" }));
+                }}
+                autoComplete="name"
               />
+              {errors.accountName ? <div className="wb3-error">{errors.accountName}</div> : null}
             </div>
 
-            <div className="wb-field">
+            <div className="wb3-field">
               <label>Account Number</label>
               <input
                 value={accountNumber}
-                onChange={(e) => setAccountNumber(e.target.value)}
-                placeholder="Account number"
+                onChange={(e) => {
+                  setAccountNumber(e.target.value);
+                  setErrors((p) => ({ ...p, accountNumber: "" }));
+                }}
+                inputMode="numeric"
+                autoComplete="off"
               />
+              {errors.accountNumber ? <div className="wb3-error">{errors.accountNumber}</div> : null}
             </div>
 
-            <div className="wb-field">
+            <div className="wb3-field">
               <label>Routing Number (optional)</label>
-              <input
-                value={routingNumber}
-                onChange={(e) => setRoutingNumber(e.target.value)}
-                placeholder="Routing number"
-              />
+              <input value={routingNumber} onChange={(e) => setRoutingNumber(e.target.value)} inputMode="numeric" />
             </div>
 
-            <div className="wb-field">
+            <div className="wb3-field">
               <label>Branch Number (optional)</label>
-              <input
-                value={branchNumber}
-                onChange={(e) => setBranchNumber(e.target.value)}
-                placeholder="Branch number"
-              />
-            </div>
-          </div>
-
-          <button className="wb-secondaryBtn" type="button" onClick={saveBeneficiary}>
-            Save Beneficiary
-          </button>
-        </section>
-
-        {/* Withdrawal Request */}
-        <section className="wb-card">
-          <h3>Withdrawal Request</h3>
-
-          <div className="wb-grid">
-            <div className="wb-field">
-              <label>Country</label>
-              <select value={country} onChange={(e) => setCountry(e.target.value)}>
-                {countries.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-              <div className="wb-help">Select your bank country/region.</div>
+              <input value={branchNumber} onChange={(e) => setBranchNumber(e.target.value)} inputMode="numeric" />
             </div>
 
-            <div className="wb-field">
-              <label>Bank</label>
-              <select value={bank} onChange={(e) => setBank(e.target.value)}>
-                <option value="">Select bank</option>
-                {banks.length ? (
-                  banks.map((b) => (
-                    <option key={b} value={b}>
-                      {b}
-                    </option>
-                  ))
-                ) : (
-                  <option value="" disabled>
-                    No banks configured (backend needed)
-                  </option>
-                )}
-              </select>
-              <div className="wb-help">Banks load by selected country (demo list).</div>
-            </div>
-
-            <div className="wb-field">
-              <label>Account Holder Name</label>
-              <input value={accountName} onChange={(e) => setAccountName(e.target.value)} />
-            </div>
-
-            <div className="wb-field">
-              <label>Account Number</label>
-              <input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} />
-            </div>
-
-            <div className="wb-field">
-              <label>Routing Number (optional)</label>
-              <input value={routingNumber} onChange={(e) => setRoutingNumber(e.target.value)} />
-            </div>
-
-            <div className="wb-field">
-              <label>Branch Number (optional)</label>
-              <input value={branchNumber} onChange={(e) => setBranchNumber(e.target.value)} />
-            </div>
-
-            <div className="wb-field">
+            <div className="wb3-field">
               <label>Withdrawal Amount (USD)</label>
               <input
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e) => {
+                  setAmount(e.target.value);
+                  setErrors((p) => ({ ...p, amount: "" }));
+                }}
                 placeholder="Enter amount"
                 inputMode="decimal"
               />
-              <div className="wb-help">Minimum: 10 USD • Fee: 1%</div>
+              {errors.amount ? (
+                <div className="wb3-error">{errors.amount}</div>
+              ) : (
+                <div className="wb3-help">Minimum: {MIN_WITHDRAW} USD • Fee: 1%</div>
+              )}
             </div>
           </div>
 
-          <div className="wb-summary">
+          <div className="wb3-summary">
             <div>
               <span>Processing Fee (1%)</span>
               <span>${money(fee)}</span>
@@ -448,42 +384,51 @@ export default function WithdrawBank() {
             </div>
           </div>
 
-          <button className="wb-primaryBtn" onClick={submit} type="button">
-            Confirm Withdrawal
+          {/* Desktop button */}
+          <button
+            className="wb3-primaryBtn wb3-desktopOnly"
+            onClick={submit}
+            type="button"
+            disabled={isSubmitting || !isReadyToSubmit()}
+          >
+            {isSubmitting ? "Submitting..." : "Confirm Withdrawal"}
           </button>
 
-          <p className="wb-note">
-            Ensure bank details are correct. Incorrect details may cause delays or rejection.
+          <p className="wb3-note">
+            Ensure bank details are correct and match your bank records. Incorrect details may cause delays or rejection.
           </p>
         </section>
 
-        {/* History + Timeline + Cancel */}
-        <section className="wb-card">
-          <h3>Withdrawal History & Status</h3>
+        {/* History */}
+        <section className="cardW">
+          <div className="wb3-cardHead">
+            <h2 className="h2W">Withdrawal History & Status</h2>
+            <span className="smallMutedW">Timeline tracking</span>
+          </div>
 
-          <div className="wb-history">
+          <div className="wb3-history">
             {history.map((h) => (
-              <div key={h.id} className="wb-historyCard">
-                <div className="wb-historyTop">
+              <div key={h.id} className="wb3-historyCard">
+                <div className="wb3-historyTop">
                   <div>
-                    <div className="wb-id">{h.id}</div>
-                    <div className="wb-date">{h.date}</div>
+                    <div className="wb3-id">{h.id}</div>
+                    <div className="wb3-date">{h.date}</div>
                   </div>
 
-                  <div className="wb-historyActions">
-                    <div className={`wb-status ${String(h.status).toLowerCase()}`}>{h.status}</div>
+                  <div className="wb3-historyActions">
+                    <div className={"wb3-status " + statusKey(h.status)}>{h.status}</div>
 
                     {canCancel(h.status) && (
-                      <button className="wb-cancelBtn" type="button" onClick={() => cancelWithdrawal(h.id)}>
+                      <button className="wb3-cancelBtn" type="button" onClick={() => cancelWithdrawal(h.id)}>
                         Cancel
                       </button>
                     )}
                   </div>
                 </div>
 
-                <div className="wb-historyAmount">${money(h.amount)}</div>
+                <div className="wb3-historyAmount">${money(h.amount)}</div>
 
-                <div className="wb-timeline">
+                <div className="wb3-timeline">
                   {["Submitted", "Reviewing", "Processing", "Completed"].map((step) => {
                     const done = h.timeline?.includes(step);
                     const cancelled = h.status === "Cancelled";
@@ -498,7 +443,7 @@ export default function WithdrawBank() {
                       : "";
 
                     return (
-                      <div key={step} className={"wb-step " + (done ? "doneText" : "")}>
+                      <div key={step} className={"wb3-step " + (done ? "doneText" : "")}>
                         <span className={"dot " + dotClass} />
                         <span>{step}</span>
                       </div>
@@ -507,11 +452,11 @@ export default function WithdrawBank() {
                 </div>
 
                 {h.status === "Failed" && (
-                  <div className="wb-failHint">Reason: Bank details mismatch or compliance review.</div>
+                  <div className="wb3-failHint">Reason: Bank details mismatch or compliance review.</div>
                 )}
 
                 {h.status === "Cancelled" && (
-                  <div className="wb-cancelHint">Cancelled by user. Funds returned to wallet (demo).</div>
+                  <div className="wb3-cancelHint">Cancelled by user. Funds returned to wallet (demo).</div>
                 )}
               </div>
             ))}
@@ -519,8 +464,31 @@ export default function WithdrawBank() {
         </section>
       </main>
 
-      {/* bottom bar like mine page */}
-      <MemberBottomNav active="mine" />
+      {/* Sticky mobile confirm bar */}
+      <div className="wb3-stickyBar" role="region" aria-label="Withdrawal action bar">
+        <div className="wb3-stickyMeta">
+          <div className="wb3-stickyLabel">Receive</div>
+          <div className="wb3-stickyValue">${money(receive)}</div>
+        </div>
+
+        <button
+          className="wb3-stickyBtn"
+          type="button"
+          onClick={() => {
+            submit();
+            const next = validateWithdrawal();
+            if (Object.keys(next).length) {
+              document.getElementById("withdraw-request")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+          }}
+          disabled={isSubmitting || !isReadyToSubmit()}
+        >
+          {isSubmitting ? "Submitting..." : "Confirm"}
+        </button>
+      </div>
+
+      {/* ✅ bottom bar */}
+      <MemberBottomNav active="mine" />      
     </div>
   );
 }

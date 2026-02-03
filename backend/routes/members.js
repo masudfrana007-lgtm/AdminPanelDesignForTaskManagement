@@ -8,25 +8,12 @@ import { allowRoles } from "../middleware/roles.js";
 const router = express.Router();
 
 /**
- * OPTIONAL auth wrapper:
- * - if token exists => set req.user
- * - if no token => continue as public
+ * CREATE MEMBER (PUBLIC SIGNUP ONLY)
+ * - referral_code required -> sponsor_id = users.id (owner/agent)
+ * - approval_status = pending
  */
-const optionalAuth = async (req, res, next) => {
-  const hdr = req.headers.authorization || "";
-  if (!hdr.startsWith("Bearer ")) return next();
-  return auth(req, res, next);
-};
-
-/**
- * CREATE MEMBER (owner/agent create OR public signup)
- * - owner/agent create: sponsor_id = req.user.id, auto approved
- * - public signup: referral_code required -> sponsor_id = users.id, pending
- */
-router.post("/", optionalAuth, async (req, res) => {
+router.post("/", async (req, res) => {
   try {
-    const isAdmin = req.user && ["owner", "agent"].includes(req.user.role);
-
     const nickname = String(req.body.nickname || "").trim();
     const phone = String(req.body.phone || "").trim();
     const country = String(req.body.country || "").trim();
@@ -34,37 +21,28 @@ router.post("/", optionalAuth, async (req, res) => {
     const gender = String(req.body.gender || "").trim();
     const referral_code = String(req.body.referral_code || "").trim();
 
-    if (!nickname || !phone || !country || !password || !gender) {
+    if (!nickname || !phone || !country || !password || !gender || !referral_code) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    let sponsor_id = null;
+    // ✅ referral_code MUST match users.short_id (owner/agent)
+    const ref = await pool.query(
+      `SELECT id
+       FROM users
+       WHERE short_id = $1
+         AND role IN ('owner','agent')
+       LIMIT 1`,
+      [referral_code]
+    );
 
-    if (isAdmin) {
-      sponsor_id = req.user.id;
-    } else {
-      if (!referral_code) {
-        return res.status(400).json({ message: "Referral code is required" });
-      }
-
-      const ref = await pool.query(
-        `SELECT id
-         FROM users
-         WHERE short_id = $1
-           AND role IN ('owner','agent')
-         LIMIT 1`,
-        [referral_code]
-      );
-
-      if (!ref.rowCount) {
-        return res.status(400).json({ message: "Invalid referral code" });
-      }
-
-      sponsor_id = ref.rows[0].id;
+    if (!ref.rowCount) {
+      return res.status(400).json({ message: "Invalid referral code" });
     }
 
+    const sponsor_id = ref.rows[0].id;
+
     const passHash = await bcrypt.hash(password, 10);
-    const approval_status = isAdmin ? "approved" : "pending";
+    const approval_status = "pending";
 
     while (true) {
       try {
@@ -86,7 +64,7 @@ router.post("/", optionalAuth, async (req, res) => {
             passHash,
             sponsor_id,
             approval_status,
-            isAdmin ? req.user.id : null,
+            sponsor_id,   
             gender,
           ]
         );
@@ -111,9 +89,10 @@ router.post("/", optionalAuth, async (req, res) => {
     }
   } catch (e) {
     console.error(e);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 });
+
 
 /**
  * LIST MEMBERS (owner/agent)
@@ -163,18 +142,92 @@ router.get("/", auth, allowRoles("owner", "agent"), async (req, res) => {
        FROM members m
        JOIN users u ON u.id = m.sponsor_id
        LEFT JOIN wallets w ON w.member_id = m.id
-       WHERE m.sponsor_id = $1
-          OR m.sponsor_id IN (
-            SELECT id FROM users WHERE created_by = $1 AND role = 'agent'
-          )
-       ORDER BY m.id DESC`,
-      [req.user.id]
+       ORDER BY m.id DESC`
     );
 
     return res.json(r.rows);
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: "Server error" });
+  }
+});
+
+/**
+ * UPDATE MEMBER (owner only)
+ * - allows editing nickname, phone, country, ranking, withdraw_privilege, gender, approval_status
+ */
+router.patch("/:id", auth, allowRoles("owner"), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ message: "Invalid member id" });
+
+    const nickname = req.body.nickname != null ? String(req.body.nickname).trim() : null;
+    const phone = req.body.phone != null ? String(req.body.phone).trim() : null;
+    const country = req.body.country != null ? String(req.body.country).trim() : null;
+    const ranking = req.body.ranking != null ? String(req.body.ranking).trim() : null;
+    const gender = req.body.gender != null ? String(req.body.gender).trim() : null;
+
+    const withdraw_privilege =
+      req.body.withdraw_privilege === undefined ? undefined : !!req.body.withdraw_privilege;
+
+    const approval_status =
+      req.body.approval_status != null ? String(req.body.approval_status).trim() : null;
+
+    // ✅ only allow safe values (prevent random status/ranking)
+    const allowedStatuses = ["pending", "approved", "rejected"];
+    const allowedRankings = ["Trial", "V1", "V2", "V3", "V4", "V5", "V6"];
+
+    if (approval_status && !allowedStatuses.includes(approval_status)) {
+      return res.status(400).json({ message: "Invalid approval_status" });
+    }
+    if (ranking && !allowedRankings.includes(ranking)) {
+      return res.status(400).json({ message: "Invalid ranking" });
+    }
+
+    // Build dynamic update query (only update fields provided)
+    const sets = [];
+    const vals = [];
+    let i = 1;
+
+    const add = (col, val) => {
+      sets.push(`${col} = $${i++}`);
+      vals.push(val);
+    };
+
+    if (nickname !== null) add("nickname", nickname);
+    if (phone !== null) add("phone", phone);
+    if (country !== null) add("country", country);
+    if (ranking !== null) add("ranking", ranking);
+    if (gender !== null) add("gender", gender);
+    if (approval_status !== null) add("approval_status", approval_status);
+    if (withdraw_privilege !== undefined) add("withdraw_privilege", withdraw_privilege);
+
+    if (!sets.length) return res.status(400).json({ message: "No fields to update" });
+
+    vals.push(id);
+
+    const r = await pool.query(
+      `UPDATE members
+       SET ${sets.join(", ")}
+       WHERE id = $${i}
+       RETURNING id, short_id, nickname, phone, country, sponsor_id,
+                 ranking, withdraw_privilege, approval_status, created_by, created_at, gender`,
+      vals
+    );
+
+    if (!r.rowCount) return res.status(404).json({ message: "Member not found" });
+
+    return res.json(r.rows[0]);
+  } catch (e) {
+    const msg = String(e);
+    if (msg.includes("members_nickname_key")) {
+      return res.status(400).json({ message: "Username already exists" });
+    }
+    if (msg.includes("members_phone_key")) {
+      return res.status(400).json({ message: "Phone number already exists" });
+    }
+    console.error(e);
+    return res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -197,14 +250,7 @@ router.get("/:id/wallet", auth, allowRoles("owner", "agent"), async (req, res) =
         return res.status(403).json({ message: "Not allowed for this member" });
       }
     } else {
-      // owner: allow own member OR member of owner's agents
-      if (member.sponsor_id !== req.user.id) {
-        const a = await pool.query(
-          `SELECT 1 FROM users WHERE id=$1 AND created_by=$2 AND role='agent' LIMIT 1`,
-          [member.sponsor_id, req.user.id]
-        );
-        if (!a.rowCount) return res.status(403).json({ message: "Not allowed for this member" });
-      }
+      //
     }
 
     // ensure wallet exists

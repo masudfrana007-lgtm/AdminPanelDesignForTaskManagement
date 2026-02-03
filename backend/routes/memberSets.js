@@ -17,20 +17,14 @@ async function canAccessMember(user, memberId) {
   const member = m.rows[0];
   if (!member) return { ok: false, reason: "Member not found" };
 
+  // agent can access only their sponsored members
   if (user.role === "agent") {
     if (member.sponsor_id !== user.id) return { ok: false, reason: "Not allowed for this member" };
     return { ok: true, member };
   }
 
-  // owner
-  if (member.sponsor_id === user.id) return { ok: true, member };
-
-  // owner’s agents
-  const a = await pool.query(
-    `SELECT 1 FROM users WHERE id = $1 AND created_by = $2 AND role = 'agent' LIMIT 1`,
-    [member.sponsor_id, user.id]
-  );
-  if (a.rowCount > 0) return { ok: true, member };
+  // ✅ owner can access ANY member
+  if (user.role === "owner") return { ok: true, member };
 
   return { ok: false, reason: "Not allowed for this member" };
 }

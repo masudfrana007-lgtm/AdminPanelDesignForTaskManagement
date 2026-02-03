@@ -7,3 +7,238 @@
 @import "./forms.css";
 @import "./mobile.css";
 @import "./auth.css";
+
+/* =========================
+   RESPONSIVE TABLE WRAP
+   ========================= */
+.tableWrap{
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
+}
+
+/* keep table readable on small screens */
+.table{
+  min-width: 980px; /* forces horizontal scroll on mobile */
+  background: #fff;
+}
+
+.table thead th{
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 2;
+}
+
+/* make actions buttons not wrap awkwardly */
+.table td:last-child{
+  white-space: nowrap;
+}
+
+/* tighten table on small screens */
+@media (max-width: 768px){
+  .table{
+    min-width: 900px;
+  }
+}
+
+/* =========================
+   RESPONSIVE MODAL
+   (fits screen + scroll body)
+   ========================= */
+.modalOverlay{
+  padding: 12px; /* smaller padding on phones */
+}
+
+.modalCard{
+  width: min(680px, 100%);
+  max-height: calc(100vh - 24px); /* keep inside viewport */
+  display: flex;
+  flex-direction: column;
+}
+
+/* modal header/footer stay fixed; body scrolls */
+.modalTop,
+.modalFooter{
+  flex: 0 0 auto;
+}
+
+.modalBody{
+  flex: 1 1 auto;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* make edit grid nicer on mobile */
+@media (max-width: 520px){
+  .modalBody{
+    padding: 14px;
+  }
+
+  /* force form rows to stack */
+  .modalBody > div[style*="grid-template-columns"]{
+    grid-template-columns: 1fr !important;
+  }
+
+  /* previews not overflow */
+  .modalBody img{
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  .modalFooter{
+    justify-content: stretch;
+  }
+
+  .modalFooter .btn{
+    width: 100%;
+  }
+}
+
+/* Optional: make action buttons in table smaller on mobile */
+@media (max-width: 520px){
+  .btn.small{
+    padding: 6px 8px;
+    font-size: 12px;
+    border-radius: 9px;
+  }
+}
+
+/* ====== TASKS TABLE: FIT WIDTH (NO H-SCROLL) ====== */
+.tableWrap{
+  width: 100%;
+  overflow: hidden;          /* no horizontal scroll */
+}
+
+.table{
+  width: 100%;
+  table-layout: fixed;       /* forces columns to fit container */
+}
+
+/* allow wrapping inside cells */
+.table th,
+.table td{
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: top;
+}
+
+/* column sizing (adjust if you want) */
+.table th:nth-child(1), .table td:nth-child(1){ width: 84px; }   /* Image */
+.table th:nth-child(4), .table td:nth-child(4){ width: 60px; }   /* Qty */
+.table th:nth-child(5), .table td:nth-child(5){ width: 76px; }   /* Rate */
+.table th:nth-child(6), .table td:nth-child(6){ width: 100px; }  /* Commission */
+.table th:nth-child(7), .table td:nth-child(7){ width: 80px; }   /* Price */
+.table th:nth-child(8), .table td:nth-child(8){ width: 150px; }  /* Actions */
+
+/* Title + Description wrap nicely */
+.table td:nth-child(2),
+.table td:nth-child(3){
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* Actions: keep buttons inside cell */
+.tblActions{
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;           /* if tight, moves to next line */
+}
+
+/* on very small widths, stack buttons */
+@media (max-width: 520px){
+  .table th:nth-child(8), .table td:nth-child(8){ width: 120px; }
+  .tblActions{ justify-content: flex-start; }
+  .tblActions .btn{ width: 100%; }
+}
+
+/* ===== Compact Create Task Form ===== */
+.taskFormCompact{
+  display: grid;
+  grid-template-columns: 1.4fr .8fr;
+  gap: 12px;
+  align-items: start;
+}
+
+/* reduce big default card padding feeling inside */
+.taskFormCompact input,
+.taskFormCompact textarea{
+  padding: 9px 10px;
+  border-radius: 10px;
+}
+
+.taskFormCompact textarea{
+  min-height: 72px;      /* smaller */
+}
+
+.taskFormMain{
+  display: grid;
+  gap: 10px;
+}
+
+.taskFormGrid2{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.taskFormSide{
+  display: grid;
+  gap: 10px;
+}
+
+.taskMiniCard{
+  background: #f9fafb;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.taskPrice{
+  font-weight: 800;
+  font-size: 20px;
+  margin-top: 4px;
+}
+
+.taskThumb{
+  width: 100%;
+  max-width: 220px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+}
+
+.taskCreateBtn{
+  width: 100%;
+  padding: 10px 12px;
+}
+
+/* Mobile: stack */
+@media (max-width: 860px){
+  .taskFormCompact{
+    grid-template-columns: 1fr;
+  }
+  .taskThumb{
+    max-width: 100%;
+  }
+}
+/* ✅ Members table: show all (no ellipsis cut-off) */
+.tableWrap{
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table.tableNoCut{
+  table-layout: auto;
+  min-width: 1100px; /* adjust if you have more columns */
+}
+
+.table.tableNoCut th,
+.table.tableNoCut td{
+  white-space: nowrap;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  max-width: none !important;
+}

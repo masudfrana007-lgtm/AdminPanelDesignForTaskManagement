@@ -1,368 +1,422 @@
-/* Full page background like the screenshot */
-.vipPage {
+.homeClean{
+  --wrap: min(1120px, 94vw);
+
+  /* White + professional palette */
+  --bg: #ffffff;
+  --card: rgba(255,255,255,0.92);
+  --line: rgba(12, 22, 38, 0.10);
+  --shadow: 0 18px 50px rgba(10, 20, 35, 0.08);
+
+  --txt: rgba(14, 22, 34, 0.92);
+  --muted: rgba(14, 22, 34, 0.62);
+
+  --primary: #1f6feb;  /* professional blue */
+  --accent: #18b7a6;   /* teal */
+  --gold: #f0c84b;
+
+  background: var(--bg);
+  color: var(--txt);
   min-height: 100vh;
-  background: url('../assets/background.png') no-repeat center center fixed;
-  /* background:
-    linear-gradient(135deg, rgba(13, 35, 80, 0.85), rgba(8, 25, 60, 0.90)),
-    url('../assets/background.png'); */
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
-  padding: 20px;
-  color: #ffffff;
   position: relative;
+  overflow: hidden;
 }
 
-.vipPage::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: 
-    radial-gradient(ellipse 800px 600px at 20% 20%, rgba(70, 130, 255, 0.15), transparent 60%),
-    radial-gradient(ellipse 700px 500px at 80% 30%, rgba(255, 150, 80, 0.12), transparent 55%),
-    radial-gradient(ellipse 600px 400px at 60% 80%, rgba(255, 100, 160, 0.10), transparent 50%);
-  pointer-events: none;
-  z-index: 0;
+/* subtle background image but page stays WHITE */
+.bgLayer{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(900px 520px at 12% 0%, rgba(31,111,235,0.08), transparent 60%),
+    radial-gradient(900px 520px at 92% 10%, rgba(24,183,166,0.07), transparent 60%),
+    url("/home/bg-soft.png") center / cover no-repeat;
+  opacity: 0.55;
+  filter: saturate(0.95);
 }
 
-.vipPage > * {
+.wrap{
+  width: var(--wrap);
+  margin: 0 auto;
+  padding: 18px 0 40px;
   position: relative;
   z-index: 1;
 }
 
-/* Header */
-.vipTop {
-  max-width: 1100px;
-  margin: 0 auto;
+/* Entry animations */
+.fadeIn{ animation: fadeIn .55s ease both; }
+.enter{
+  opacity: 0;
+  transform: translateY(10px);
+  animation: enter .55s ease forwards;
+}
+.enter-1{ animation-delay: .05s; }
+.enter-2{ animation-delay: .12s; }
+.enter-3{ animation-delay: .18s; }
+.enter-4{ animation-delay: .24s; }
+
+@keyframes fadeIn{
+  from{ opacity:0; transform: translateY(6px); }
+  to{ opacity:1; transform: translateY(0); }
+}
+@keyframes enter{
+  to{ opacity:1; transform: translateY(0); }
 }
 
-.vipHeaderRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+/* Hover / click effects */
+.lift{
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, background .16s ease;
+}
+.lift:hover{
+  transform: translateY(-3px);
+  border-color: rgba(31,111,235,0.18);
+  box-shadow: 0 26px 70px rgba(10, 20, 35, 0.10);
+}
+.lift:active{
+  transform: translateY(-1px) scale(0.99);
 }
 
-.vipBrand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
+/* Sections */
+.section{ margin-top: 14px; }
 
-.vipBrandLogo {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  display: grid;
-  place-items: center;
-  font-weight: 900;
-  color: #0b1020;
-  background: linear-gradient(135deg, #ffd25a, #ffb300);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.35);
+.sectionHead{
+  margin: 2px 2px 10px;
 }
-
-.vipBrandTitle {
+.h2{
+  margin: 0;
   font-size: 18px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
+  letter-spacing: -0.2px;
+}
+.p{
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.55;
 }
 
-.vipBrandSub {
-  opacity: 0.9;
-  font-size: 12.5px;
-  margin-top: 2px;
-}
-
-.vipLogout {
-  border: 0;
-  border-radius: 999px;
-  padding: 10px 14px;
-  cursor: pointer;
-  background: rgba(255,255,255,0.12);
-  color: #fff;
-  backdrop-filter: blur(10px);
-}
-
-.vipHint {
-  margin-top: 12px;
-  font-size: 12.5px;
-  opacity: 0.95;
-}
-
-.vipPill {
-  display: inline-block;
-  padding: 2px 10px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.14);
-  border: 1px solid rgba(255,255,255,0.18);
-  margin-left: 6px;
-  font-size: 12px;
-}
-
-.vipError {
-  margin-top: 10px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: rgba(255, 0, 80, 0.16);
-  border: 1px solid rgba(255, 0, 80, 0.25);
-}
-
-/* Tabs */
-.vipTabs {
-  margin: 25px 0;
-  display: flex;
+/* Top header: make it more professional colored */
+.topHeader{
+  display:flex;
+  align-items:stretch;
+  justify-content:space-between;
   gap: 12px;
-  flex-wrap: wrap;
-  justify-content: flex-start;
+  padding: 14px;
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--line);
+  background: var(--card);
 }
 
-.vipTab {
-  border: 1px solid rgba(255,255,255,0.25);
-  background: rgba(255,255,255,0.15);
-  color: rgba(255,255,255,0.9);
-  padding: 12px 20px;
-  border-radius: 12px;
-  cursor: pointer;
-  backdrop-filter: blur(15px);
-  min-width: 80px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+.premiumHeader{
+  /* upgraded profile header color */
+  background:
+    linear-gradient(135deg, rgba(0, 60, 119, 0.903), rgba(2, 99, 89, 0.267)),
+    rgba(255,255,255,0.92);
+  border-color: rgba(31, 113, 235, 0.5);
 }
 
-.vipTab:hover {
-  background: rgba(255,255,255,0.25);
-  transform: translateY(-2px);
+.profileLeft{
+  display:flex;
+  gap: 12px;
+  align-items:center;
 }
 
-.vipTab.active {
-  /* background: linear-gradient(135deg, rgba(120,180,255,0.9), rgba(60,120,220,0.8)); */
-  background: linear-gradient(135deg, #ffd25a, #ffb300);
-  border-color: rgba(180,220,255,0.6);
-  box-shadow: 0 8px 25px rgba(60,120,220,0.4);
-  color: #ffffff;
+.avatarWrap{
+  position:relative;
+  width:56px;
+  height:56px;
+  border-radius: 999px;
+  padding: 2px;
+  background: linear-gradient(180deg, rgba(31,111,235,0.55), rgba(24,183,166,0.38));
 }
 
-/* Cards container */
-.vipCardsWrap {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 25px;
-  padding-bottom: 100px;
-}
-
-/* Card base (glass) */
-.vipCard {
-  position: relative;
-  border-radius: 20px;
-  padding: 20px;
-  border: 1px solid rgba(255,255,255,0.2);
-  background: rgba(255,255,255,0.1);
-  /* backdrop-filter: blur(20px); */
-  box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-  overflow: hidden;
-  min-height: 280px;
-  transition: all 0.3s ease;
-}
-
-.vipCard:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 25px 60px rgba(0,0,0,0.4);
-}
-
-/* Colored glow per tier */
-.vipCard.vip1::before,
-.vipCard.vip2::before,
-.vipCard.vip3::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.1) 70%);
-  border-radius: 20px;
-  opacity: 0.8;
-  z-index: -1;
-}
-
-.vipCard.vip1 {
-  background: linear-gradient(135deg, rgba(30, 90, 200, 0.25), rgba(60, 120, 255, 0.15));
-  border-color: rgba(100, 150, 255, 0.3);
-}
-
-.vipCard.vip2 {
-  background: linear-gradient(135deg, #ff765a , rgba(255, 120, 80, 0.15));
-  border-color: rgba(255, 160, 100, 0.3);
-}
-
-.vipCard.vip3 {
-  background: linear-gradient(135deg, #ff5a5aa8 , rgba(163, 18, 83, 0.15));
-  border-color: rgba(255, 120, 160, 0.3);
-}
-
-
-/* Icon + title row */
-.vipCardTop {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  margin-top: 40px;
-  position: relative;
-  z-index: 2;
-}
-
-.vipIcon {
-  width: 100px;
-  height: 100px;
-  border-radius: 16px;
-  /* border: 2px solid rgba(255,255,255,0.3); */
-  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-  backdrop-filter: blur(10px);
+.avatar{
+  width:100%;
+  height:100%;
+  border-radius: 999px;
   object-fit: cover;
-  background: rgba(255,255,255,0.1);
+  border: 1px solid rgb(7, 41, 96);
+  display:block;
 }
 
-/* Remove the ::after pseudo-elements since we're using real images now */
-
-.vipTitleBlock {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  flex: 1;
+.online{
+  position:absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: #22c55e;
+  border: 2px solid #fff;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.10);
 }
 
-.vipStore {
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  margin-bottom: 2px;
+.welcomeBig{
+  color: var(--muted);
+  font-size: 18px;
 }
-
-.vipMini {
-  font-size: 13px;
-  opacity: 0.9;
-  color: rgba(255,255,255,0.8);
+.welcomeName{
+  font-size: 36px;
+  font-weight: 950;
+  letter-spacing: -0.2px;
 }
-
-.vipDivider {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-  margin: 20px 0 15px;
-  position: relative;
-  z-index: 2;
-}
-
-.vipLine {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 15px;
-  font-size: 14px;
-  margin-bottom: 10px;
-  position: relative;
-  z-index: 2;
-}
-
-.vipLabel {
-  opacity: 0.9;
-  color: rgba(255,255,255,0.8);
-  font-weight: 500;
-}
-
-.vipValue {
-  font-weight: 700;
-  color: #ffffff;
-}
-
-.vipValue.strong {
-  font-size: 16px;
-  font-weight: 800;
-  color: #FFD700;
-}
-
-/* Bottom nav */
-.vipBottomNav {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 74px;
-  background: rgba(8, 18, 40, 0.78);
-  border-top: 1px solid rgba(255,255,255,0.12);
-  backdrop-filter: blur(12px);
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  z-index: 999;
-}
-
-.navItem {
-  border: 0;
-  background: transparent;
-  color: rgba(230,240,255,0.8);
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  gap: 4px;
-  padding: 10px 6px;
-}
-
-.navIcon {
-  font-size: 20px;
-  line-height: 1;
-}
-
-.navText {
+.vip{
+  margin-left: 8px;
   font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgb(255, 255, 255);
+  background: rgb(236, 232, 232);
+  color: rgba(14,22,34,0.85);
+  font-weight: 900;
+}
+.welcomeMeta{
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 14.5px;
 }
 
-.navItem.active {
-  color: rgba(110, 200, 255, 1);
+/* Add a small photo in header (beauty) */
+.headerMiniPhoto{
+  width: 220px;
+  border-radius: 16px;
+  border: 1px solid rgba(12,22,38,0.08);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.35), rgba(255,255,255,0.55)),
+    url("/home/hero-2.png") center / cover no-repeat;
+  box-shadow: 0 14px 40px rgba(10,20,35,0.08);
 }
 
-.navItem.mine {
-  color: rgba(255, 190, 60, 0.95);
+/* Grids */
+.grid4{
+  display:grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.grid3{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
 }
 
-/* Spacer so content not hidden behind bottom nav */
-.vipNavSpacer {
-  height: 84px;
+/* Small status cards */
+.card, .faq{
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
 }
 
-/* ✅ Responsive */
-@media (max-width: 1200px) {
-  .vipCardsWrap {
-    grid-template-columns: repeat(2, minmax(300px, 1fr));
-    gap: 20px;
-  }
+.card{
+  padding: 12px;
+}
+.cardTop{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+}
+.cardLabel{
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.cardValue{
+  margin-top: 8px;
+  font-weight: 950;
+  font-size: 16px;
+  letter-spacing: -0.15px;
+  color:black;
+}
+.dot{
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(14,22,34,0.25);
+}
+.dot.good{ background: #22c55e; }
+.dot.info{ background: var(--primary); }
+
+/* HOW IT WORKS - Clickable blocks */
+.howGrid{
+  display:grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
 }
 
-@media (max-width: 768px) {
-  .vipPage {
-    padding: 15px;
-  }
-  .vipCardsWrap {
-    grid-template-columns: 1fr;
-    gap: 18px;
-  }
-  .vipCard {
-    min-height: 260px;
-  }
-  .vipIcon {
-    width: 60px;
-    height: 60px;
-  }
+.howCard{
+  border: 1px solid rgba(31,111,235,0.12);
+  background: rgba(255,255,255,0.92);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  text-align: left;
+  cursor: pointer;
+  padding: 12px;
+  display: grid;
+  gap: 10px;
 }
 
-@media (max-width: 480px) {
-  .vipTabs {
-    gap: 8px;
-  }
-  .vipTab {
-    padding: 10px 16px;
-    min-width: 70px;
-    font-size: 14px;
-  }
+.howCard:hover{
+  border-color: rgba(31,111,235,0.22);
+  background: rgba(255,255,255,0.96);
+}
+
+.howTop{
+  display:flex;
+  gap: 10px;
+  align-items:flex-start;
+}
+.howIcon{
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  display:grid;
+  place-items:center;
+  background: rgba(31,111,235,0.10);
+  border: 1px solid rgba(31,111,235,0.14);
+  font-size: 18px;
+}
+.howTitle{ font-weight: 950; }
+.howDesc{
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12.8px;
+  line-height: 1.45;
+}
+
+.howPhoto{
+  height: 110px;
+  border-radius: 14px;
+  border: 1px solid rgba(12,22,38,0.08);
+  background-position: center;
+  background-size: cover;
+  filter: saturate(0.95);
+  transition: transform .16s ease, filter .16s ease;
+}
+.howCard:hover .howPhoto{
+  transform: scale(1.01);
+  filter: saturate(1.05);
+}
+
+.howBottom{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding-top: 2px;
+}
+.howAction{
+  font-weight: 900;
+  color: rgba(14,22,34,0.86);
+}
+.howArrow{
+  font-weight: 950;
+  color: rgba(31,111,235,0.75);
+  transition: transform .16s ease;
+}
+.howCard:hover .howArrow{
+  transform: translateX(2px);
+}
+
+/* Info panels with photos */
+.infoPanel{
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  overflow:hidden;
+}
+.infoPanelPhoto{
+  height: 150px;
+  background-position: center;
+  background-size: cover;
+  border-bottom: 1px solid rgba(12,22,38,0.08);
+}
+.infoPanelBody{
+  padding: 12px 14px 14px;
+}
+.infoPanelHead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom: 8px;
+}
+.panelIconSm{
+  width: 36px;
+  height: 36px;
+  border-radius: 14px;
+  display:grid;
+  place-items:center;
+  background: rgba(24,183,166,0.10);
+  border: 1px solid rgba(24,183,166,0.16);
+}
+.chip{
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(31,111,235,0.16);
+  background: rgba(31,111,235,0.08);
+  color: rgba(14,22,34,0.78);
+  font-weight: 900;
+}
+.panelTitle{
+  font-weight: 950;
+  margin-bottom: 6px;
+}
+.panelDesc{
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.bullets{
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: rgba(14,22,34,0.78);
+  line-height: 1.65;
+  font-size: 13px;
+}
+
+/* FAQ */
+.faq{
+  padding: 14px;
+}
+.faqQ{
+  font-weight: 950;
+  margin-bottom: 6px;
+}
+.faqA{
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+/* Footer */
+.footer{ margin-top: 14px; }
+.footerBox{
+  border: 1px solid rgba(24,183,166,0.18);
+  background: linear-gradient(180deg, rgba(24,183,166,0.08), rgba(255,255,255,0.92));
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: var(--shadow);
+}
+.footerTitle{
+  font-weight: 950;
+  margin-bottom: 6px;
+}
+.footerText{
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+/* Responsive */
+@media (max-width: 980px){
+  .topHeader{ flex-direction: column; }
+  .headerMiniPhoto{ width: 100%; height: 120px; }
+  .grid4{ grid-template-columns: 1fr 1fr; }
+  .grid3{ grid-template-columns: 1fr; }
+  .howGrid{ grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 520px){
+  .grid4{ grid-template-columns: 1fr; }
+  .howGrid{ grid-template-columns: 1fr; }
 }

@@ -91,14 +91,13 @@
   padding: 16px 16px;
   border-radius: 18px;
   /* background: rgba(255, 255, 255, 0.10); */
-  /* background: linear-gradient(
+  background: linear-gradient(
       135deg,
       rgba(255,193,7,.22),
       rgba(255,152,0,.14),
       rgba(0,0,0,.22)
-    ); */
-  background: linear-gradient(135deg, #ffe082ab, #ffc1078c);
-  border: 1px solid rgba(248, 237, 237, 0.966);
+    );
+  border: 1px solid rgba(255, 255, 255, 0.18);
   backdrop-filter: blur(16px);
   box-shadow: 0 18px 38px rgba(0,0,0,0.22);
 }

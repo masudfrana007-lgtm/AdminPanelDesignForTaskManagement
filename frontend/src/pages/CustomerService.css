@@ -42,7 +42,7 @@ html, body, #root{
   background:
     radial-gradient(900px 520px at 10% 10%, rgba(34,197,94,.18), transparent 55%),
     radial-gradient(900px 520px at 90% 18%, rgba(59,130,246,.16), transparent 60%),
-    linear-gradient(180deg, #0b1220, #070b14);
+    linear-gradient(180deg, #000001, #070b14);
   color: var(--text);
 }
 
@@ -52,7 +52,7 @@ html, body, #root{
   align-items:center;
   gap:12px;
   padding: 14px 16px;
-  background: rgba(0,0,0,.22);
+  background: rgb(1, 50, 69);
   border-bottom: 1px solid rgba(255,255,255,.10);
   backdrop-filter: blur(10px);
 }
@@ -72,7 +72,6 @@ html, body, #root{
   font-size: 16px;
   font-weight: 900;
   letter-spacing: .2px;
-  color: white;
 }
 
 .cs-headerText p{
@@ -380,9 +379,9 @@ html, body, #root{
   border-radius: 14px;
   padding: 12px 12px;
   outline:none;
-  background: rgba(255,255,255,.10);
-  border: 1px solid rgba(255,255,255,.16);
-  color:#fff;
+  background: rgb(255, 255, 255);
+  border: 1px solid rgba(47, 15, 15, 0.16);
+  color:#000000;
 }
 .cs-input::placeholder{ color: rgba(255,255,255,.70); }
 
@@ -476,7 +475,6 @@ html, body, #root{
 .cs-tgTipsTitle{
   font-weight: 1000;
   margin-bottom: 6px;
-  color: white;
 }
 .cs-tgTips ul{
   margin: 0;
@@ -618,7 +616,7 @@ html, body, #root{
 /* ✅ Desktop: don't use full wide page */
 @media (min-width: 900px) {
   .cs-page {
-    max-width: 60vw;      /* like mobile app width */
+    max-width: 520px;      /* like mobile app width */
     margin: 18px auto;     /* center on desktop */
     border-radius: 22px;
     overflow: hidden;      /* clean rounded corners */
@@ -628,6 +626,6 @@ html, body, #root{
 
   /* Keep background dark outside the card */
   html, body, #root {
-    background: #0b1220 !important;
+    background: #edfcfd !important;
   }
 }
