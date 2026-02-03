@@ -150,7 +150,7 @@ export default function MemberMine() {
                 />
               }
               label="Deposit Records"
-              onClick={() => nav("/deposit-records")}
+              onClick={() => nav("/member/deposit/records")}
             />
             <ListItem
               icon={

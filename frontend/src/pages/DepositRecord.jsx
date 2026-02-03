@@ -1,73 +1,114 @@
-import React, { useState } from "react";
+// src/pages/DepositRecord.jsx
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import memberApi from "../services/memberApi"; // ✅ member-side API client
 import "./DepositRecord.css";
+import MemberBottomNav from "../components/MemberBottomNav";
+
+/** ✅ Map DB status -> UI labels used by DepositRecord.css
+ * deposits.status: pending | approved | rejected
+ */
+function uiStatus(dbStatus) {
+  const s = String(dbStatus || "").toLowerCase();
+  if (s === "approved") return "Completed";
+  if (s === "rejected") return "Failed";
+  return "Confirming";
+}
 
 /** ✅ Confirmation rule:
  * - Completed => 12/12
- * - Others (Confirming/Failed/etc) => random 3..10 / 12
+ * - Others => random 3..10 / 12
  */
 function getConfirmationsByStatus(status, max = 12) {
-  if (status === "Completed") {
-    return { current: max, max };
-  }
+  if (status === "Completed") return { current: max, max };
   const current = Math.floor(Math.random() * (10 - 3 + 1)) + 3; // 3..10
   return { current, max };
 }
 
-const records = [
-  {
-    id: "DP-40231",
-    date: "2026-02-02 11:20",
-    amount: 500,
-    method: "USDT",
-    network: "TRC20",
-    status: "Completed",
-    txHash: "9f1a2b3c4d5e6f7a8b9c",
-    completedAt: "2026-02-02 11:35",
-  },
-  {
-    id: "DP-40188",
-    date: "2026-02-01 19:02",
-    amount: 120,
-    method: "USDT",
-    network: "ERC20",
-    status: "Confirming",
-    txHash: "a7b8c9d0e1f2",
-    completedAt: "-",
-  },
-  {
-    id: "DP-40110",
-    date: "2026-01-31 08:40",
-    amount: 80,
-    method: "USDT",
-    network: "TRC20",
-    status: "Failed",
-    txHash: "-",
-    completedAt: "-",
-  },
-];
+function fmtDate(d) {
+  if (!d) return "-";
+  try {
+    return new Date(d).toLocaleString();
+  } catch {
+    return String(d);
+  }
+}
 
 function money(n) {
-  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n);
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(Number(n || 0));
+}
+
+/** ✅ Normalize DB row -> UI record */
+function normalizeDeposit(d) {
+  const status = uiStatus(d.status);
+
+  return {
+    // keep numeric id, but show DP-xxx in UI
+    id: Number(d.id),
+    displayId: `DP-${d.id}`,
+
+    date: fmtDate(d.created_at),
+    completedAt: d.reviewed_at ? fmtDate(d.reviewed_at) : "-",
+
+    amount: Number(d.amount || 0),
+    asset: d.asset || "USDT",
+    network: d.network || "-",
+    method: d.method || "-",
+
+    status,
+    rawStatus: d.status || "pending",
+
+    // in your DB it is tx_ref (nullable)
+    txHash: d.tx_ref || "-",
+
+    adminNote: d.admin_note || "",
+  };
 }
 
 export default function DepositRecord() {
   const nav = useNavigate();
+
+  const [rows, setRows] = useState([]); // normalized records
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
   const [active, setActive] = useState(null);
 
-  const filtered = records.filter((r) => {
-    if (filter !== "All" && r.status !== filter) return false;
-
-    if (search) {
-      const q = search.toLowerCase();
-      if (!r.id.toLowerCase().includes(q) && !r.txHash.toLowerCase().includes(q)) {
-        return false;
-      }
+  const load = async () => {
+    setErr("");
+    setBusy(true);
+    try {
+      // ✅ MEMBER endpoint
+      // returns: id, amount, method, asset, network, tx_ref, proof_url, source, status, admin_note, created_at, reviewed_at
+      const { data } = await memberApi.get("/member/deposits");
+      const list = Array.isArray(data) ? data : [];
+      setRows(list.map(normalizeDeposit));
+    } catch (e) {
+      setErr(e?.response?.data?.message || "Failed to load deposit records");
+    } finally {
+      setBusy(false);
     }
-    return true;
-  });
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const filtered = useMemo(() => {
+    return rows.filter((r) => {
+      if (filter !== "All" && r.status !== filter) return false;
+
+      if (search) {
+        const q = search.toLowerCase();
+        const a = String(r.displayId || "").toLowerCase();
+        const b = String(r.txHash || "").toLowerCase();
+        if (!a.includes(q) && !b.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [rows, filter, search]);
 
   return (
     <div className="dpPage">
@@ -75,8 +116,20 @@ export default function DepositRecord() {
       <header className="dpTop">
         <button className="dpBack" onClick={() => nav(-1)}>←</button>
         <div className="dpTitle">Deposit Records</div>
-        <div style={{ width: 40 }} />
+
+        {/* small refresh button */}
+        <button
+          className="dpFilterBtn"
+          style={{ marginLeft: "auto" }}
+          onClick={load}
+          disabled={busy}
+          type="button"
+        >
+          {busy ? "..." : "↻"}
+        </button>
       </header>
+
+      {err ? <div className="dpEmpty" style={{ color: "#dc2626" }}>{err}</div> : null}
 
       {/* Status filter */}
       <section className="dpFilters">
@@ -85,6 +138,7 @@ export default function DepositRecord() {
             key={f}
             className={`dpFilterBtn ${filter === f ? "active" : ""}`}
             onClick={() => setFilter(f)}
+            type="button"
           >
             {f}
           </button>
@@ -102,7 +156,9 @@ export default function DepositRecord() {
 
       {/* Records */}
       <main className="dpWrap">
-        {filtered.length === 0 && (
+        {busy && <div className="dpEmpty">Loading…</div>}
+
+        {!busy && filtered.length === 0 && (
           <div className="dpEmpty">No deposit records found.</div>
         )}
 
@@ -113,13 +169,13 @@ export default function DepositRecord() {
             onClick={() =>
               setActive({
                 ...r,
-                confirmations: getConfirmationsByStatus(r.status, 12), // ✅ updated rule
+                confirmations: getConfirmationsByStatus(r.status, 12),
               })
             }
           >
             <div className="dpRow">
               <span className="dpLabel">Amount</span>
-              <span className="dpAmount">{money(r.amount)} USDT</span>
+              <span className="dpAmount">{money(r.amount)} {r.asset}</span>
             </div>
 
             <div className="dpRow">
@@ -140,7 +196,7 @@ export default function DepositRecord() {
             </div>
 
             <div className="dpFooter">
-              <span className="dpId">{r.id}</span>
+              <span className="dpId">{r.displayId}</span>
               <span className="dpView">View Details →</span>
             </div>
           </div>
@@ -153,13 +209,13 @@ export default function DepositRecord() {
           <div className="dpModal" onClick={(e) => e.stopPropagation()}>
             <div className="dpModalTop">
               <div className="dpModalTitle">Deposit Details</div>
-              <button className="dpClose" onClick={() => setActive(null)}>✕</button>
+              <button className="dpClose" onClick={() => setActive(null)} type="button">✕</button>
             </div>
 
             <div className="dpModalBody">
               <DepositTimeline status={active.status} />
 
-              {/* ✅ Confirmations counter */}
+              {/* Confirmations counter */}
               {active.confirmations && (
                 <DetailRow
                   label="Confirmations"
@@ -167,16 +223,22 @@ export default function DepositRecord() {
                 />
               )}
 
-              <DetailRow label="Amount" value={`${money(active.amount)} USDT`} />
+              <DetailRow label="Deposit ID" value={active.displayId} />
+              <DetailRow label="Amount" value={`${money(active.amount)} ${active.asset}`} />
+              <DetailRow label="Method" value={active.method} />
               <DetailRow label="Network" value={active.network} />
               <DetailRow label="TX Hash" mono value={active.txHash} />
               <DetailRow label="Submitted At" value={active.date} />
               <DetailRow label="Completed At" value={active.completedAt} />
+
+              {!!active.adminNote && (
+                <DetailRow label="Admin note" value={active.adminNote} />
+              )}
             </div>
 
             {/* Footer actions (Close + Copy) */}
             <div className="dpModalFooter">
-              <button className="dpBtnSoft" onClick={() => setActive(null)}>
+              <button className="dpBtnSoft" onClick={() => setActive(null)} type="button">
                 Close
               </button>
 
@@ -184,6 +246,7 @@ export default function DepositRecord() {
                 <button
                   className="dpBtnPrimary"
                   onClick={() => navigator.clipboard.writeText(active.txHash)}
+                  type="button"
                 >
                   Copy TX Hash
                 </button>
@@ -192,6 +255,8 @@ export default function DepositRecord() {
           </div>
         </div>
       )}
+
+      <MemberBottomNav active="mine" />            
     </div>
   );
 }

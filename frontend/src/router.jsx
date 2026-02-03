@@ -44,6 +44,8 @@ import MemberWallet from "./pages/MemberWallet";
 import CreateMemberDeposit from "./pages/CreateMemberDeposit";
 import CreateMemberWithdrawal from "./pages/CreateMemberWithdrawal";
 
+import DepositRecord from "./pages/DepositRecord";
+
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
   
@@ -314,6 +316,15 @@ export const router = createBrowserRouter([
   element: (
     <MemberProtectedRoute>
       <MemberTasks />
+    </MemberProtectedRoute>
+  ),
+},
+
+{
+  path: "/member/deposit/records",
+  element: (
+    <MemberProtectedRoute>
+      <DepositRecord />
     </MemberProtectedRoute>
   ),
 },
