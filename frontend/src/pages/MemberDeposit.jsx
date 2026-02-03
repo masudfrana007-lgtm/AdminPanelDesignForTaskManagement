@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import "../styles/memberDeposit.css";
 import MemberBottomNav from "../components/MemberBottomNav";
-import usdtIcon from "../assets/icons/usdt.PNG";
+import usdtIcon from "../assets/icons/usdt.png";
 
 const user = {
   name: "User",

@@ -10,7 +10,7 @@ import "../styles/memberMine.css";
 /* ✅ icons (adjust path if your structure is different) */
 import teamIcon from "../assets/icons/Team.jpg";
 import depositIcon from "../assets/icons/deposit-new.jpg";
-import withdrawalIcon from "../assets/icons/withdrawal.png";
+import withdrawalIcon from "../assets/icons/withdrawal-new.png";
 
 import profileIcon from "../assets/icons/profile.PNG";
 import securityIcon from "../assets/icons/Security.PNG";
