@@ -19,14 +19,12 @@ const optionalAuth = async (req, res, next) => {
 };
 
 /**
- * CREATE MEMBER (owner/agent create OR public signup)
- * - owner/agent create: sponsor_id = req.user.id, auto approved
- * - public signup: referral_code required -> sponsor_id = users.id, pending
+ * CREATE MEMBER (PUBLIC SIGNUP ONLY)
+ * - referral_code required -> sponsor_id = users.id (owner/agent)
+ * - approval_status = pending
  */
-router.post("/", optionalAuth, async (req, res) => {
+router.post("/", async (req, res) => {
   try {
-    const isAdmin = req.user && ["owner", "agent"].includes(req.user.role);
-
     const nickname = String(req.body.nickname || "").trim();
     const phone = String(req.body.phone || "").trim();
     const country = String(req.body.country || "").trim();
@@ -34,34 +32,25 @@ router.post("/", optionalAuth, async (req, res) => {
     const gender = String(req.body.gender || "").trim();
     const referral_code = String(req.body.referral_code || "").trim();
 
-    if (!nickname || !phone || !country || !password || !gender) {
+    if (!nickname || !phone || !country || !password || !gender || !referral_code) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    let sponsor_id = null;
+    // ✅ referral_code MUST match users.short_id (owner/agent)
+    const ref = await pool.query(
+      `SELECT id
+       FROM users
+       WHERE short_id = $1
+         AND role IN ('owner','agent')
+       LIMIT 1`,
+      [referral_code]
+    );
 
-    if (isAdmin) {
-      sponsor_id = req.user.id;
-    } else {
-      if (!referral_code) {
-        return res.status(400).json({ message: "Referral code is required" });
-      }
-
-      const ref = await pool.query(
-        `SELECT id
-         FROM users
-         WHERE short_id = $1
-           AND role IN ('owner','agent')
-         LIMIT 1`,
-        [referral_code]
-      );
-
-      if (!ref.rowCount) {
-        return res.status(400).json({ message: "Invalid referral code" });
-      }
-
-      sponsor_id = ref.rows[0].id;
+    if (!ref.rowCount) {
+      return res.status(400).json({ message: "Invalid referral code" });
     }
+
+    const sponsor_id = ref.rows[0].id;
 
     const passHash = await bcrypt.hash(password, 10);
     const approval_status = "pending";
@@ -86,7 +75,7 @@ router.post("/", optionalAuth, async (req, res) => {
             passHash,
             sponsor_id,
             approval_status,
-            isAdmin ? req.user.id : null,
+            sponsor_id,   // ✅ created_by is always null for public signup
             gender,
           ]
         );
@@ -111,9 +100,10 @@ router.post("/", optionalAuth, async (req, res) => {
     }
   } catch (e) {
     console.error(e);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 });
+
 
 /**
  * LIST MEMBERS (owner/agent)
