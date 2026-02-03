@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+// src/pages/MemberDepositCrypto.jsx
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import memberApi from "../services/memberApi";
 import "../styles/memberDepositCrypto.css";
@@ -46,7 +47,7 @@ const ASSETS = [
 ];
 
 function money(n) {
-  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n);
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(Number(n || 0));
 }
 function shortAddr(addr) {
   if (!addr) return "";
@@ -104,9 +105,49 @@ export default function MemberDepositCrypto() {
 
   const [submitting, setSubmitting] = useState(false);
 
-  // demo numbers (replace with real API later)
-  const walletUsd = 1280.45;
-  const walletUsdt = 1245.32;
+  // ✅ REAL balance + counts (no new API)
+  const [walletUsd, setWalletUsd] = useState(0);
+  const [walletUsdt, setWalletUsdt] = useState(0);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [completedCount, setCompletedCount] = useState(0);
+
+  const loadMe = async () => {
+    try {
+      const { data } = await memberApi.get("/member/me");
+      const bal = Number(data?.balance || 0);
+      setWalletUsdt(bal);
+      setWalletUsd(bal); // if you treat 1 USDT ≈ 1 USD
+    } catch {
+      // ignore
+    }
+  };
+
+  // ✅ Use your EXISTING API that returns ALL deposits for THIS member (member routes)
+  // If you already have a different route, just change this path.
+  const loadDepositCounts = async () => {
+    try {
+      const { data } = await memberApi.get("/member/deposits"); // <— change if your route differs
+      const rows = Array.isArray(data) ? data : Array.isArray(data?.rows) ? data.rows : [];
+      const p = rows.filter((x) => String(x?.status || "").toLowerCase() === "pending").length;
+      const c = rows.filter((x) => String(x?.status || "").toLowerCase() === "approved").length;
+      setPendingCount(p);
+      setCompletedCount(c);
+    } catch {
+      // ignore
+      setPendingCount(0);
+      setCompletedCount(0);
+    }
+  };
+
+  const refreshTop = async () => {
+    showToast("Refreshing...");
+    await Promise.all([loadMe(), loadDepositCounts()]);
+  };
+
+  useEffect(() => {
+    refreshTop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onChangeAsset = (sym) => {
     setAsset(sym);
@@ -138,7 +179,6 @@ export default function MemberDepositCrypto() {
   };
 
   const handleCompleteTransfer = () => {
-    // front validation before showing confirmation popup
     const n = Number(amount);
     if (!amount || Number.isNaN(n) || n <= 0) {
       showToast("Enter a valid amount");
@@ -177,21 +217,21 @@ export default function MemberDepositCrypto() {
 
       setSubmitting(true);
 
-      // backend: POST /member/deposits (memberApp.js)
       await memberApi.post("/member/deposits", {
         amount: n,
         method: "crypto",
         asset,
         network,
-        tx_ref: null, // optional
-        proof_url: null, // optional
+        tx_ref: null,
+        proof_url: null,
       });
 
       setShowConfirmation(false);
       showToast("Deposit submitted. Awaiting approval.");
 
-      // Optional: go to record page
-      // change this route to your real route
+      // refresh real numbers
+      await refreshTop();
+
       nav("/member/deposit/records");
     } catch (e) {
       const msg = e?.response?.data?.message || "Failed to submit deposit";
@@ -207,7 +247,7 @@ export default function MemberDepositCrypto() {
 
       {/* Header */}
       <header className="dc-header">
-        <button className="dc-back" onClick={() => nav(-1)}>
+        <button className="dc-back" onClick={() => nav(-1)} type="button">
           ←
         </button>
 
@@ -217,7 +257,7 @@ export default function MemberDepositCrypto() {
         </div>
 
         <div className="dc-headerActions">
-          <button className="dc-ghostBtn" onClick={() => nav("/member/service")}>
+          <button className="dc-ghostBtn" onClick={() => nav("/member/service")} type="button">
             Help
           </button>
         </div>
@@ -246,7 +286,7 @@ export default function MemberDepositCrypto() {
               <button className="dc-miniBtn" onClick={() => nav("/member/deposit/records")} type="button">
                 View History
               </button>
-              <button className="dc-miniBtn" onClick={() => showToast("Refreshing balance...")} type="button">
+              <button className="dc-miniBtn" onClick={refreshTop} type="button">
                 Refresh
               </button>
             </div>
@@ -255,8 +295,8 @@ export default function MemberDepositCrypto() {
           <div className="dc-card dc-status">
             <div className="dc-statusTitle">Deposit Status</div>
             <div className="dc-statusRow">
-              <div className="dc-chip">Pending: —</div>
-              <div className="dc-chip">Completed: —</div>
+              <div className="dc-chip">Pending: {pendingCount}</div>
+              <div className="dc-chip">Completed: {completedCount}</div>
             </div>
             <div className="dc-mutedSmall">Deposits are credited after required confirmations and owner approval.</div>
           </div>

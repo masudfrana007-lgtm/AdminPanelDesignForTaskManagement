@@ -509,7 +509,7 @@ router.post("/deposits", memberAuth, async (req, res) => {
     const asset = String(req.body.asset || "USDT").trim();
     const network = String(req.body.network || "").trim();
 
-    const tx_ref = String(req.body.tx_ref || "").trim();
+    const tx_ref_raw = (req.body.tx_ref ?? "").toString().trim();
     const proof_url = String(req.body.proof_url || "").trim();
 
     if (!amount || amount <= 0)
@@ -536,22 +536,24 @@ router.post("/deposits", memberAuth, async (req, res) => {
     }
 
     const r = await pool.query(
-      `
-      INSERT INTO deposits
-        (member_id, amount, method, asset, network, tx_ref, proof_url, source)
-      VALUES
-        ($1,$2,$3,$4,$5,$6,$7,'member')
-      RETURNING *
-      `,
-      [
-        memberId,
-        amount,
-        method,
-        asset,
-        network || null,
-        tx_ref || null,
-        proof_url || null,
-      ]
+      tx_ref_raw
+        ? `
+          INSERT INTO deposits
+            (member_id, amount, method, asset, network, tx_ref, proof_url, source)
+          VALUES
+            ($1,$2,$3,$4,$5,$6,$7,'member')
+          RETURNING *
+          `
+        : `
+          INSERT INTO deposits
+            (member_id, amount, method, asset, network, proof_url, source)
+          VALUES
+            ($1,$2,$3,$4,$5,$6,'member')
+          RETURNING *
+          `,
+      tx_ref_raw
+        ? [memberId, amount, method, asset, network || null, tx_ref_raw, proof_url || null]
+        : [memberId, amount, method, asset, network || null, proof_url || null]
     );
 
     res.status(201).json(r.rows[0]);
