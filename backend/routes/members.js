@@ -64,7 +64,7 @@ router.post("/", optionalAuth, async (req, res) => {
     }
 
     const passHash = await bcrypt.hash(password, 10);
-    const approval_status = isAdmin ? "approved" : "pending";
+    const approval_status = "pending";
 
     while (true) {
       try {
