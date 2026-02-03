@@ -124,6 +124,13 @@ useEffect(() => {
     },
   ];
 
+  const user = {
+    name: "User",
+    vip: 3,
+    inviteCode: "ABCD-1234",
+    balance: 97280.12,
+  };
+
   return (
     <div className="homeClean">
       <div className="bgLayer" aria-hidden="true" />
@@ -132,7 +139,14 @@ useEffect(() => {
         {/* TOP: Welcome + profile (color improved) */}
         <header className="topHeader premiumHeader fadeIn">
           <div className="profileLeft">
-            <div className="avatarWrap">
+            <div className="mine-avatar">
+              <img
+                src={`https://i.pravatar.cc/150?u=${user.referenceCode}`}
+                alt="User Avatar"
+                className="mine-avatar-img"
+              />
+            </div>
+            {/* <div className="avatarWrap">
               <img
                 className="avatar"
                 src={profile?.photo_url || "/user.png"}
@@ -142,7 +156,7 @@ useEffect(() => {
                 }}
               />
               <span className="online" />
-            </div>
+            </div> */}
 
             <div className="welcomeText">
               <div className="welcomeSmall">Welcome back</div>
@@ -151,8 +165,14 @@ useEffect(() => {
                 <span className="vip">{profile?.ranking ? profile.ranking : "Trial"}</span>
               </div>
               <div className="welcomeMeta">ID: {profile?.short_id || me?.short_id || "-"}</div>
+              {/* need to add balance here */}
+              <div className="welcomeBalance">                
+                <span className="balanceAmount">
+                  Current Balance:{" "} USD {user?.balance != null ? user.balance.toFixed(2) : "-"}
+                </span>
+              </div>
             </div>
-          </div>
+           </div> 
 
           <div className="headerMiniPhoto" />
         </header>

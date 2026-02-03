@@ -9,7 +9,7 @@ import "../styles/memberMine.css";
 
 /* ✅ icons (adjust path if your structure is different) */
 import teamIcon from "../assets/icons/Team.jpg";
-import depositIcon from "../assets/icons/deposit-new.jpg";
+import depositIcon from "../assets/icons/deposit-new.png";
 import withdrawalIcon from "../assets/icons/withdrawal-new.png";
 
 import profileIcon from "../assets/icons/profile.PNG";
@@ -60,7 +60,13 @@ export default function MemberMine() {
         {/* ✅ NEW HEADER (from new page) */}
         <div className="mine-hero">
           <div className="mine-hero-top">
-            <div className="mine-avatar" />
+            <div className="mine-avatar">
+              <img
+                src={`https://i.pravatar.cc/150?u=${user.referenceCode}`}
+                alt="User Avatar"
+                className="mine-avatar-img"
+              />
+            </div>
             <div className="mine-meta">
               <div className="mine-vip">
                 <span className="mine-vip-pill">VIP {user.vip}</span>
@@ -150,18 +156,18 @@ export default function MemberMine() {
                 />
               }
               label="Deposit Records"
-              onClick={() => nav("/deposit-records")}
+              onClick={() => nav("/member/history")}
             />
             <ListItem
               icon={
                 <img
                   src={depositRec2Icon}
-                  alt="Deposit Records"
+                  alt="Withdrawal Records"
                   className="list-icon-img"
                 />
               }
-              label="Deposit Records"
-              onClick={() => nav("/deposit-records")}
+              label="Withdrawal Records"
+              onClick={() => nav("/member/history")}
             />
             <ListItem
               icon={<img src={securityIcon} alt="Security" className="list-icon-img" />}

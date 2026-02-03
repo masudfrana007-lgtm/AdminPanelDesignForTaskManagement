@@ -39,7 +39,14 @@ export default function DepositMethod() {
         {/* Profile + Balance card */}
         <div className="dm-profileCard">
           <div className="dm-profLeft">
-            <div className="dm-avatar" aria-hidden="true" />
+            <div className="mine-avatar">
+              <img
+                src={`https://i.pravatar.cc/150?u=${user.referenceCode}`}
+                alt="User Avatar"
+                className="mine-avatar-img"
+              />
+            </div>
+            {/* <div className="dm-avatar" aria-hidden="true" /> */}
             <div className="dm-profMeta">
               <div className="dm-profRow">
                 <span className="dm-profName">{user.name}</span>

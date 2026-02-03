@@ -6,6 +6,7 @@ export default function MemberBottomNav({ active = "home" }) {
 
   return (
     <>
+      
       <div className="mNav">
         <button
           className={`mNavItem ${active === "home" ? "active" : ""}`}
@@ -22,7 +23,7 @@ export default function MemberBottomNav({ active = "home" }) {
           type="button"
         >
           <span className="mNavIcon">⟲</span>
-          <span className="mNavText">Service</span>
+          <span className="mNavText">Customer Service</span>
         </button>
 
         <button
@@ -55,6 +56,8 @@ export default function MemberBottomNav({ active = "home" }) {
 
       {/* spacer so page content never hides behind nav */}
       <div className="mNavSpacer" />
+
+      
     </>
   );
 }

@@ -76,8 +76,14 @@
   width: 62px;
   height: 62px;
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #ffd36a, #ff9b00 65%, #d46f00);
   box-shadow: 0 14px 26px rgba(0, 0, 0, 0.28);
+}
+
+.mine-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .mine-meta {

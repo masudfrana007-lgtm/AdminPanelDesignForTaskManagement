@@ -33,8 +33,8 @@ function toMs(d) {
 // keep the 3-slot UI the same
 const EMPTY_SLOTS = [
   { dateLabel: "Today", dateISO: "—", task: null },
-  { dateLabel: "Tomorrow", dateISO: "—", task: null },
-  { dateLabel: "Next Day", dateISO: "—", task: null },
+  // { dateLabel: "Tomorrow", dateISO: "—", task: null },
+  // { dateLabel: "Next Day", dateISO: "—", task: null },
 ];
 
 export default function MemberTasks() {
