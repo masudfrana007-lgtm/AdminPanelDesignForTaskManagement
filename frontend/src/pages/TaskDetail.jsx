@@ -41,9 +41,12 @@ export default function TaskDetail() {
   // live payload
   const [activeSet, setActiveSet] = useState(null);
 
+  // ✅ member wallet/profile (balance)
+  const [me, setMe] = useState(null);
+  const balance = Number(me?.balance || 0);
+
   // UI tabs
   const [tab, setTab] = useState("active");
-  const [completed, setCompleted] = useState([]);
 
   // overlay
   const [isLoading, setIsLoading] = useState(false);
@@ -57,10 +60,17 @@ export default function TaskDetail() {
     setLoading(true);
     setErr("");
     try {
-      const r = await memberApi.get("/member/active-set");
-      setActiveSet(r.data || null);
+      // ✅ load active set + wallet balance together
+      const [setRes, meRes] = await Promise.all([
+        memberApi.get("/member/active-set"),
+        memberApi.get("/member/me"),
+      ]);
+
+      setActiveSet(setRes.data || null);
+      setMe(meRes.data || null);
     } catch (e) {
       setActiveSet(null);
+      setMe(null);
       setErr(e?.response?.data?.message || e?.message || "Failed to load active order");
     } finally {
       setLoading(false);
@@ -120,19 +130,18 @@ export default function TaskDetail() {
   const orderAmount = task ? task.qty * task.unitPrice : 0;
   const taskProfit = task ? (orderAmount * task.commissionRate) / 100 : 0;
 
-// ✅ Total Profit from API-completed orders (tasks before currentIndex)
-const totalProfit = useMemo(() => {
-  if (!Array.isArray(tasks) || currentIndex <= 0) return 0;
+  // ✅ Total Profit from API-completed orders (tasks before currentIndex)
+  const totalProfit = useMemo(() => {
+    if (!Array.isArray(tasks) || currentIndex <= 0) return 0;
 
-  return tasks.slice(0, currentIndex).reduce((sum, ct) => {
-    const qty = Number(ct.quantity || 1);
-    const unitPrice = Number(ct.rate || 0);
-    const amount = qty * unitPrice;
-    const profit = (amount * Number(ct.commission_rate || 0)) / 100;
-    return sum + profit;
-  }, 0);
-}, [tasks, currentIndex]);
-  
+    return tasks.slice(0, currentIndex).reduce((sum, ct) => {
+      const qty = Number(ct.quantity || 1);
+      const unitPrice = Number(ct.rate || 0);
+      const amount = qty * unitPrice;
+      const profit = (amount * Number(ct.commission_rate || 0)) / 100;
+      return sum + profit;
+    }, 0);
+  }, [tasks, currentIndex]);
 
   // ✅ completed count is backend progress, not the UI viewIndex
   const completedCount = currentIndex;
@@ -141,6 +150,15 @@ const totalProfit = useMemo(() => {
   const submit = () => {
     // 🔒 only allow submit if viewing the current task
     if (!task || isLoading || !isCurrentTask) return;
+
+    // ✅ check balance BEFORE submitting
+    // if balance is not loaded yet, treat as 0 (will go deposit)
+    if (balance < orderAmount) {
+      // optional: show message then redirect
+      setErr(`Insufficient balance. Need ${money(orderAmount)} USDT, you have ${money(balance)} USDT.`);
+      nav("/member/deposit");
+      return;
+    }
 
     setIsLoading(true);
     setProgress(0);
@@ -151,22 +169,6 @@ const totalProfit = useMemo(() => {
           clearInterval(interval);
           setIsLoading(false);
           setIsSuccess(true);
-
-          setCompleted((prev) => {
-            // avoid duplicates
-            if (prev.some((x) => x.id === task.id)) return prev;
-            return [
-              {
-                id: task.id,
-                title: task.title,
-                profit: taskProfit,
-                amount: orderAmount,
-                time: fmtGMT(new Date().toISOString()),
-              },
-              ...prev,
-            ];
-          });
-
           return 100;
         }
         return p + 4;
@@ -191,7 +193,7 @@ const totalProfit = useMemo(() => {
     try {
       await memberApi.post("/member/complete-task", {});
       setIsSuccess(false);
-      await load(); // this will update currentIndex + tasks + sync viewIndex
+      await load(); // refresh active-set + balance
     } catch (e) {
       alert(e?.response?.data?.message || "Failed to complete Order");
     }
@@ -252,6 +254,12 @@ const totalProfit = useMemo(() => {
         </div>
 
         <div className="td-balance">
+          {/* ✅ show wallet balance */}
+          <div className="td-balanceBlock">
+            <span className="td-balanceLabel">Wallet Balance</span>
+            <span className="td-balanceValue">${money(balance)}</span>
+          </div>
+
           <div className="td-balanceBlock">
             <span className="td-balanceLabel">This Order Profit</span>
             <span className="td-balanceValue profit">+${money(taskProfit)}</span>
@@ -266,55 +274,57 @@ const totalProfit = useMemo(() => {
 
       {/* BODY */}
       <main className="td-wrap">
-		{tab === "completed" ? (
-		  <section className="td-card">
-		    <div className="td-cardTop">
-		      <div className="td-date">Completed Order History</div>
-		      <span className="td-status is-ok">Completed</span>
-		    </div>
+        {tab === "completed" ? (
+          <section className="td-card">
+            <div className="td-cardTop">
+              <div className="td-date">Completed Order History</div>
+              <span className="td-status is-ok">Completed</span>
+            </div>
 
-		    {/* ✅ API-based completed tasks: tasks[0 .. currentIndex-1] */}
-		    {currentIndex <= 0 ? (
-		      <div className="td-empty">No completed orders yet.</div>
-		    ) : (
-		      <div className="td-completedList">
-		        {tasks.slice(0, currentIndex).map((ct, idx) => {
-		          const qty = Number(ct.quantity || 1);
-		          const unitPrice = Number(ct.rate || 0);
-		          const amount = qty * unitPrice;
-		          const profit = (amount * Number(ct.commission_rate || 0)) / 100;
+            {/* ✅ API-based completed tasks: tasks[0 .. currentIndex-1] */}
+            {currentIndex <= 0 ? (
+              <div className="td-empty">No completed orders yet.</div>
+            ) : (
+              <div className="td-completedList">
+                {tasks.slice(0, currentIndex).map((ct, idx) => {
+                  const qty = Number(ct.quantity || 1);
+                  const unitPrice = Number(ct.rate || 0);
+                  const amount = qty * unitPrice;
+                  const profit = (amount * Number(ct.commission_rate || 0)) / 100;
 
-		          return (
-		            <div key={ct.id} className="td-completedItem">
-		              <div className="td-ciMain">
-		                <div className="td-ciTitle">{ct.title || `Order ${idx + 1}`}</div>
-		                <div className="td-ciMeta">
-		                  <span>
-		                    <b>{ct.id}</b>
-		                  </span>
-		                  <span className="td-ciDot">•</span>
-		                  <span>
-		                    SET-{activeSet?.set?.name ?? "-"}-#{idx + 1} / {totalTasks}
-		                  </span>
-		                </div>
-		              </div>
+                  return (
+                    <div key={ct.id} className="td-completedItem">
+                      <div className="td-ciMain">
+                        <div className="td-ciTitle">{ct.title || `Order ${idx + 1}`}</div>
+                        <div className="td-ciMeta">
+                          <span>
+                            <b>{ct.id}</b>
+                          </span>
+                          <span className="td-ciDot">•</span>
+                          <span>
+                            SET-{activeSet?.set?.name ?? "-"}-#{idx + 1} / {totalTasks}
+                          </span>
+                        </div>
+                      </div>
 
-		              <div className="td-ciRight">
-		                <div className="td-ciAmount">${money(amount)}</div>
-		                <div className="td-ciProfit">+${money(profit)}</div>
-		              </div>
-		            </div>
-		          );
-		        })}
-		      </div>
-		    )}
-		  </section>		          
+                      <div className="td-ciRight">
+                        <div className="td-ciAmount">${money(amount)}</div>
+                        <div className="td-ciProfit">+${money(profit)}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
         ) : (
           <section className="td-card">
             <div className="td-cardTop">
               <div className="td-date">{fmtGMT(task.assignedAt)}</div>
               <span className="td-status">{viewedStatusText}</span>
             </div>
+
+            {err && <div className="td-error" style={{ marginTop: 10 }}>{err}</div>}
 
             <div className="td-title">{task.title}</div>
             {task.description ? <div className="td-desc">{task.description}</div> : null}
@@ -328,6 +338,18 @@ const totalProfit = useMemo(() => {
                 <span>Set / Step</span>
                 <span className="td-strong">
                   SET-{task.setId}-#{task.stepNo} / {task.totalTasks}
+                </span>
+              </div>
+
+              {/* ✅ show balance vs required */}
+              <div className="td-row">
+                <span>Required Balance</span>
+                <span className="td-strong">${money(orderAmount)}</span>
+              </div>
+              <div className="td-row">
+                <span>Your Balance</span>
+                <span className={"td-strong " + (balance < orderAmount ? "td-danger" : "")}>
+                  ${money(balance)}
                 </span>
               </div>
             </div>
@@ -385,8 +407,14 @@ const totalProfit = useMemo(() => {
 
               {!isCurrentTask ? (
                 <div className="td-hint">Submit is enabled only for the current order.</div>
+              ) : balance < orderAmount ? (
+                <div className="td-hint">
+                  Insufficient balance — you will be redirected to Deposit.
+                </div>
               ) : (
-                <div className="td-hint">Please wait while the system verifies and processes this order.</div>
+                <div className="td-hint">
+                  Please wait while the system verifies and processes this order.
+                </div>
               )}
             </div>
           </section>

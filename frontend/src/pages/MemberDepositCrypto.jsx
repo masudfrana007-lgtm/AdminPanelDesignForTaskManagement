@@ -78,6 +78,8 @@ export default function MemberDepositCrypto() {
 
   const [address, setAddress] = useState(() => getDemoAddress(asset, network));
   const [memoTag, setMemoTag] = useState("");
+  const [amount, setAmount] = useState("");
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const memoRequired = false;
 
   const [toast, setToast] = useState("");
@@ -121,7 +123,12 @@ export default function MemberDepositCrypto() {
   };
 
   const markPaid = () => {
+    setShowConfirmation(false);
     showToast("Submitted. We are checking your deposit...");
+  };
+
+  const handleCompleteTransfer = () => {
+    setShowConfirmation(true);
   };
 
   return (
@@ -140,7 +147,7 @@ export default function MemberDepositCrypto() {
         </div>
 
         <div className="dc-headerActions">
-          <button className="dc-ghostBtn" onClick={() => showToast("Opening help...")}>
+          <button className="dc-ghostBtn" onClick={() => nav("/member/service")}>
             Help
           </button>
         </div>
@@ -149,7 +156,7 @@ export default function MemberDepositCrypto() {
       <main className="dc-wrap">
         {/* Top summary */}
         <section className="dc-gridTop">
-          <div className="dc-card dc-balance dc-balance--highlight">
+          <div className="dc-card dc-balance dc-balance--highlight dc-wallet-card">
             <div className="dc-balanceTop">
               <div className="dc-balanceTitleRow">
                 <div className="dc-dot dc-dot--cyan" />
@@ -244,7 +251,24 @@ export default function MemberDepositCrypto() {
                 ))}
               </div>
 
-              <div className="dc-warning">
+              <div className="dc-field" style={{ margin: "16px" }}>
+                <div className="dc-label" style={{ fontSize: "18px"}}>Amount</div>
+                <div className="dc-inputGroup">
+                  <input
+                    className="dc-input"
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder={`Enter amount (min: ${networkObj.min})`}
+                  />
+                  <div className="dc-inputSuffix" style={{ margin: "16px" }}>{asset}</div>
+                </div>
+                <div className="dc-mutedSmall">
+                  Minimum deposit: {networkObj.min} {asset}
+                </div>
+              </div>
+
+              <div className="dc-warning" style={{ margin: "16px" }}>
                 <span className="dc-warningIcon">⚠</span>
                 Sending to the wrong network may result in permanent loss.
               </div>
@@ -331,10 +355,10 @@ export default function MemberDepositCrypto() {
               </div>
 
               <div className="dc-actions">
-                <button className="dc-primaryBtn" onClick={markPaid} type="button">
+                <button className="dc-primaryBtn" onClick={handleCompleteTransfer} type="button">
                   I have completed the transfer
                 </button>
-                <button className="dc-secondaryBtn" onClick={() => showToast("Opening support...")} type="button">
+                <button className="dc-secondaryBtn" onClick={() => nav("/member/service")} type="button">
                   Contact Support
                 </button>
               </div>
@@ -399,6 +423,168 @@ export default function MemberDepositCrypto() {
       </main>
 
       {toast ? <div className="dc-toast">{toast}</div> : null}
+
+      {/* Confirmation Popup */}
+      {showConfirmation && (
+        <div className="dc-popup-overlay" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          animation: 'fadeIn 0.3s ease'
+        }}>
+          <div className="dc-popup" style={{
+            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+            borderRadius: '20px',
+            padding: '32px',
+            maxWidth: '440px',
+            width: '90%',
+            boxShadow: '0 25px 50px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1)',
+            border: '1px solid rgba(226, 232, 240, 0.8)',
+            transform: 'scale(1)',
+            animation: 'popupScale 0.3s ease'
+          }}>
+            <div className="dc-popup-header" style={{
+              textAlign: 'center',
+              marginBottom: '24px'
+            }}>
+              <div style={{
+                width: '64px',
+                height: '64px',
+                background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                borderRadius: '50%',
+                margin: '0 auto 16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '24px',
+                color: 'white',
+                boxShadow: '0 8px 25px rgba(59, 130, 246, 0.3)'
+              }}>
+                ✓
+              </div>
+              <h3 style={{ 
+                margin: 0, 
+                color: '#1e293b', 
+                fontSize: '22px', 
+                fontWeight: '700',
+                lineHeight: '1.3'
+              }}>
+                Confirm Transfer Completion
+              </h3>
+            </div>
+            <div className="dc-popup-content" style={{ marginBottom: '32px' }}>
+              <p style={{ 
+                margin: '0 0 20px 0', 
+                color: '#475569', 
+                fontSize: '16px',
+                textAlign: 'center',
+                lineHeight: '1.6'
+              }}>
+                Are you sure you have completed the transfer?
+              </p>
+              <div style={{
+                background: '#f1f5f9',
+                borderRadius: '12px',
+                padding: '20px',
+                border: '1px solid #e2e8f0'
+              }}>
+                <p style={{ 
+                  margin: '0 0 12px 0', 
+                  color: '#334155', 
+                  fontSize: '14px',
+                  fontWeight: '600'
+                }}>
+                  Please confirm you have:
+                </p>
+                <ul style={{ 
+                  margin: 0, 
+                  paddingLeft: '20px', 
+                  color: '#64748b',
+                  fontSize: '14px',
+                  lineHeight: '1.8'
+                }}>
+                  <li style={{ marginBottom: '8px' }}>
+                    ✅ Sent the correct amount to the provided address
+                  </li>
+                  <li style={{ marginBottom: '8px' }}>
+                    ✅ Used the correct network ({networkObj.label})
+                  </li>
+                  <li>
+                    ✅ Included memo/tag if required
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div className="dc-popup-actions" style={{
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'center'
+            }}>
+              <button 
+                onClick={() => setShowConfirmation(false)}
+                type="button"
+                style={{
+                  padding: '12px 24px',
+                  border: '2px solid #e2e8f0',
+                  background: 'white',
+                  color: '#64748b',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  transition: 'all 0.2s ease',
+                  minWidth: '100px'
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.background = '#f8fafc';
+                  e.target.style.borderColor = '#cbd5e1';
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.background = 'white';
+                  e.target.style.borderColor = '#e2e8f0';
+                }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={markPaid}
+                type="button"
+                style={{
+                  padding: '12px 24px',
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)',
+                  transition: 'all 0.2s ease',
+                  minWidth: '140px'
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.transform = 'translateY(-1px)';
+                  e.target.style.boxShadow = '0 6px 20px rgba(59, 130, 246, 0.4)';
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 4px 15px rgba(59, 130, 246, 0.3)';
+                }}
+              >
+                Yes, I've completed it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ✅ KEEP OLD BOTTOM BAR EXACTLY */}
       <div className="memberBottomNavFixed">

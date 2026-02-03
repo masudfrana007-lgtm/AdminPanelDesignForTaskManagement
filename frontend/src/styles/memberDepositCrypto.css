@@ -68,6 +68,13 @@
   margin: 0 auto;
 }
 
+.dc-wallet-card{
+  background:
+    linear-gradient(135deg, #ffe082ab, #ffc1078c) !important;
+  border: 1px solid rgba(248, 237, 237, 0.966) !important;
+  color: #fff7da !important;
+}
+
 .dc-gridTop{
   display: grid;
   grid-template-columns: 1.2fr .8fr;
@@ -151,7 +158,8 @@
 .dc-balanceTitle{
   font-size: 14px;
   font-weight: 800;
-  color: rgba(255, 235, 180, 0.95);
+  /* color: rgba(255, 235, 180, 0.95); */
+  color: #ffffff;
   letter-spacing: .3px;
 }
 

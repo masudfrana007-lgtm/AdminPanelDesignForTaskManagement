@@ -167,28 +167,28 @@
 }
 
 .mine-action-icon {
-  width: 58px;
+  /* width: 58px;
   height: 58px;
-  border-radius: 50%;
+  border-radius: 50%; */
   display: grid;
   place-items: center;
-  font-size: 22px;
+  font-size: 40px;
   box-shadow:
     0 14px 28px rgba(0, 0, 0, 0.24),
     inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
 
 /* gradients behind icons */
-.mine-action:nth-child(1) .mine-action-icon { background: linear-gradient(180deg, #ffc87a, #ff8c1a); }
+/* .mine-action:nth-child(1) .mine-action-icon { background: linear-gradient(180deg, #ffc87a, #ff8c1a); }
 .mine-action:nth-child(2) .mine-action-icon { background: linear-gradient(180deg, #9dffe8, #2bd2aa); }
 .mine-action:nth-child(3) .mine-action-icon { background: linear-gradient(180deg, #ffb2b2, #eb5050); }
-.mine-action:nth-child(4) .mine-action-icon { background: linear-gradient(180deg, #9ad3ff, #3a8cff); }
+.mine-action:nth-child(4) .mine-action-icon { background: linear-gradient(180deg, #9ad3ff, #3a8cff); } */
 
 .mine-action-label { font-size: 13px; }
 
 .custom-icon {
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
   object-fit: contain;
   filter: drop-shadow(0 8px 12px rgba(0,0,0,0.18));
 }

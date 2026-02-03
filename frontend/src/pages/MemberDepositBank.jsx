@@ -127,7 +127,7 @@ export default function MemberDepositBank() {
           <p>Select country & bank. Complete payment and submit reference.</p>
         </div>
 
-        <button className="db-ghostBtn" type="button" onClick={() => alert("Help / Guide")}>
+        <button className="db-ghostBtn" type="button" onClick={() => nav("/member/service")}>
           Help
         </button>
       </header>
@@ -173,7 +173,9 @@ export default function MemberDepositBank() {
               <div className="db-label">Country</div>
               <select className="db-select" value={country} onChange={(e) => setCountry(e.target.value)}>
                 {countries.map((c) => (
-                  <option key={c.code} value={c.code}>
+                  <option key={c.code} value={c.code} style={{
+                    backgroundColor: "#051436"
+                  }}>
                     {c.name}
                   </option>
                 ))}
