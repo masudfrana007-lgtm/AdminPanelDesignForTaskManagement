@@ -8,17 +8,6 @@ import { allowRoles } from "../middleware/roles.js";
 const router = express.Router();
 
 /**
- * OPTIONAL auth wrapper:
- * - if token exists => set req.user
- * - if no token => continue as public
- */
-const optionalAuth = async (req, res, next) => {
-  const hdr = req.headers.authorization || "";
-  if (!hdr.startsWith("Bearer ")) return next();
-  return auth(req, res, next);
-};
-
-/**
  * CREATE MEMBER (PUBLIC SIGNUP ONLY)
  * - referral_code required -> sponsor_id = users.id (owner/agent)
  * - approval_status = pending
@@ -75,7 +64,7 @@ router.post("/", async (req, res) => {
             passHash,
             sponsor_id,
             approval_status,
-            sponsor_id,   // ✅ created_by is always null for public signup
+            sponsor_id,   
             gender,
           ]
         );
@@ -153,12 +142,7 @@ router.get("/", auth, allowRoles("owner", "agent"), async (req, res) => {
        FROM members m
        JOIN users u ON u.id = m.sponsor_id
        LEFT JOIN wallets w ON w.member_id = m.id
-       WHERE m.sponsor_id = $1
-          OR m.sponsor_id IN (
-            SELECT id FROM users WHERE created_by = $1 AND role = 'agent'
-          )
-       ORDER BY m.id DESC`,
-      [req.user.id]
+       ORDER BY m.id DESC`
     );
 
     return res.json(r.rows);
@@ -187,14 +171,7 @@ router.get("/:id/wallet", auth, allowRoles("owner", "agent"), async (req, res) =
         return res.status(403).json({ message: "Not allowed for this member" });
       }
     } else {
-      // owner: allow own member OR member of owner's agents
-      if (member.sponsor_id !== req.user.id) {
-        const a = await pool.query(
-          `SELECT 1 FROM users WHERE id=$1 AND created_by=$2 AND role='agent' LIMIT 1`,
-          [member.sponsor_id, req.user.id]
-        );
-        if (!a.rowCount) return res.status(403).json({ message: "Not allowed for this member" });
-      }
+      //
     }
 
     // ensure wallet exists
