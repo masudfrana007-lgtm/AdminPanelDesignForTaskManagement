@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "../styles/memberService.css";
 import MemberBottomNav from "../components/MemberBottomNav";
 
@@ -13,6 +14,7 @@ function nowTime() {
 const LS_KEY = "customer_service_chat_pro_v1";
 
 export default function CustomerService() {
+  const nav = useNavigate();
   const [channel, setChannel] = useState("direct"); // "direct" | "telegram"
   const [message, setMessage] = useState("");
   const [helpOpen, setHelpOpen] = useState(false);
@@ -196,7 +198,7 @@ export default function CustomerService() {
     <div className="cs-page">
       {/* Header */}
       <header className="cs-header">
-        <button className="cs-back" type="button" aria-label="Back">
+        <button className="cs-back" onClick={() => nav(-1)} type="button">
           ←
         </button>
 
@@ -455,7 +457,7 @@ export default function CustomerService() {
       )}
 
       {/* keep bottom bar exactly */}
-      <MemberBottomNav active="menu" />
+      <MemberBottomNav active="service" />
 
     </div>
   );

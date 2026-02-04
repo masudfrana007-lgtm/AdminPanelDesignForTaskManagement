@@ -12,7 +12,7 @@
 
 /* Force whole app dark */
 html, body, #root{
-  height: 100%;
+  min-height: 100vh;
   background: #0b1220 !important;
 }
 
@@ -44,6 +44,7 @@ html, body, #root{
     radial-gradient(900px 520px at 90% 18%, rgba(59,130,246,.16), transparent 60%),
     linear-gradient(180deg, #0b1220, #070b14);
   color: var(--text);
+  padding-bottom: 100px;  /* space for fixed bottom nav */
 }
 
 /* HEADER */
@@ -79,6 +80,7 @@ html, body, #root{
   font-size: 12px;
   color: var(--muted);
   margin-top: 3px;
+  color: white;
 }
 
 .cs-headerRight{
@@ -380,9 +382,10 @@ html, body, #root{
   border-radius: 14px;
   padding: 12px 12px;
   outline:none;
-  background: rgba(255,255,255,.10);
+  /* background: rgba(255,255,255,.10); */
+  background: white;
   border: 1px solid rgba(255,255,255,.16);
-  color:#fff;
+  color:#000;
 }
 .cs-input::placeholder{ color: rgba(255,255,255,.70); }
 
