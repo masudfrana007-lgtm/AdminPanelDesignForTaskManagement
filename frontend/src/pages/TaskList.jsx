@@ -157,7 +157,7 @@ const load = async () => {
 
       <main className="tl-wrap">
         <section className="tl-topGrid">
-          <div className="tl-card tl-balance">
+          <div className="tl-card tl-balance tl-balanceGold">
             <div className="tl-cardHead">
               <div>
                 <div className="tl-kicker">Wallet Balance</div>
