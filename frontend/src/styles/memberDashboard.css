@@ -159,6 +159,11 @@
   font-weight: 950;
   letter-spacing: -0.2px;
 }
+.welcomeBalance{
+  margin-top: 6px;
+  font-size: 14.5px;
+  color: #fff;
+}
 .vip{
   margin-left: 8px;
   font-size: 12px;
@@ -417,6 +422,8 @@
 }
 
 @media (max-width: 520px){
-  .grid4{ grid-template-columns: 1fr; }
+  /* .grid4{ grid-template-columns: 1fr; } */
   .howGrid{ grid-template-columns: 1fr; }
+  /* need to hide image when screen is narrow */
+  .headerMiniPhoto{ display: none; }
 }

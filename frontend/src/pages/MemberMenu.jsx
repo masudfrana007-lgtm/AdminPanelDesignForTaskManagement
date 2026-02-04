@@ -14,6 +14,30 @@ const LOGOS = import.meta.glob("../assets/img/*.png", {
 
 const getLogoSrc = (logoType) => LOGOS[`../assets/img/${logoType}.png`];
 
+function formatRemaining(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const hh = Math.floor(s / 3600);
+  const mm = Math.floor((s % 3600) / 60);
+  const ss = s % 60;
+  return `${pad2(hh)}:${pad2(mm)}:${pad2(ss)}`;
+}
+
+function isExpired(ms) {
+  return ms <= 0;
+}
+
+function toMs(d) {
+  const t = new Date(d).getTime();
+  return Number.isFinite(t) ? t : Date.now();
+}
+
+// keep the 3-slot UI the same
+const EMPTY_SLOTS = [
+  { dateLabel: "Today", dateISO: "—", task: null },
+  // { dateLabel: "Tomorrow", dateISO: "—", task: null },
+  // { dateLabel: "Next Day", dateISO: "—", task: null },
+];
+
 export default function MemberMenu() {
   const nav = useNavigate();
   const me = getMember();
