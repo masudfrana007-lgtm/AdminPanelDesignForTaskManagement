@@ -29,7 +29,7 @@ import Profile from "./pages/Profile";
 
 import WithdrawalMethod from "./pages/WithdrawalMethod";
 import WithdrawBank from "./pages/WithdrawBank";
-import WithdrawCrypto from "./pages/WithdrawCrypto";
+import WithdrawByCrypto from "./pages/WithdrawByCrypto";
 
 import TaskList from "./pages/TaskList";
 import TaskDetail from "./pages/TaskDetail";
@@ -253,7 +253,7 @@ export const router = createBrowserRouter([
   path: "/member/withdraw/crypto",
   element: (
     <MemberProtectedRoute>
-      <WithdrawCrypto />
+      <WithdrawByCrypto />
     </MemberProtectedRoute>
   ),
 },

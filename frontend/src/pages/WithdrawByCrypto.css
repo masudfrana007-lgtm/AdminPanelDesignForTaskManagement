@@ -1,24 +1,29 @@
 :root{
-  --bg:#d9e1ef;
-  --top:#ecf7f787;
-  --panel:#b8c5d7;
-  --panel2:#dde3ec;
-  --text:#0f172a;
-  --muted:#4b5563;
-  --line:#bed4f7;
+  --bg:#f6f8fb;
+  --top:#ffffff;
+  --card:#ffffff;
 
-  --brand:#f5b301;
-  --brandSoft:rgba(245,179,1,.12);
+  --text:#0f172a;
+  --muted:#64748b;
+  --line:#e5e7eb;
+
+  --gold1:#ffd36a;
+  --gold2:#cfa547;
+  --gold3:#6b4e16;
 
   --success:#16a34a;
   --danger:#ef4444;
 
-  --shadow:0 14px 30px rgba(15, 23, 42, .18);
+  --shadow:0 18px 40px rgba(15,23,42,.08);
+  --shadow2:0 10px 22px rgba(15,23,42,.06);
 }
+
+*{ box-sizing:border-box; }
 
 /* Page */
 .wcPage{
   min-height:100vh;
+  padding-bottom:110px; /* space if you have bottom nav */
   background:var(--bg);
   color:var(--text);
   font-family:system-ui, Segoe UI, Roboto, Arial;
@@ -31,23 +36,26 @@
   align-items:center;
   padding:12px 16px;
   background:var(--top);
-  border-bottom:1px solid rgba(15,23,42,.12);
+  border-bottom:1px solid var(--line);
+  position:sticky;
+  top:0;
+  z-index:10;
 }
 
 .wcBack,
 .wcHistoryBtn{
   height:40px;
   border-radius:12px;
-  border:1px solid rgba(15,23,42,.18);
-  background:rgba(8,166,214,.28);
+  border:1px solid var(--line);
+  background:#fff;
   color:var(--text);
   cursor:pointer;
-  font-weight:600;
+  font-weight:800;
 }
 
 .wcTitle{
   text-align:center;
-  font-weight:700;
+  font-weight:900;
   font-size:15px;
 }
 
@@ -59,71 +67,65 @@
 }
 
 /* =========================
-   BALANCE (AliExpressVip3 style + shine)
+   BALANCE (1st image style)
    ========================= */
 .wcBalance{
   margin:16px;
-  padding:20px;
+  padding:18px 20px;
   border-radius:18px;
   position:relative;
   overflow:hidden;
 
-  background: linear-gradient(
-    135deg,
-    #572903 0%,
-    #88560096 55%,
-    #e8f7ff 100%
-  );
-
-  box-shadow:
-    0 14px 34px rgba(43,124,255,.30),
-    inset 0 0 0 1px rgba(255,255,255,.40);
+  /* dark -> gold -> dark */
+  background: linear-gradient(120deg, #0b0f14 0%, var(--gold2) 55%, #2b2410 100%);
+  box-shadow: 0 18px 40px rgba(15,23,42,.12);
 }
 
-/* Shine */
 .wcBalance::after{
   content:"";
   position:absolute;
-  top:-60%;
+  top:-70%;
   left:-40%;
   width:60%;
-  height:220%;
+  height:240%;
   background: linear-gradient(
     90deg,
     rgba(255,255,255,0) 0%,
-    rgba(255,255,255,.35) 45%,
+    rgba(255,255,255,.30) 45%,
     rgba(255,255,255,0) 100%
   );
   transform: rotate(18deg);
-  animation: wcShine 3s ease-in-out infinite;
+  animation: wcShine 3.2s ease-in-out infinite;
   pointer-events:none;
+  opacity:.35;
 }
 
 @keyframes wcShine{
-  0%{ transform: translateX(-60%) rotate(18deg); opacity:.0; }
-  20%{ opacity:.55; }
-  45%{ transform: translateX(220%) rotate(18deg); opacity:.0; }
+  0%{ transform: translateX(-70%) rotate(18deg); opacity:0; }
+  15%{ opacity:.55; }
+  45%{ transform: translateX(220%) rotate(18deg); opacity:0; }
   100%{ transform: translateX(220%) rotate(18deg); opacity:0; }
 }
 
 .wcBalanceLabel{
   font-size:12px;
-  color:rgba(15,23,42,.78);
-  font-weight:600;
+  color:rgba(255,255,255,.78);
+  font-weight:800;
 }
 
 .wcBalanceValue{
   margin-top:6px;
   font-size:26px;
-  font-weight:800;
+  font-weight:950;
   letter-spacing:.2px;
-  color:#0f172a;
+  color:#ffffff;
 }
 
 .wcBalanceMeta{
   margin-top:6px;
   font-size:12px;
-  color:rgba(15,23,42,.72);
+  color:rgba(255,255,255,.78);
+  font-weight:700;
 }
 
 /* Coins */
@@ -134,8 +136,8 @@
 .wcCoinsTitle{
   font-size:13px;
   margin:10px 0 8px;
-  color:rgba(15,23,42,.70);
-  font-weight:700;
+  color:var(--muted);
+  font-weight:900;
 }
 
 .wcCoinRow{
@@ -150,17 +152,17 @@
   min-width:160px;
   padding:12px;
   border-radius:16px;
-  border:1px solid rgba(15,23,42,.14);
-  background:var(--panel2);
+  border:1px solid var(--line);
+  background:var(--card);
   color:var(--text);
   cursor:pointer;
   text-align:left;
-  box-shadow:0 10px 18px rgba(15,23,42,.06);
+  box-shadow:var(--shadow2);
 }
 
 .wcCoin.active{
-  border-color:rgba(245,179,1,.65);
-  background:rgba(245,179,1,.14);
+  border-color: rgba(207,165,71,.75);
+  background: rgba(255,211,106,.22);
 }
 
 .wcCoinTop{
@@ -173,10 +175,10 @@
   width:30px;
   height:30px;
   object-fit:contain;
-  border-radius:8px;
-  background:rgba(255,255,255,.55);
+  border-radius:10px;
+  background:#fff;
   padding:4px;
-  box-shadow:0 8px 14px rgba(15,23,42,.10);
+  border:1px solid var(--line);
 }
 
 .wcCoinTexts{
@@ -185,16 +187,16 @@
   gap:2px;
 }
 
-.wcCoinCode{ font-weight:800; }
+.wcCoinCode{ font-weight:950; }
 .wcCoinName{
   font-size:12px;
-  color:rgba(15,23,42,.60);
+  color:var(--muted);
 }
 
 .wcHelper{
   margin-top:8px;
   font-size:12px;
-  color:rgba(15,23,42,.62);
+  color:black;
 }
 
 /* Wallet */
@@ -212,16 +214,16 @@
 
 .wcWalletTitle{
   font-size:13px;
-  color:rgba(15,23,42,.70);
-  font-weight:700;
+  color:var(--muted);
+  font-weight:900;
 }
 
 .wcAddWallet{
   border:none;
   background:none;
-  color:#0b4eb3de;
+  color:#2563eb;
   font-size:12px;
-  font-weight:800;
+  font-weight:950;
   cursor:pointer;
 }
 
@@ -237,33 +239,33 @@
   gap:12px;
   padding:14px;
   border-radius:16px;
-  border:1px solid rgba(15,23,42,.14);
-  background:var(--panel2);
+  border:1px solid var(--line);
+  background:var(--card);
   cursor:pointer;
-  box-shadow:0 10px 18px rgba(15,23,42,.06);
+  box-shadow:var(--shadow2);
 }
 
 .wcSavedWallet.active{
-  border-color:rgba(245,179,1,.65);
-  background:rgba(245,179,1,.12);
+  border-color: rgba(207,165,71,.75);
+  background: rgba(255,211,106,.18);
 }
 
 .wcWalletLeft{ text-align:left; }
 .wcWalletLabel{
   font-size:13px;
-  font-weight:800;
+  font-weight:950;
 }
 
 .wcWalletAddr{
   font-size:12px;
-  color:rgba(15,23,42,.60);
+  color:black;
   margin-top:2px;
 }
 
 .wcWalletNet{
   font-size:12px;
   color:#0b4fb3;
-  font-weight:900;
+  font-weight:950;
 }
 
 /* Card */
@@ -271,8 +273,8 @@
   margin:16px;
   padding:18px;
   border-radius:18px;
-  background:var(--panel2);
-  border:1px solid rgba(15,23,42,.14);
+  background:var(--card);
+  border:1px solid var(--line);
   box-shadow:var(--shadow);
 }
 
@@ -289,8 +291,8 @@
 .wcField label{
   display:block;
   font-size:12px;
-  color:rgba(15,23,42,.70);
-  font-weight:800;
+  color:var(--muted);
+  font-weight:950;
   margin-bottom:6px;
 }
 
@@ -299,17 +301,17 @@
   width:100%;
   height:44px;
   border-radius:12px;
-  border:1px solid rgba(15,23,42,.16);
-  background:#b2cde8;
-  color:#0f172a;
+  border:1px solid var(--line);
+  background:#fff;
+  color:var(--text);
   padding:0 14px;
   outline:none;
 }
 
 .wcField input:focus,
 .wcField select:focus{
-  border-color:rgba(245,179,1,.75);
-  box-shadow:0 0 0 4px rgba(245,179,1,.18);
+  border-color: rgba(207,165,71,.75);
+  box-shadow:0 0 0 4px rgba(255,211,106,.22);
 }
 
 .wcAmountRow{
@@ -322,49 +324,49 @@
   height:44px;
   padding:0 16px;
   border-radius:12px;
-  border:1px solid rgba(245,179,1,.75);
-  background:rgba(245,179,1,.16);
-  color:#0f172a;
-  font-weight:900;
+  border:1px solid rgba(207,165,71,.65);
+  background: rgb(255 180 0 / 22%);
+  color:var(--gold3);
+  font-weight:950;
   cursor:pointer;
 }
 
 .wcCalc{
   margin-top:8px;
   font-size:12px;
-  color:rgba(15,23,42,.70);
+  color:black;
 }
 
 .wcCalc span{
   color:var(--success);
-  font-weight:900;
+  font-weight:950;
 }
 
 .wcHint{
   margin-top:7px;
   font-size:12px;
-  color:rgba(15,23,42,.62);
+  color:black;
 }
 
 .wcError{
   margin-top:8px;
   font-size:12px;
   color:var(--danger);
-  font-weight:800;
+  font-weight:950;
 }
 
-/* Submit */
+/* Submit (1st image pale gold) */
 .wcSubmit{
   width:100%;
   height:48px;
   margin-top:8px;
   border-radius:16px;
-  border:none;
-  background:var(--brand);
-  color:#f8f8f8;
-  font-weight:900;
+  border:1px solid rgba(207,165,71,.65);
+  background: linear-gradient(180deg, rgb(255 179 0 / 55%), rgb(169 116 0 / 35%));
+  color:#1f2937;
+  font-weight:950;
   cursor:pointer;
-  box-shadow:0 12px 24px rgba(245,179,1,.25);
+  box-shadow:0 12px 24px rgba(15,23,42,.08);
 }
 
 .wcSubmit:disabled{
@@ -377,8 +379,106 @@
 .wcRules{
   margin-top:14px;
   font-size:12px;
-  color:rgba(15,23,42,.70);
+  color:var(--muted);
   line-height:1.7;
+  margin-left:2%;
+}
+
+/* =========================
+   ADD WALLET MODAL (clean)
+   ========================= */
+.wcModalOverlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.45);
+  display:grid;
+  place-items:center;
+  z-index:1000;
+  padding:16px;
+}
+
+.wcModal{
+  width:min(460px, 100%);
+  background:#fff;
+  border-radius:18px;
+  box-shadow:0 24px 60px rgba(0,0,0,.25);
+  border:1px solid var(--line);
+  overflow:hidden;
+}
+
+.wcModalHead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:14px 14px;
+  background:#fff;
+  border-bottom:1px solid var(--line);
+}
+
+.wcModalTitle{
+  font-weight:950;
+  color:var(--text);
+}
+
+.wcModalClose{
+  width:36px;
+  height:36px;
+  border-radius:12px;
+  border:1px solid var(--line);
+  background:#fff;
+  cursor:pointer;
+  font-weight:950;
+}
+
+.wcModalBody{
+  padding:14px;
+}
+
+.wcModalLabel{
+  display:block;
+  font-size:12px;
+  font-weight:950;
+  color:var(--muted);
+  margin:10px 0 6px;
+}
+
+.wcModalInput{
+  width:100%;
+  height:42px;
+  border-radius:12px;
+  border:1px solid var(--line);
+  background:#fff;
+  color:var(--text);
+  padding:0 12px;
+  outline:none;
+}
+
+.wcModalInput:focus{
+  border-color: rgba(207,165,71,.75);
+  box-shadow:0 0 0 4px rgba(255,211,106,.22);
+}
+
+.wcModalSave{
+  width:100%;
+  height:46px;
+  margin-top:12px;
+  border-radius:14px;
+  border:1px solid rgba(207,165,71,.65);
+  background: linear-gradient(180deg, rgba(255,211,106,.55), rgba(207,165,71,.35));
+  color:#1f2937;
+  font-weight:950;
+  cursor:pointer;
+}
+
+.wcModalSave:disabled{
+  opacity:.55;
+  cursor:not-allowed;
+}
+
+.wcModalTip{
+  margin-top:10px;
+  font-size:12px;
+  color:var(--muted);
 }
 
 /* Responsive */
@@ -394,101 +494,4 @@
   .wcBalanceValue{ font-size:22px; }
   .wcCoin{ min-width:140px; }
   .wcCard, .wcBalance{ margin:12px; padding:14px; }
-}
-
-/* =========================
-   ADD WALLET MODAL
-   ========================= */
-.wcModalOverlay{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.45);
-  display:grid;
-  place-items:center;
-  z-index:1000;
-  padding:16px;
-}
-
-.wcModal{
-  width:min(460px, 100%);
-  background:var(--panel2);
-  border-radius:18px;
-  box-shadow:0 24px 60px rgba(0,0,0,.25);
-  border:1px solid rgba(15,23,42,.14);
-  overflow:hidden;
-}
-
-.wcModalHead{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:14px 14px;
-  background:rgba(255,255,255,.30);
-  border-bottom:1px solid rgba(15,23,42,.12);
-}
-
-.wcModalTitle{
-  font-weight:900;
-  color:#0f172a;
-}
-
-.wcModalClose{
-  width:36px;
-  height:36px;
-  border-radius:12px;
-  border:1px solid rgba(15,23,42,.16);
-  background:rgba(255,255,255,.40);
-  cursor:pointer;
-  font-weight:900;
-}
-
-.wcModalBody{
-  padding:14px;
-}
-
-.wcModalLabel{
-  display:block;
-  font-size:12px;
-  font-weight:800;
-  color:rgba(15,23,42,.70);
-  margin:10px 0 6px;
-}
-
-.wcModalInput{
-  width:100%;
-  height:42px;
-  border-radius:12px;
-  border:1px solid rgba(15,23,42,.16);
-  background:#8cbef0;
-  color:#0f172a;
-  padding:0 12px;
-  outline:none;
-}
-
-.wcModalInput:focus{
-  border-color:rgba(245,179,1,.75);
-  box-shadow:0 0 0 4px rgba(245,179,1,.18);
-}
-
-.wcModalSave{
-  width:100%;
-  height:46px;
-  margin-top:12px;
-  border-radius:14px;
-  border:none;
-  background:var(--brand);
-  color:#111827;
-  font-weight:900;
-  cursor:pointer;
-}
-
-.wcModalSave:disabled{
-  opacity:.55;
-  cursor:not-allowed;
-}
-
-.wcModalTip{
-  margin-top:10px;
-  font-size:12px;
-  color:rgba(15,23,42,.62);
 }

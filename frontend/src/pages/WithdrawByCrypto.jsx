@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./WithdrawCrypto.css";
+import "./WithdrawByCrypto.css";
+import MemberBottomNav from "../components/MemberBottomNav";
 
 const coins = [
   {
@@ -296,6 +297,9 @@ export default function WithdrawCrypto() {
           </div>
         </div>
       )}
+
+      {/* ✅ SAME bottom bar (reusable) */}
+      <MemberBottomNav active="mine" />            
     </div>
   );
 }
