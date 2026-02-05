@@ -106,77 +106,97 @@ router.put("/:setId/tasks/:taskId/move", auth, allowRoles("owner", "agent"), asy
     return res.status(400).json({ message: "to_position must be >= 1" });
   }
 
-  await pool.query("BEGIN");
+  const client = await pool.connect();
   try {
-    // count tasks in set
-    const countR = await pool.query(
+    await client.query("BEGIN");
+
+    const countR = await client.query(
       "SELECT COUNT(*)::int AS c FROM set_tasks WHERE set_id = $1",
       [setId]
     );
     const count = countR.rows[0].c;
     if (count === 0) {
-      await pool.query("ROLLBACK");
+      await client.query("ROLLBACK");
       return res.status(404).json({ message: "Set is empty" });
     }
 
     const newPos = Math.min(toPos, count);
 
-    // current position of the task
-    const curR = await pool.query(
+    // ✅ lock all rows in this set to avoid concurrent move collisions
+    await client.query("SELECT id FROM set_tasks WHERE set_id = $1 FOR UPDATE", [setId]);
+
+    const curR = await client.query(
       "SELECT position FROM set_tasks WHERE set_id = $1 AND task_id = $2",
       [setId, taskId]
     );
     const cur = curR.rows[0];
     if (!cur) {
-      await pool.query("ROLLBACK");
+      await client.query("ROLLBACK");
       return res.status(404).json({ message: "Task not in set" });
     }
 
     const fromPos = Number(cur.position || 1);
     if (fromPos === newPos) {
-      await pool.query("COMMIT");
+      await client.query("COMMIT");
       return res.json({ ok: true, position: newPos });
     }
 
-    // Temporarily move target task out of range to avoid unique conflicts
-    await pool.query(
-      "UPDATE set_tasks SET position = -1000000 - $2 WHERE set_id = $1 AND task_id = $2",
-      [setId, taskId]
+    // ✅ move the target task to a safe temporary position (negative is OK in your schema)
+    const tempPos = -1000000 - taskId;
+    await client.query(
+      "UPDATE set_tasks SET position = $1 WHERE set_id = $2 AND task_id = $3",
+      [tempPos, setId, taskId]
     );
 
     if (newPos < fromPos) {
-      // moving up: shift [newPos .. fromPos-1] down by 1
-      await pool.query(
+      // move up: shift [newPos .. fromPos-1] down (+1) safely using negatives
+      await client.query(
         `UPDATE set_tasks
-         SET position = position + 1
+         SET position = -(position + 1)
          WHERE set_id = $1
            AND position >= $2
            AND position < $3`,
         [setId, newPos, fromPos]
       );
-    } else {
-      // moving down: shift [fromPos+1 .. newPos] up by 1
-      await pool.query(
+
+      await client.query(
         `UPDATE set_tasks
-         SET position = position - 1
+         SET position = -position
+         WHERE set_id = $1
+           AND position < 0`,
+        [setId]
+      );
+    } else {
+      // move down: shift [fromPos+1 .. newPos] up (-1) safely using negatives
+      await client.query(
+        `UPDATE set_tasks
+         SET position = -(position - 1)
          WHERE set_id = $1
            AND position > $2
            AND position <= $3`,
         [setId, fromPos, newPos]
       );
+
+      await client.query(
+        `UPDATE set_tasks
+         SET position = -position
+         WHERE set_id = $1
+           AND position < 0`,
+        [setId]
+      );
     }
 
     // place task into desired position
-    await pool.query(
+    await client.query(
       "UPDATE set_tasks SET position = $1 WHERE set_id = $2 AND task_id = $3",
       [newPos, setId, taskId]
     );
 
-    await pool.query("COMMIT");
+    await client.query("COMMIT");
     res.json({ ok: true, position: newPos });
   } catch (e) {
-    await pool.query("ROLLBACK");
-    console.error("MOVE ERROR:", e); // ✅ check terminal logs
+    try { await client.query("ROLLBACK"); } catch {}
+    console.error("MOVE ERROR:", e);
 
     res.status(500).json({
       message: "Server error",
@@ -187,7 +207,8 @@ router.put("/:setId/tasks/:taskId/move", auth, allowRoles("owner", "agent"), asy
         table: e?.table,
       },
     });
-    
+  } finally {
+    client.release();
   }
 });
 
@@ -198,16 +219,16 @@ router.delete("/:setId/tasks/:taskId", auth, allowRoles("owner", "agent"), async
     return res.status(400).json({ message: "Invalid id" });
   }
 
-  await pool.query("BEGIN");
+  const client = await pool.connect();
   try {
-    // delete the row
-    await pool.query(
+    await client.query("BEGIN");
+
+    await client.query(
       "DELETE FROM set_tasks WHERE set_id = $1 AND task_id = $2",
       [setId, taskId]
     );
 
-    // ✅ reindex positions to 1..N (so gaps are removed)
-    await pool.query(
+    await client.query(
       `
       WITH ordered AS (
         SELECT id, ROW_NUMBER() OVER (ORDER BY position ASC, id ASC) AS rn
@@ -222,7 +243,7 @@ router.delete("/:setId/tasks/:taskId", auth, allowRoles("owner", "agent"), async
       [setId]
     );
 
-    await pool.query(
+    await client.query(
       `
       UPDATE set_tasks
       SET position = -position
@@ -232,11 +253,14 @@ router.delete("/:setId/tasks/:taskId", auth, allowRoles("owner", "agent"), async
       [setId]
     );
 
-    await pool.query("COMMIT");
+    await client.query("COMMIT");
     res.json({ ok: true });
   } catch (e) {
-    await pool.query("ROLLBACK");
+    try { await client.query("ROLLBACK"); } catch {}
+    console.error("REMOVE TASK ERROR:", e);
     res.status(500).json({ message: "Server error" });
+  } finally {
+    client.release();
   }
 });
 

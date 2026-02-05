@@ -50,7 +50,12 @@ export default function Sets() {
       setOk("Order updated");
       setTimeout(() => setOk(""), 900);
     } catch (e2) {
-      setErr(e2?.response?.data?.message || "Failed to update order");
+      const data = e2?.response?.data;
+      setErr(
+        data?.pg
+          ? `${data.message} | ${data.pg.code || ""} ${data.pg.constraint || ""} ${data.pg.detail || ""}`.trim()
+          : (data?.message || "Failed to update order")
+      );      
     }
   };
 
