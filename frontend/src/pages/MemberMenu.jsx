@@ -177,10 +177,18 @@ export default function MemberMenu() {
           </button>
         </div>
 
-        {active && (
+        {data?.assignment?.status && (
           <div className="vipHint">
-            Active Package: <b>{data?.set?.name}</b> · Status{" "}
-            <span className="vipPill">{data?.assignment?.status}</span>
+            Balance: <b>{data?.me?.balance}</b> · Status{" "}
+            <span
+              className={`vipPill ${
+                String(data?.assignment?.status).toLowerCase() === "active"
+                  ? "isActive"
+                  : "isInactive"
+              }`}
+            >
+              {data?.assignment?.status}
+            </span>
           </div>
         )}
 

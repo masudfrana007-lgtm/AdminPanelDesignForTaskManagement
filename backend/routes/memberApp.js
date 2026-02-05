@@ -188,11 +188,12 @@ router.get("/active-set", memberAuth, async (req, res) => {
         t.quantity,
         t.rate,
         t.commission_rate,
-        t.price
+        t.price,
+        t.task_type          
       FROM set_tasks st
       JOIN tasks t ON t.id = st.task_id
       WHERE st.set_id = $1
-      ORDER BY st.id ASC
+      ORDER BY st.position ASC
       `,
       [ms.set_id]
     );
@@ -293,7 +294,7 @@ router.post("/complete-task", memberAuth, async (req, res) => {
       FROM set_tasks st
       JOIN tasks t ON t.id = st.task_id
       WHERE st.set_id = $1
-      ORDER BY st.id ASC
+      ORDER BY st.position ASC
       OFFSET $2
       LIMIT 1
       `,
