@@ -11,6 +11,7 @@ export default function Tasks() {
   const [form, setForm] = useState({
     title: "",
     description: "",
+    task_type: "regular",
     quantity: 1,
     commission_rate: 0,
     rate: 0,
@@ -69,6 +70,7 @@ export default function Tasks() {
       const fd = new FormData();
       fd.append("title", form.title);
       fd.append("description", form.description);
+      fd.append("task_type", form.task_type);
       fd.append("quantity", form.quantity);
       fd.append("commission_rate", form.commission_rate);
       fd.append("rate", form.rate);
@@ -81,6 +83,7 @@ export default function Tasks() {
       setForm({
         title: "",
         description: "",
+        task_type: "regular",
         quantity: 1,
         commission_rate: 0,
         rate: 0,
@@ -196,6 +199,17 @@ export default function Tasks() {
                   value={form.description}
                   onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
                 />
+              </div>
+              
+              <div>
+                <div className="small">Task Type</div>
+                <select
+                  value={form.task_type}
+                  onChange={(e) => setForm((p) => ({ ...p, task_type: e.target.value }))}
+                >
+                  <option value="regular">Regular</option>
+                  <option value="combo">Combo</option>
+                </select>
               </div>
 
               <div className="taskFormGrid2">
