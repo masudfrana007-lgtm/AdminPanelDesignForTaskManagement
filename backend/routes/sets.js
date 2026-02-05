@@ -229,4 +229,42 @@ router.delete("/:setId/tasks/:taskId", auth, allowRoles("owner", "agent"), async
   }
 });
 
+router.delete("/:id", auth, allowRoles("owner", "agent"), async (req, res) => {
+  const setId = Number(req.params.id);
+  if (!Number.isFinite(setId)) {
+    return res.status(400).json({ message: "Invalid set id" });
+  }
+
+  // 🚫 Block deletion if set is assigned
+  const assignedR = await pool.query(
+    "SELECT 1 FROM member_sets WHERE set_id = $1 LIMIT 1",
+    [setId]
+  );
+
+  if (assignedR.rowCount > 0) {
+    return res.status(400).json({
+      message: "Set is assigned to members and cannot be deleted",
+    });
+  }
+
+  const whereSql =
+    req.user.role === "agent"
+      ? "id = $1 AND created_by = $2"
+      : "id = $1";
+
+  const params =
+    req.user.role === "agent" ? [setId, req.user.id] : [setId];
+
+  const del = await pool.query(
+    `DELETE FROM sets WHERE ${whereSql} RETURNING id`,
+    params
+  );
+
+  if (!del.rowCount) {
+    return res.status(404).json({ message: "Set not found or not allowed" });
+  }
+
+  res.json({ ok: true });
+});
+
 export default router;

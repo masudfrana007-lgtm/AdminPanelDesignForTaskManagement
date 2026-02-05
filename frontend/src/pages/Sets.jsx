@@ -121,6 +121,32 @@ export default function Sets() {
     }
   };
 
+const deleteSet = async (id) => {
+  setErr("");
+  setOk("");
+  const okConfirm = window.confirm(
+    `Delete this set?\n\nThis will delete the set and all tasks inside it.\n\nThis cannot be undone.`
+  );
+  if (!okConfirm) return;
+
+  try {
+    await api.delete(`/sets/${id}`);
+    setOk("Set deleted");
+    // refresh lists
+    await load();
+
+    // if you deleted the opened set, close it
+    if (selectedSetId === id) {
+      setSelectedSetId(null);
+      setTasksInSet([]);
+    }
+
+    setTimeout(() => setOk(""), 1200);
+  } catch (e2) {
+    setErr(e2?.response?.data?.message || "Failed to delete set");
+  }
+};
+
   const currentCount = tasksInSet.length;
   const max = selectedSet?.max_tasks ?? 0;
 
@@ -336,13 +362,21 @@ const TaskTable = ({ rows, mode }) => {
                       </div>
                     </div>
 
-                    <button
-                      className="btn small"
-                      onClick={() => openSet(s.id)}
-                      type="button"
-                    >
-                      Open
-                    </button>
+                    <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                      <button className="btn small" onClick={() => openSet(s.id)} type="button">
+                        Open
+                      </button>
+
+                      <button
+                        className="btn small danger"
+                        onClick={() => deleteSet(s.id)}
+                        type="button"
+                        title="Will fail if assigned to members"
+                      >
+                        Delete
+                      </button>
+                    </div>
+
                   </li>
                 ))}
               </ul>
