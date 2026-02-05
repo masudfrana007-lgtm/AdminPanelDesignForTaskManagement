@@ -176,7 +176,18 @@ router.put("/:setId/tasks/:taskId/move", auth, allowRoles("owner", "agent"), asy
     res.json({ ok: true, position: newPos });
   } catch (e) {
     await pool.query("ROLLBACK");
-    res.status(500).json({ message: "Server error" });
+    console.error("MOVE ERROR:", e); // ✅ check terminal logs
+
+    res.status(500).json({
+      message: "Server error",
+      pg: {
+        code: e?.code,
+        detail: e?.detail,
+        constraint: e?.constraint,
+        table: e?.table,
+      },
+    });
+    
   }
 });
 

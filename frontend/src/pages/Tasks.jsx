@@ -200,7 +200,7 @@ export default function Tasks() {
                   onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
                 />
               </div>
-              
+
               <div>
                 <div className="small">Task Type</div>
                 <select
@@ -290,6 +290,7 @@ export default function Tasks() {
                 <thead>
                   <tr>
                     <th>Image</th>
+                    <th>Type</th>
                     <th>Title</th>
                     <th>Description</th>
                     <th>Qty</th>
@@ -302,7 +303,15 @@ export default function Tasks() {
 
                 <tbody>
                   {list.map((t) => (
-                    <tr key={t.id}>
+                    <tr
+                      key={t.id}
+                      style={
+                        t.task_type === "combo"
+                          ? { background: "rgb(180 204 255)", color: "#fff" } // blue row + white text
+                          : undefined
+                      }
+                    >
+                      
                       <td>
                         {t.image_url ? (
                           <img
@@ -321,6 +330,11 @@ export default function Tasks() {
                           <span className="small">—</span>
                         )}
                       </td>
+
+                      <td className="small">
+                        {t.task_type === "combo" ? "Combo" : "Regular"}
+                      </td>
+
 
                       <td>
                         <b>{t.title}</b>
