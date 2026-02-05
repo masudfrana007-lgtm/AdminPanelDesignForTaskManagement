@@ -66,8 +66,8 @@ export default function AssignSets() {
               <tr>
                 <th style={{ width: 70 }}>No.</th>
                 <th style={{ width: 190 }}>Created Date</th>
-                <th>Username</th>
-                <th>Package</th>
+                <th style={{ width: 150 }}>Username</th>
+                <th style={{ width: 190 }}>Package</th>
                 <th style={{ width: 130 }}>Status</th>
                 <th style={{ width: 190 }}>Updated Date</th>
                 <th style={{ width: 140 }}>Action</th>
@@ -90,7 +90,7 @@ export default function AssignSets() {
 
                     <td>
                       <div className="small">
-                        <b>Member ID:</b> {r.member_short_id || r.member_id || "-"}
+                        <b>Member ID:</b> {r.member_id || "-"}
                       </div>
                       <div className="small">
                         <b>Phone:</b> {r.member_phone || "-"}
@@ -119,7 +119,7 @@ export default function AssignSets() {
                     </td>
 
                     <td>
-                      <span className="badge">
+                      <span className={`badge ${isCompleted ? "badge-success" : "badge-warning"}`}>
                         {isCompleted ? "Completed" : "Active"}
                       </span>
                     </td>

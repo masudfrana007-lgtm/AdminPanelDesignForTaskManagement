@@ -109,7 +109,7 @@ export default function Members() {
               <tbody>
                 {list.map((m) => (
                   <tr key={m.short_id || m.id}>
-                    <td>{m.short_id}</td>
+                    <td>{m.id}</td>
                     <td>{m.nickname}</td>
                     <td>{m.phone}</td>
 
