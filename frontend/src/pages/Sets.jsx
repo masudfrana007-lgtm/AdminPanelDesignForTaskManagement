@@ -15,6 +15,9 @@ export default function Sets() {
 
   const [createForm, setCreateForm] = useState({ name: "", max_tasks: 3 });
 
+  const [editingPos, setEditingPos] = useState({}); // taskId -> true/false
+  const [posDraft, setPosDraft] = useState({});     // taskId -> number/string
+
   const selectedSet = useMemo(
     () => sets.find((s) => s.id === selectedSetId) || null,
     [sets, selectedSetId]
@@ -36,9 +39,33 @@ export default function Sets() {
     setTasksInSet(data);
   };
 
+  const moveTask = async (taskId, toPos) => {
+    setErr(""); setOk("");
+    if (!selectedSetId) return;
+    try {
+      await api.put(`/sets/${selectedSetId}/tasks/${taskId}/move`, {
+        to_position: Number(toPos),
+      });
+      await loadSetTasks(selectedSetId);
+      setOk("Order updated");
+      setTimeout(() => setOk(""), 900);
+    } catch (e2) {
+      setErr(e2?.response?.data?.message || "Failed to update order");
+    }
+  };
+
   useEffect(() => {
     load();
   }, []);
+
+  useEffect(() => {
+    const next = {};
+    tasksInSet.forEach((t, idx) => {
+      next[t.id] = Number(t.position ?? (idx + 1));
+    });
+    setPosDraft(next);
+    setEditingPos({});
+  }, [tasksInSet]);
 
   const createSet = async (e) => {
     e.preventDefault();
@@ -97,85 +124,151 @@ export default function Sets() {
   const currentCount = tasksInSet.length;
   const max = selectedSet?.max_tasks ?? 0;
 
-  const TaskTable = ({ rows, mode }) => {
-    // mode: "remove" | "add"
-    const isRemove = mode === "remove";
+const TaskTable = ({ rows, mode }) => {
+  const isRemove = mode === "remove";
 
-    return (
-      <div className="tableWrap niceTableWrap">
-        <table className="table niceTable">
-          <thead>
-            <tr>
-              <th style={{ width: 56 }}>S/N</th>
-              <th style={{ width: 86 }}>Image</th>
-              <th>Title</th>
-              <th style={{ width: 90 }}>Qty</th>
-              <th style={{ width: 110 }}>Rate</th>
-              <th style={{ width: 130 }}>Commission</th>
-              <th style={{ width: 120 }}>Price</th>
-              <th style={{ width: 140, textAlign: "right" }}>Action</th>
-            </tr>
-          </thead>
+  const startEdit = (t, idx) => {
+    setEditingPos((p) => ({ ...p, [t.id]: true }));
+    setPosDraft((p) => ({ ...p, [t.id]: Number(t.position ?? (idx + 1)) }));
+  };
 
-          <tbody>
-            {rows.map((t, idx) => (
+  const cancelEdit = (t, idx) => {
+    setEditingPos((p) => ({ ...p, [t.id]: false }));
+    setPosDraft((p) => ({ ...p, [t.id]: Number(t.position ?? (idx + 1)) }));
+  };
+
+  const confirmAndMove = (t, idx) => {
+    const from = Number(t.position ?? (idx + 1));
+    const to = Number(posDraft[t.id] || 0);
+
+    if (!Number.isFinite(to) || to < 1) return;
+
+    const okConfirm = window.confirm(
+      `Change order?\n\n"${t.title}"\nMove from #${from} to #${to}\n\nThis will shift other tasks.`
+    );
+
+    if (!okConfirm) {
+      cancelEdit(t, idx);
+      return;
+    }
+
+    moveTask(t.id, to);
+    setEditingPos((p) => ({ ...p, [t.id]: false }));
+  };
+
+  return (
+    <div className="tableWrap niceTableWrap">
+      <table className="table niceTable">
+        <thead>
+          <tr>
+            <th style={{ width: 56 }}>S/N</th>
+            <th style={{ width: 86 }}>Image</th>
+            <th>Title</th>
+            <th style={{ width: 90 }}>Qty</th>
+            <th style={{ width: 110 }}>Rate</th>
+            <th style={{ width: 130 }}>Commission</th>
+            <th style={{ width: 120 }}>Price</th>
+            <th style={{ width: 260, textAlign: "right" }}>Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {rows.map((t, idx) => {
+            const isEditing = !!editingPos[t.id];
+
+            return (
               <tr key={t.id}>
                 <td>
-                  <span className="snBadge">{idx + 1}</span>
+                  <span className="snBadge">{t.position ?? (idx + 1)}</span>
                 </td>
 
                 <td>
                   {t.image_url ? (
-                    <img
-                      className="taskAvatar"
-                      src={`${API_HOST}${t.image_url}`}
-                      alt=""
-                    />
+                    <img className="taskAvatar" src={`${API_HOST}${t.image_url}`} alt="" />
                   ) : (
                     <div className="taskAvatar placeholder" />
                   )}
                 </td>
 
-                <td>
-                  <div className="taskTitle">{t.title}</div>
-                </td>
-
+                <td><div className="taskTitle">{t.title}</div></td>
                 <td>{t.quantity}</td>
                 <td>{t.rate}</td>
                 <td>{t.commission_rate}%</td>
-
-                <td>
-                  <b>{t.price}</b>
-                </td>
+                <td><b>{t.price}</b></td>
 
                 <td style={{ textAlign: "right" }}>
-                  <button
-                    className={`btn small ${isRemove ? "danger" : ""}`}
-                    onClick={() =>
-                      isRemove ? removeTask(t.id) : addTask(t.id)
-                    }
-                    type="button"
-                  >
-                    {isRemove ? "Remove" : "Add"}
-                  </button>
-                </td>
-              </tr>
-            ))}
+                  {isRemove ? (
+                    <div className="tblActions">
+                      {!isEditing ? (
+                        <>
+                          <button
+                            className="btn small secondary"
+                            type="button"
+                            onClick={() => startEdit(t, idx)}
+                          >
+                            Edit order
+                          </button>
 
-            {!rows.length && (
-              <tr>
-                <td colSpan={8} className="emptyRow">
-                  {isRemove
-                    ? "No tasks added yet."
-                    : "All tasks are already in this set."}
+                          <button
+                            className="btn small danger"
+                            onClick={() => removeTask(t.id)}
+                            type="button"
+                          >
+                            Remove
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <input
+                            type="number"
+                            min={1}
+                            className="miniPosInput"
+                            value={posDraft[t.id] ?? (t.position ?? (idx + 1))}
+                            onChange={(e) =>
+                              setPosDraft((p) => ({ ...p, [t.id]: Number(e.target.value) }))
+                            }
+                          />
+
+                          <button
+                            className="btn small"
+                            type="button"
+                            onClick={() => confirmAndMove(t, idx)}
+                          >
+                            Update
+                          </button>
+
+                          <button
+                            className="btn small secondary"
+                            type="button"
+                            onClick={() => cancelEdit(t, idx)}
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <button className="btn small" onClick={() => addTask(t.id)} type="button">
+                      Add
+                    </button>
+                  )}
                 </td>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    );
-  };
+            );
+          })}
+
+          {!rows.length && (
+            <tr>
+              <td colSpan={8} className="emptyRow">
+                {isRemove ? "No tasks added yet." : "All tasks are already in this set."}
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+};
 
   return (
     <AppLayout>
