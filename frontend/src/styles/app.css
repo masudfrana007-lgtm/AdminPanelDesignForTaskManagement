@@ -242,3 +242,185 @@
   text-overflow: clip !important;
   max-width: none !important;
 }
+/* =========================
+   SETS PAGE - BEAUTIFUL TABLES
+   ========================= */
+
+.niceTableWrap{
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.05);
+  overflow: hidden;
+}
+
+.table.niceTable{
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.table.niceTable thead th{
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  color: #0f172a;
+  font-weight: 700;
+  border-top: none;
+  border-bottom: 1px solid var(--border);
+  padding: 12px 10px;
+}
+
+.table.niceTable tbody td{
+  padding: 12px 10px;
+  border-top: 1px solid rgba(0,0,0,0.06);
+  vertical-align: middle;
+}
+
+.table.niceTable tbody tr:nth-child(even){
+  background: #fbfdff;
+}
+
+.table.niceTable tbody tr:hover{
+  background: #f1f5ff;
+}
+
+.snBadge{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #eef2ff;
+  border: 1px solid rgba(37,99,235,0.18);
+  color: #1e3a8a;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.taskAvatar{
+  width: 62px;
+  height: 62px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1px solid rgba(0,0,0,0.10);
+  box-shadow: 0 8px 18px rgba(2, 6, 23, 0.08);
+  background: #fff;
+}
+
+.taskAvatar.placeholder{
+  background: #f1f5f9;
+  box-shadow: none;
+}
+
+.taskTitle{
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.emptyRow{
+  text-align: center;
+  padding: 18px 12px !important;
+  color: #475569;
+  background: #ffffff;
+}
+
+.sectionTitle{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 10px;
+}
+
+.mutedChip{
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: #f8fafc;
+  color: #334155;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+/* Make the set list itself cleaner */
+.setList{
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.setRow{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: linear-gradient(180deg, #ffffff, #fbfdff);
+  border-radius: 14px;
+  padding: 10px 12px;
+  box-shadow: 0 8px 18px rgba(2, 6, 23, 0.04);
+}
+
+.setRow:hover{
+  background: #f8fafc;
+  border-color: rgba(37,99,235,0.18);
+}
+
+.setName{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Mobile: allow horizontal scroll for the table nicely */
+@media (max-width: 900px){
+  .niceTableWrap{
+    overflow-x: auto;
+  }
+  .table.niceTable{
+    min-width: 980px;
+  }
+}
+
+.badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* Active → Yellow */
+.badge-warning {
+  background: #facc15; /* yellow */
+  color: #222;
+}
+
+/* Completed → Green */
+.badge-success {
+  background: #22c55e; /* green */
+}
+
+.miniPosInput{
+  width: 80px;
+  padding: 7px 9px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.10);
+  background: #f8fafc;
+  color: #0f172a;
+  font-weight: 700;
+}
+.tblActions{
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+}

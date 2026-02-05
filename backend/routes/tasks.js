@@ -32,9 +32,14 @@ function safeUnlink(p) {
 // ------------------
 router.post("/", auth, allowRoles("owner"), upload.single("image"), async (req, res) => {
   try {
-    const { title, description, quantity, commission_rate, rate } = req.body;
+    const { title, description, quantity, commission_rate, rate, task_type } = req.body;
 
     if (!title) return res.status(400).json({ message: "Title is required" });
+
+    const type = String(task_type || "regular").toLowerCase();
+    if (!["regular", "combo"].includes(type)) {
+      return res.status(400).json({ message: "Invalid task type" });
+    }
 
     const qty = Number(quantity || 1);
     const commission = Number(commission_rate || 0);
@@ -45,10 +50,10 @@ router.post("/", auth, allowRoles("owner"), upload.single("image"), async (req, 
 
     const result = await pool.query(
       `INSERT INTO tasks 
-        (title, description, image_url, quantity, commission_rate, rate, price, created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+        (title, description, image_url, quantity, commission_rate, rate, price, task_type, created_by)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)      
        RETURNING *`,
-      [title, description || null, imageUrl, qty, commission, r, price, req.user.id]
+      [title, description || null, imageUrl, qty, commission, r, price, type, req.user.id]
     );
 
     res.status(201).json(result.rows[0]);

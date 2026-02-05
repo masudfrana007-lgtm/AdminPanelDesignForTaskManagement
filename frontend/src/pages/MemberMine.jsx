@@ -156,7 +156,7 @@ export default function MemberMine() {
                 />
               }
               label="Deposit Records"
-              onClick={() => nav("/member/history")}
+              onClick={() => nav("/member/deposit/records")}
             />
             <ListItem
               icon={
@@ -167,7 +167,7 @@ export default function MemberMine() {
                 />
               }
               label="Withdrawal Records"
-              onClick={() => nav("/member/history")}
+              onClick={() => nav("/member/withdraw/records")}
             />
             <ListItem
               icon={<img src={securityIcon} alt="Security" className="list-icon-img" />}

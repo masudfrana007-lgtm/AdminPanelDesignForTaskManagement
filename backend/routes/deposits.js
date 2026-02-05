@@ -34,22 +34,41 @@ router.post("/", auth, allowRoles("owner"), async (req, res) => {
     const member_id = Number(req.body.member_id);
     const amount = Number(req.body.amount || 0);
     const method = String(req.body.method || "").trim();
-    const tx_ref = String(req.body.tx_ref || "").trim();
+    const tx_ref_raw = (req.body.tx_ref ?? "").toString().trim();
     const proof_url = String(req.body.proof_url || "").trim();
+    const asset = String(req.body.asset || "USDT").trim();
+    const network = String(req.body.network || "").trim();
 
     if (!member_id) return res.status(400).json({ message: "member_id required" });
     if (!amount || amount <= 0) return res.status(400).json({ message: "Invalid amount" });
     if (!method) return res.status(400).json({ message: "Method required" });
+    if (method.toLowerCase().includes("crypto") && !network) {
+      return res.status(400).json({ message: "Network required for crypto deposit" });
+    }
 
     // Ensure member exists (optional but recommended)
     const m = await pool.query(`SELECT id FROM members WHERE id=$1`, [member_id]);
     if (!m.rowCount) return res.status(404).json({ message: "Member not found" });
 
     const r = await pool.query(
-      `INSERT INTO deposits (member_id, amount, method, tx_ref, proof_url)
-       VALUES ($1,$2,$3,$4,$5)
-       RETURNING *`,
-      [member_id, amount, method, tx_ref || null, proof_url || null]
+      tx_ref_raw
+        ? `
+          INSERT INTO deposits
+            (member_id, amount, method, asset, network, tx_ref, proof_url, source)
+          VALUES
+            ($1,$2,$3,$4,$5,$6,$7,'owner')
+          RETURNING *
+          `
+        : `
+          INSERT INTO deposits
+            (member_id, amount, method, asset, network, proof_url, source)
+          VALUES
+            ($1,$2,$3,$4,$5,$6,'owner')
+          RETURNING *
+          `,
+      tx_ref_raw
+        ? [member_id, amount, method, asset, network || null, tx_ref_raw, proof_url || null]
+        : [member_id, amount, method, asset, network || null, proof_url || null]
     );
 
     res.status(201).json(r.rows[0]);

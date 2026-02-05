@@ -19,6 +19,7 @@
   color: var(--text);
   background: linear-gradient(180deg, #061529 0%, #071c35 45%, #061529 100%);
   overflow-x:hidden;
+  color:white;
 }
 
 .mn-header{

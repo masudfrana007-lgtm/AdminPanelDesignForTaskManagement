@@ -4,11 +4,18 @@ import memberApi from "../services/memberApi";
 import { getMember } from "../memberAuth";
 import MemberBottomNav from "../components/MemberBottomNav"; // ✅ add this
 
+function money(n) {
+  const num = Number(n || 0);
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(num);
+}
+
 export default function Home() {
 
   const me = getMember(); // from local storage (logged in member)
-const [profile, setProfile] = useState(null);
-const [pErr, setPErr] = useState("");
+  const [profile, setProfile] = useState(null);
+  const [pErr, setPErr] = useState("");
+  const [balance, setBalance] = useState(0);
+  const [locked, setLocked] = useState(0); // optional (if you need later)
 
 useEffect(() => {
   (async () => {
@@ -16,11 +23,15 @@ useEffect(() => {
       // ✅ pick ONE that you already have in backend:
       // If you already have: GET /member/me or /members/me
       const { data } = await memberApi.get("/member/me");
-      setProfile(data);
+      setProfile(data || null);
+      setBalance(Number(data?.balance || 0));
+      setLocked(Number(data?.locked_balance || 0)); // optional      
     } catch (e) {
       // fallback to local storage values if API not ready
       setProfile(me || null);
-      setPErr(e?.response?.data?.message || "");
+      setBalance(Number(me?.balance || 0));          // fallback if LS has balance
+      setLocked(Number(me?.locked_balance || 0));    // optional
+      setPErr(e?.response?.data?.message || "");      
     }
   })();
 }, []);
@@ -141,7 +152,7 @@ useEffect(() => {
           <div className="profileLeft">
             <div className="mine-avatar">
               <img
-                src={`https://i.pravatar.cc/150?u=${user.referenceCode}`}
+                src={`https://i.pravatar.cc/150?u=${profile?.short_id || me?.short_id || "guest"}`}
                 alt="User Avatar"
                 className="mine-avatar-img"
               />
@@ -159,16 +170,16 @@ useEffect(() => {
             </div> */}
 
             <div className="welcomeText">
-              <div className="welcomeSmall">Welcome back</div>
+              <div className="welcomeBalance">Welcome back</div>
               <div className="welcomeName">
                 {profile?.nickname || profile?.name || "—"}
                 <span className="vip">{profile?.ranking ? profile.ranking : "Trial"}</span>
               </div>
-              <div className="welcomeMeta">ID: {profile?.short_id || me?.short_id || "-"}</div>
+              <div className="welcomeBalance">ID: {profile?.short_id || me?.short_id || "-"}</div>
               {/* need to add balance here */}
               <div className="welcomeBalance">                
                 <span className="balanceAmount">
-                  Current Balance:{" "} USD {user?.balance != null ? user.balance.toFixed(2) : "-"}
+                  Current Balance: USD {money(balance)}
                 </span>
               </div>
             </div>

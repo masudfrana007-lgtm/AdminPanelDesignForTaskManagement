@@ -159,7 +159,6 @@ export default function MemberMenu() {
       <div className="vipTop">
         <div className="vipHeaderRow">
           <div className="vipBrand">
-            <div className="vipBrandLogo">TK</div>
             <div>
               <div className="vipBrandTitle">TK Branding</div>
               <div className="vipBrandSub">
@@ -219,7 +218,7 @@ export default function MemberMenu() {
               if (e.key === "Enter" || e.key === " ") goToVip(c);
             }}
           >
-            <div className="vipBadge">{c.tier}</div>
+            <div className="vipTierText">{c.tier}</div>
 
             <div className="vipCardTop">
               <img

@@ -29,7 +29,7 @@ import Profile from "./pages/Profile";
 
 import WithdrawalMethod from "./pages/WithdrawalMethod";
 import WithdrawBank from "./pages/WithdrawBank";
-import WithdrawCrypto from "./pages/WithdrawCrypto";
+import WithdrawByCrypto from "./pages/WithdrawByCrypto";
 
 import TaskList from "./pages/TaskList";
 import TaskDetail from "./pages/TaskDetail";
@@ -39,6 +39,13 @@ import AlibabaVip2 from "./pages/AlibabaVip2";
 import AliexpressVip3 from "./pages/AliexpressVip3";
 
 import MemberTasks from "./pages/MemberTasks";
+
+import MemberWallet from "./pages/MemberWallet";
+import CreateMemberDeposit from "./pages/CreateMemberDeposit";
+import CreateMemberWithdrawal from "./pages/CreateMemberWithdrawal";
+
+import DepositRecord from "./pages/DepositRecord";
+import WithdrawalRecord from "./pages/WithdrawalRecord";
 
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
@@ -96,6 +103,31 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute roles={["owner","agent"]}>
         <CreateMember />
+      </ProtectedRoute>
+    )
+  },
+
+  {
+    path: "/members/:memberId/wallet",
+    element: (
+      <ProtectedRoute roles={["owner","agent"]}>
+        <MemberWallet />
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/members/:memberId/wallet/deposit/new",
+    element: (
+      <ProtectedRoute roles={["owner","agent"]}>
+        <CreateMemberDeposit />
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/members/:memberId/wallet/withdraw/new",
+    element: (
+      <ProtectedRoute roles={["owner","agent"]}>
+        <CreateMemberWithdrawal />
       </ProtectedRoute>
     )
   },
@@ -231,7 +263,7 @@ export const router = createBrowserRouter([
   path: "/member/withdraw/crypto",
   element: (
     <MemberProtectedRoute>
-      <WithdrawCrypto />
+      <WithdrawByCrypto />
     </MemberProtectedRoute>
   ),
 },
@@ -295,6 +327,24 @@ export const router = createBrowserRouter([
   element: (
     <MemberProtectedRoute>
       <MemberTasks />
+    </MemberProtectedRoute>
+  ),
+},
+
+{
+  path: "/member/deposit/records",
+  element: (
+    <MemberProtectedRoute>
+      <DepositRecord />
+    </MemberProtectedRoute>
+  ),
+},
+
+{
+  path: "/member/withdraw/records",
+  element: (
+    <MemberProtectedRoute>
+      <WithdrawalRecord />
     </MemberProtectedRoute>
   ),
 },

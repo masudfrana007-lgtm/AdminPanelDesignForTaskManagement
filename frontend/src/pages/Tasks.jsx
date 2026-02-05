@@ -11,6 +11,7 @@ export default function Tasks() {
   const [form, setForm] = useState({
     title: "",
     description: "",
+    task_type: "regular",
     quantity: 1,
     commission_rate: 0,
     rate: 0,
@@ -69,6 +70,7 @@ export default function Tasks() {
       const fd = new FormData();
       fd.append("title", form.title);
       fd.append("description", form.description);
+      fd.append("task_type", form.task_type);
       fd.append("quantity", form.quantity);
       fd.append("commission_rate", form.commission_rate);
       fd.append("rate", form.rate);
@@ -81,6 +83,7 @@ export default function Tasks() {
       setForm({
         title: "",
         description: "",
+        task_type: "regular",
         quantity: 1,
         commission_rate: 0,
         rate: 0,
@@ -198,6 +201,17 @@ export default function Tasks() {
                 />
               </div>
 
+              <div>
+                <div className="small">Task Type</div>
+                <select
+                  value={form.task_type}
+                  onChange={(e) => setForm((p) => ({ ...p, task_type: e.target.value }))}
+                >
+                  <option value="regular">Regular</option>
+                  <option value="combo">Combo</option>
+                </select>
+              </div>
+
               <div className="taskFormGrid2">
                 <div>
                   <div className="small">Quantity</div>
@@ -276,6 +290,7 @@ export default function Tasks() {
                 <thead>
                   <tr>
                     <th>Image</th>
+                    <th>Type</th>
                     <th>Title</th>
                     <th>Description</th>
                     <th>Qty</th>
@@ -288,7 +303,15 @@ export default function Tasks() {
 
                 <tbody>
                   {list.map((t) => (
-                    <tr key={t.id}>
+                    <tr
+                      key={t.id}
+                      style={
+                        t.task_type === "combo"
+                          ? { background: "rgb(180 204 255)", color: "#fff" } // blue row + white text
+                          : undefined
+                      }
+                    >
+                      
                       <td>
                         {t.image_url ? (
                           <img
@@ -307,6 +330,11 @@ export default function Tasks() {
                           <span className="small">—</span>
                         )}
                       </td>
+
+                      <td className="small">
+                        {t.task_type === "combo" ? "Combo" : "Regular"}
+                      </td>
+
 
                       <td>
                         <b>{t.title}</b>

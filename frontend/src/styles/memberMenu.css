@@ -395,3 +395,10 @@
     font-size: 14px;
   }
 }
+
+.vipTierText {
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.9;
+  margin-bottom: 6px;
+}

@@ -1,5 +1,7 @@
-import { useMemo, useState } from "react";
+// src/pages/MemberDepositCrypto.jsx
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import memberApi from "../services/memberApi";
 import "../styles/memberDepositCrypto.css";
 import MemberBottomNav from "../components/MemberBottomNav";
 
@@ -18,7 +20,17 @@ const ASSETS = [
     symbol: "BTC",
     name: "Bitcoin",
     icon: "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
-    networks: [{ key: "BTC", label: "Bitcoin", badge: "Mainnet", feeHint: "Network fee varies", eta: "10–60 min", conf: 2, min: 0.0002 }],
+    networks: [
+      {
+        key: "BTC",
+        label: "Bitcoin",
+        badge: "Mainnet",
+        feeHint: "Network fee varies",
+        eta: "10–60 min",
+        conf: 2,
+        min: 0.0002,
+      },
+    ],
   },
   {
     symbol: "ETH",
@@ -35,7 +47,7 @@ const ASSETS = [
 ];
 
 function money(n) {
-  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n);
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(Number(n || 0));
 }
 function shortAddr(addr) {
   if (!addr) return "";
@@ -70,11 +82,13 @@ export default function MemberDepositCrypto() {
   const [asset, setAsset] = useState("USDT");
   const assetObj = useMemo(() => ASSETS.find((a) => a.symbol === asset), [asset]);
 
-  const [network, setNetwork] = useState(assetObj.networks[0].key);
-  const networkObj = useMemo(
-    () => assetObj.networks.find((n) => n.key === network) || assetObj.networks[0],
-    [assetObj, network]
-  );
+  // IMPORTANT: keep network valid when asset changes (init from current assetObj)
+  const [network, setNetwork] = useState(() => ASSETS.find((a) => a.symbol === "USDT")?.networks?.[0]?.key || "TRC20");
+
+  const networkObj = useMemo(() => {
+    const found = assetObj.networks.find((n) => n.key === network);
+    return found || assetObj.networks[0];
+  }, [assetObj, network]);
 
   const [address, setAddress] = useState(() => getDemoAddress(asset, network));
   const [memoTag, setMemoTag] = useState("");
@@ -89,9 +103,51 @@ export default function MemberDepositCrypto() {
     window.__toastTimer = window.setTimeout(() => setToast(""), 2200);
   };
 
-  // demo numbers (replace with real API later)
-  const walletUsd = 1280.45;
-  const walletUsdt = 1245.32;
+  const [submitting, setSubmitting] = useState(false);
+
+  // ✅ REAL balance + counts (no new API)
+  const [walletUsd, setWalletUsd] = useState(0);
+  const [walletUsdt, setWalletUsdt] = useState(0);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [completedCount, setCompletedCount] = useState(0);
+
+  const loadMe = async () => {
+    try {
+      const { data } = await memberApi.get("/member/me");
+      const bal = Number(data?.balance || 0);
+      setWalletUsdt(bal);
+      setWalletUsd(bal); // if you treat 1 USDT ≈ 1 USD
+    } catch {
+      // ignore
+    }
+  };
+
+  // ✅ Use your EXISTING API that returns ALL deposits for THIS member (member routes)
+  // If you already have a different route, just change this path.
+  const loadDepositCounts = async () => {
+    try {
+      const { data } = await memberApi.get("/member/deposits"); // <— change if your route differs
+      const rows = Array.isArray(data) ? data : Array.isArray(data?.rows) ? data.rows : [];
+      const p = rows.filter((x) => String(x?.status || "").toLowerCase() === "pending").length;
+      const c = rows.filter((x) => String(x?.status || "").toLowerCase() === "approved").length;
+      setPendingCount(p);
+      setCompletedCount(c);
+    } catch {
+      // ignore
+      setPendingCount(0);
+      setCompletedCount(0);
+    }
+  };
+
+  const refreshTop = async () => {
+    showToast("Refreshing...");
+    await Promise.all([loadMe(), loadDepositCounts()]);
+  };
+
+  useEffect(() => {
+    refreshTop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onChangeAsset = (sym) => {
     setAsset(sym);
@@ -122,13 +178,67 @@ export default function MemberDepositCrypto() {
     showToast("New address generated");
   };
 
-  const markPaid = () => {
-    setShowConfirmation(false);
-    showToast("Submitted. We are checking your deposit...");
+  const handleCompleteTransfer = () => {
+    const n = Number(amount);
+    if (!amount || Number.isNaN(n) || n <= 0) {
+      showToast("Enter a valid amount");
+      return;
+    }
+    if (n < Number(networkObj.min)) {
+      showToast(`Minimum deposit is ${networkObj.min} ${asset}`);
+      return;
+    }
+    setShowConfirmation(true);
   };
 
-  const handleCompleteTransfer = () => {
-    setShowConfirmation(true);
+  // ✅ REAL: create deposit request in DB
+  const markPaid = async () => {
+    if (submitting) return;
+
+    try {
+      const n = Number(amount);
+
+      if (!amount || Number.isNaN(n) || n <= 0) {
+        showToast("Enter a valid amount");
+        return;
+      }
+      if (n < Number(networkObj.min)) {
+        showToast(`Minimum deposit is ${networkObj.min} ${asset}`);
+        return;
+      }
+      if (!asset) {
+        showToast("Asset is required");
+        return;
+      }
+      if (!network) {
+        showToast("Network is required");
+        return;
+      }
+
+      setSubmitting(true);
+
+      await memberApi.post("/member/deposits", {
+        amount: n,
+        method: "crypto",
+        asset,
+        network,
+        tx_ref: null,
+        proof_url: null,
+      });
+
+      setShowConfirmation(false);
+      showToast("Deposit submitted. Awaiting approval.");
+
+      // refresh real numbers
+      await refreshTop();
+
+      nav("/member/deposit/records");
+    } catch (e) {
+      const msg = e?.response?.data?.message || "Failed to submit deposit";
+      showToast(msg);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -137,7 +247,7 @@ export default function MemberDepositCrypto() {
 
       {/* Header */}
       <header className="dc-header">
-        <button className="dc-back" onClick={() => nav(-1)}>
+        <button className="dc-back" onClick={() => nav(-1)} type="button">
           ←
         </button>
 
@@ -147,7 +257,7 @@ export default function MemberDepositCrypto() {
         </div>
 
         <div className="dc-headerActions">
-          <button className="dc-ghostBtn" onClick={() => nav("/member/service")}>
+          <button className="dc-ghostBtn" onClick={() => nav("/member/service")} type="button">
             Help
           </button>
         </div>
@@ -173,10 +283,10 @@ export default function MemberDepositCrypto() {
             </div>
 
             <div className="dc-balanceActions">
-              <button className="dc-miniBtn" onClick={() => showToast("Opening deposit history...")}>
+              <button className="dc-miniBtn" onClick={() => nav("/member/deposit/records")} type="button">
                 View History
               </button>
-              <button className="dc-miniBtn" onClick={() => showToast("Refreshing balance...")}>
+              <button className="dc-miniBtn" onClick={refreshTop} type="button">
                 Refresh
               </button>
             </div>
@@ -185,10 +295,10 @@ export default function MemberDepositCrypto() {
           <div className="dc-card dc-status">
             <div className="dc-statusTitle">Deposit Status</div>
             <div className="dc-statusRow">
-              <div className="dc-chip">Pending: 0</div>
-              <div className="dc-chip">Completed: 12</div>
+              <div className="dc-chip">Pending: {pendingCount}</div>
+              <div className="dc-chip">Completed: {completedCount}</div>
             </div>
-            <div className="dc-mutedSmall">Deposits are credited after required confirmations.</div>
+            <div className="dc-mutedSmall">Deposits are credited after required confirmations and owner approval.</div>
           </div>
         </section>
 
@@ -238,7 +348,7 @@ export default function MemberDepositCrypto() {
                 {assetObj.networks.map((n) => (
                   <button
                     key={n.key}
-                    className={"dc-netBtn " + (network === n.key ? "is-selected" : "")}
+                    className={"dc-netBtn " + (networkObj.key === n.key ? "is-selected" : "")}
                     onClick={() => onChangeNetwork(n.key)}
                     type="button"
                   >
@@ -252,7 +362,9 @@ export default function MemberDepositCrypto() {
               </div>
 
               <div className="dc-field" style={{ margin: "16px" }}>
-                <div className="dc-label" style={{ fontSize: "18px"}}>Amount</div>
+                <div className="dc-label" style={{ fontSize: "18px" }}>
+                  Amount
+                </div>
                 <div className="dc-inputGroup">
                   <input
                     className="dc-input"
@@ -260,8 +372,12 @@ export default function MemberDepositCrypto() {
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder={`Enter amount (min: ${networkObj.min})`}
+                    min={networkObj.min}
+                    step="any"
                   />
-                  <div className="dc-inputSuffix" style={{ margin: "16px" }}>{asset}</div>
+                  <div className="dc-inputSuffix" style={{ margin: "16px" }}>
+                    {asset}
+                  </div>
                 </div>
                 <div className="dc-mutedSmall">
                   Minimum deposit: {networkObj.min} {asset}
@@ -319,11 +435,7 @@ export default function MemberDepositCrypto() {
                   <div className="dc-field">
                     <div className="dc-label">
                       Memo / Tag{" "}
-                      {memoRequired ? (
-                        <span className="dc-required">Required</span>
-                      ) : (
-                        <span className="dc-mutedSmall">(if needed)</span>
-                      )}
+                      {memoRequired ? <span className="dc-required">Required</span> : <span className="dc-mutedSmall">(if needed)</span>}
                     </div>
                     <input
                       className="dc-input"
@@ -355,10 +467,10 @@ export default function MemberDepositCrypto() {
               </div>
 
               <div className="dc-actions">
-                <button className="dc-primaryBtn" onClick={handleCompleteTransfer} type="button">
+                <button className="dc-primaryBtn" onClick={handleCompleteTransfer} type="button" disabled={submitting}>
                   I have completed the transfer
                 </button>
-                <button className="dc-secondaryBtn" onClick={() => nav("/member/service")} type="button">
+                <button className="dc-secondaryBtn" onClick={() => nav("/member/service")} type="button" disabled={submitting}>
                   Contact Support
                 </button>
               </div>
@@ -414,7 +526,7 @@ export default function MemberDepositCrypto() {
               <button className="dc-secondaryBtn w100" onClick={() => copy(address)} type="button">
                 Copy Address
               </button>
-              <button className="dc-ghostBtn w100" onClick={() => showToast("Opening history...")} type="button">
+              <button className="dc-ghostBtn w100" onClick={() => nav("/member/deposit/records")} type="button">
                 Deposit History
               </button>
             </div>
@@ -426,160 +538,125 @@ export default function MemberDepositCrypto() {
 
       {/* Confirmation Popup */}
       {showConfirmation && (
-        <div className="dc-popup-overlay" style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(15, 23, 42, 0.75)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          animation: 'fadeIn 0.3s ease'
-        }}>
-          <div className="dc-popup" style={{
-            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-            borderRadius: '20px',
-            padding: '32px',
-            maxWidth: '440px',
-            width: '90%',
-            boxShadow: '0 25px 50px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1)',
-            border: '1px solid rgba(226, 232, 240, 0.8)',
-            transform: 'scale(1)',
-            animation: 'popupScale 0.3s ease'
-          }}>
-            <div className="dc-popup-header" style={{
-              textAlign: 'center',
-              marginBottom: '24px'
-            }}>
-              <div style={{
-                width: '64px',
-                height: '64px',
-                background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-                borderRadius: '50%',
-                margin: '0 auto 16px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '24px',
-                color: 'white',
-                boxShadow: '0 8px 25px rgba(59, 130, 246, 0.3)'
-              }}>
+        <div
+          className="dc-popup-overlay"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(15, 23, 42, 0.75)",
+            backdropFilter: "blur(8px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            animation: "fadeIn 0.3s ease",
+          }}
+        >
+          <div
+            className="dc-popup"
+            style={{
+              background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+              borderRadius: "20px",
+              padding: "32px",
+              maxWidth: "440px",
+              width: "90%",
+              boxShadow: "0 25px 50px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1)",
+              border: "1px solid rgba(226, 232, 240, 0.8)",
+              transform: "scale(1)",
+              animation: "popupScale 0.3s ease",
+            }}
+          >
+            <div className="dc-popup-header" style={{ textAlign: "center", marginBottom: "24px" }}>
+              <div
+                style={{
+                  width: "64px",
+                  height: "64px",
+                  background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+                  borderRadius: "50%",
+                  margin: "0 auto 16px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "24px",
+                  color: "white",
+                  boxShadow: "0 8px 25px rgba(59, 130, 246, 0.3)",
+                }}
+              >
                 ✓
               </div>
-              <h3 style={{ 
-                margin: 0, 
-                color: '#1e293b', 
-                fontSize: '22px', 
-                fontWeight: '700',
-                lineHeight: '1.3'
-              }}>
+              <h3
+                style={{
+                  margin: 0,
+                  color: "#1e293b",
+                  fontSize: "22px",
+                  fontWeight: "700",
+                  lineHeight: "1.3",
+                }}
+              >
                 Confirm Transfer Completion
               </h3>
             </div>
-            <div className="dc-popup-content" style={{ marginBottom: '32px' }}>
-              <p style={{ 
-                margin: '0 0 20px 0', 
-                color: '#475569', 
-                fontSize: '16px',
-                textAlign: 'center',
-                lineHeight: '1.6'
-              }}>
+
+            <div className="dc-popup-content" style={{ marginBottom: "32px" }}>
+              <p style={{ margin: "0 0 20px 0", color: "#475569", fontSize: "16px", textAlign: "center", lineHeight: "1.6" }}>
                 Are you sure you have completed the transfer?
               </p>
-              <div style={{
-                background: '#f1f5f9',
-                borderRadius: '12px',
-                padding: '20px',
-                border: '1px solid #e2e8f0'
-              }}>
-                <p style={{ 
-                  margin: '0 0 12px 0', 
-                  color: '#334155', 
-                  fontSize: '14px',
-                  fontWeight: '600'
-                }}>
-                  Please confirm you have:
-                </p>
-                <ul style={{ 
-                  margin: 0, 
-                  paddingLeft: '20px', 
-                  color: '#64748b',
-                  fontSize: '14px',
-                  lineHeight: '1.8'
-                }}>
-                  <li style={{ marginBottom: '8px' }}>
-                    ✅ Sent the correct amount to the provided address
-                  </li>
-                  <li style={{ marginBottom: '8px' }}>
-                    ✅ Used the correct network ({networkObj.label})
-                  </li>
-                  <li>
-                    ✅ Included memo/tag if required
-                  </li>
+
+              <div style={{ background: "#f1f5f9", borderRadius: "12px", padding: "20px", border: "1px solid #e2e8f0" }}>
+                <p style={{ margin: "0 0 12px 0", color: "#334155", fontSize: "14px", fontWeight: "600" }}>Please confirm you have:</p>
+                <ul style={{ margin: 0, paddingLeft: "20px", color: "#64748b", fontSize: "14px", lineHeight: "1.8" }}>
+                  <li style={{ marginBottom: "8px" }}>✅ Sent the correct amount to the provided address</li>
+                  <li style={{ marginBottom: "8px" }}>✅ Used the correct network ({networkObj.label})</li>
+                  <li>✅ Included memo/tag if required</li>
                 </ul>
               </div>
             </div>
-            <div className="dc-popup-actions" style={{
-              display: 'flex',
-              gap: '12px',
-              justifyContent: 'center'
-            }}>
-              <button 
+
+            <div className="dc-popup-actions" style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
+              <button
                 onClick={() => setShowConfirmation(false)}
                 type="button"
+                disabled={submitting}
                 style={{
-                  padding: '12px 24px',
-                  border: '2px solid #e2e8f0',
-                  background: 'white',
-                  color: '#64748b',
-                  borderRadius: '12px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  transition: 'all 0.2s ease',
-                  minWidth: '100px'
-                }}
-                onMouseOver={(e) => {
-                  e.target.style.background = '#f8fafc';
-                  e.target.style.borderColor = '#cbd5e1';
-                }}
-                onMouseOut={(e) => {
-                  e.target.style.background = 'white';
-                  e.target.style.borderColor = '#e2e8f0';
+                  padding: "12px 24px",
+                  border: "2px solid #e2e8f0",
+                  background: "white",
+                  color: "#64748b",
+                  borderRadius: "12px",
+                  cursor: submitting ? "not-allowed" : "pointer",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  transition: "all 0.2s ease",
+                  minWidth: "100px",
+                  opacity: submitting ? 0.7 : 1,
                 }}
               >
                 Cancel
               </button>
-              <button 
+
+              <button
                 onClick={markPaid}
                 type="button"
+                disabled={submitting}
                 style={{
-                  padding: '12px 24px',
-                  background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '12px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)',
-                  transition: 'all 0.2s ease',
-                  minWidth: '140px'
-                }}
-                onMouseOver={(e) => {
-                  e.target.style.transform = 'translateY(-1px)';
-                  e.target.style.boxShadow = '0 6px 20px rgba(59, 130, 246, 0.4)';
-                }}
-                onMouseOut={(e) => {
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 4px 15px rgba(59, 130, 246, 0.3)';
+                  padding: "12px 24px",
+                  background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "12px",
+                  cursor: submitting ? "not-allowed" : "pointer",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  boxShadow: "0 4px 15px rgba(59, 130, 246, 0.3)",
+                  transition: "all 0.2s ease",
+                  minWidth: "140px",
+                  opacity: submitting ? 0.75 : 1,
                 }}
               >
-                Yes, I've completed it
+                {submitting ? "Submitting..." : "Yes, I've completed it"}
               </button>
             </div>
           </div>
@@ -590,7 +667,6 @@ export default function MemberDepositCrypto() {
       <div className="memberBottomNavFixed">
         <MemberBottomNav active="mine" />
       </div>
-      
     </div>
   );
 }

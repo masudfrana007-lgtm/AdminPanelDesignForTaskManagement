@@ -7,12 +7,16 @@ import "../styles/app.css";
 export default function AssignSets() {
   const [rows, setRows] = useState([]);
   const [err, setErr] = useState("");
+  const [setId, setSetId] = useState("");
+  const [memberId, setMemberId] = useState("");
+  const [allRows, setAllRows] = useState([]);
 
   const load = async () => {
     setErr("");
     try {
-      const { data } = await api.get("/member-sets");
-      setRows(Array.isArray(data) ? data : []);
+      const { data } = await api.get("/member-sets");   
+      const arr = Array.isArray(data) ? data : [];
+      setAllRows(arr);      
     } catch (e) {
       setRows([]);
       setErr(e?.response?.data?.message || "Failed to load assignments");
@@ -39,6 +43,21 @@ export default function AssignSets() {
     return n.toFixed(2);
   };
 
+  const filteredRows = useMemo(() => {
+    const sid = String(setId || "").trim();
+    const mid = String(memberId || "").trim();
+
+    return allRows.filter((r) => {
+      const rSetId = String(r.id ?? "");
+      const rMemberId = String(r.member_id ?? r.memberId ?? "");
+
+      const okSet = !sid || rSetId === sid;
+      const okMember = !mid || rMemberId === mid;
+
+      return okSet && okMember;
+    });
+  }, [allRows, setId, memberId]);
+
   return (
     <AppLayout>
       <div className="container">
@@ -54,9 +73,37 @@ export default function AssignSets() {
         </div>
 
         <div className="card">
-          <div className="small" style={{ marginBottom: 8 }}>
-            Table layout like “Manage Set Orders”.
-          </div>
+            <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+              <input
+                type="text"
+                className="input"
+                placeholder="Filter by Set ID"
+                value={setId}
+                onChange={(e) => setSetId(e.target.value)}
+              />
+
+              <input
+                type="text"
+                className="input"
+                placeholder="Filter by Member ID"
+                value={memberId}
+                onChange={(e) => setMemberId(e.target.value)}
+              />
+
+              <button className="btn" onClick={load}>
+                Filter
+              </button>
+
+              <button
+                className="btn secondary"
+                onClick={() => {
+                  setSetId("");
+                  setMemberId("");
+                }}
+              >
+                Reset
+              </button>
+            </div>
           <div className="hr" />
 
           {err && <div className="error">{err}</div>}
@@ -66,8 +113,8 @@ export default function AssignSets() {
               <tr>
                 <th style={{ width: 70 }}>No.</th>
                 <th style={{ width: 190 }}>Created Date</th>
-                <th>Username</th>
-                <th>Package</th>
+                <th style={{ width: 150 }}>Username</th>
+                <th style={{ width: 190 }}>Package</th>
                 <th style={{ width: 130 }}>Status</th>
                 <th style={{ width: 190 }}>Updated Date</th>
                 <th style={{ width: 140 }}>Action</th>
@@ -75,7 +122,7 @@ export default function AssignSets() {
             </thead>
 
             <tbody>
-              {rows.map((r, idx) => {
+              {filteredRows.map((r, idx) => {
                 const isCompleted = r.status === "completed";
                 const lastCompleted = Number(r.current_task_index || 0); // your meaning: last completed #
                 const totalTasks = Number(r.total_tasks || 0);
@@ -84,13 +131,13 @@ export default function AssignSets() {
 
                 return (
                   <tr key={r.id || idx}>
-                    <td>{idx + 1}</td>
+                    <td>{r.id}</td>
 
                     <td>{fmt(r.created_at)}</td>
 
                     <td>
                       <div className="small">
-                        <b>Member ID:</b> {r.member_short_id || r.member_id || "-"}
+                        <b>Member ID:</b> {r.member_id || "-"}
                       </div>
                       <div className="small">
                         <b>Phone:</b> {r.member_phone || "-"}
@@ -119,7 +166,7 @@ export default function AssignSets() {
                     </td>
 
                     <td>
-                      <span className="badge">
+                      <span className={`badge ${isCompleted ? "badge-success" : "badge-warning"}`}>
                         {isCompleted ? "Completed" : "Active"}
                       </span>
                     </td>
@@ -135,7 +182,7 @@ export default function AssignSets() {
                 );
               })}
 
-              {!rows.length && (
+             {!filteredRows.length && (
                 <tr>
                   <td colSpan="7" className="small">
                     No assigned sets yet.

@@ -436,3 +436,80 @@
 .tl-openBtn:disabled:hover{
   background: #e2e8f0;
 }
+/* =========================
+   Gold/Black Balance Card (TaskList)
+   ========================= */
+
+.tl-balanceGold{
+  position: relative;
+  overflow: hidden;
+
+  border-radius: 22px;
+  border: 1px solid rgba(255,215,120,.35);
+  box-shadow: 0 18px 40px rgba(0,0,0,.25);
+
+  color:#fff;
+  background-blend-mode: normal;
+  box-shadow: 0 18px 40px rgba(0,0,0,.25), 0 0 40px rgba(255,211,106,.18);
+
+  background:
+    linear-gradient(135deg,
+      #0a0a0a 0%,
+      #111827 10%,
+      #6b4e16 18%,
+      #cfa547 38%,
+      #ffd36a 58%,
+      #cfa547 78%,
+      #1a1405 100%);    
+}
+
+.tl-balanceGold::before{
+  content:"";
+  position:absolute;
+  inset:-20%;
+  background:
+    linear-gradient(120deg, transparent 30%, rgba(255,215,120,.20) 50%, transparent 70%),
+    linear-gradient(60deg,  transparent 40%, rgba(255,200,90,.14) 55%, transparent 75%);
+  transform: translateX(-10%);
+  animation: tlGoldSweep 3s linear infinite;
+  pointer-events:none;
+}
+
+.tl-balanceGold::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background: radial-gradient(rgba(255,255,255,.25) 1px, transparent 1px);
+  background-size: 42px 42px;
+  opacity:.07;
+  pointer-events:none;
+}
+
+@keyframes tlGoldSweep{
+  0%   { transform: translateX(-12%) translateY(0); opacity: .9; }
+  50%  { transform: translateX(12%) translateY(-2%); opacity: 1; }
+  100% { transform: translateX(-12%) translateY(0); opacity: .9; }
+}
+
+/* keep content above shimmer layers */
+.tl-balanceGold > *{ position: relative; z-index: 1; }
+
+/* text tuning inside balance card */
+.tl-balanceGold .tl-kicker{ color:#ffe7b0; font-weight:900; }
+.tl-balanceGold .tl-muted{ color:rgba(255,255,255,.82); }
+.tl-balanceGold .tl-balanceValue,
+.tl-balanceGold .tl-unit{ color:#fff; }
+
+/* "Available" pill look */
+.tl-balanceGold .tl-pill{
+  background: rgba(0,0,0,.45);
+  border: 1px solid rgba(255,215,120,.45);
+  color: #ffd36a;
+  font-weight: 900;
+}
+
+/* optional: make buttons match better (keeps your existing classes) */
+.tl-balanceGold .mn-miniBtn,
+.tl-balanceGold .tl-mini{
+  border-color: rgba(255,215,120,.35);
+}

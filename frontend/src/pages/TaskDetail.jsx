@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/TaskDetail.css";
 import memberApi from "../services/memberApi";
+import MemberBottomNav from "../components/MemberBottomNav";
 
 function money(n) {
   const num = Number(n || 0);
@@ -60,7 +61,6 @@ export default function TaskDetail() {
     setLoading(true);
     setErr("");
     try {
-      // ✅ load active set + wallet balance together
       const [setRes, meRes] = await Promise.all([
         memberApi.get("/member/active-set"),
         memberApi.get("/member/me"),
@@ -100,10 +100,10 @@ export default function TaskDetail() {
   // ✅ only current task can be submitted
   const isCurrentTask = viewIndex === currentIndex;
 
-  // ✅ show the task at viewIndex (not only current_task)
+  // ✅ show the task at viewIndex
   const t = tasks[viewIndex] || null;
 
-  // ✅ map backend -> UI (for the currently viewed task)
+  // ✅ map backend -> UI
   const task = useMemo(() => {
     if (!activeSet?.active || !t) return null;
 
@@ -114,14 +114,13 @@ export default function TaskDetail() {
       image: toImageUrl(t.image_url),
 
       qty: Number(t.quantity || 1),
-      unitPrice: Number(t.rate || 0), // rate is unit price
+      unitPrice: Number(t.rate || 0),
       commissionRate: Number(t.commission_rate || 0),
 
       assignedAt: activeSet.assignment?.created_at || null,
       sponsorRef: activeSet.sponsor_short_id || "—",
       setId: activeSet.set?.name ?? null,
 
-      // ✅ this is the viewed step number (UI)
       stepNo: viewIndex + 1,
       totalTasks,
     };
@@ -143,18 +142,13 @@ export default function TaskDetail() {
     }, 0);
   }, [tasks, currentIndex]);
 
-  // ✅ completed count is backend progress, not the UI viewIndex
+  // ✅ completed count is backend progress
   const completedCount = currentIndex;
 
-  // ✅ UI only: submit animation, no backend call here
   const submit = () => {
-    // 🔒 only allow submit if viewing the current task
     if (!task || isLoading || !isCurrentTask) return;
 
-    // ✅ check balance BEFORE submitting
-    // if balance is not loaded yet, treat as 0 (will go deposit)
     if (balance < orderAmount) {
-      // optional: show message then redirect
       setErr(`Insufficient balance. Need ${money(orderAmount)} USDT, you have ${money(balance)} USDT.`);
       nav("/member/deposit");
       return;
@@ -193,7 +187,7 @@ export default function TaskDetail() {
     try {
       await memberApi.post("/member/complete-task", {});
       setIsSuccess(false);
-      await load(); // refresh active-set + balance
+      await load();
     } catch (e) {
       alert(e?.response?.data?.message || "Failed to complete Order");
     }
@@ -218,250 +212,267 @@ export default function TaskDetail() {
     );
   }
 
-  // Optional: label for viewed task status
-  const viewedStatusText = isCurrentTask
-    ? "Current Order"
-    : viewIndex < currentIndex
-    ? "Completed"
-    : "Locked";
-
   return (
     <div className="td-page">
-      {/* HEADER */}
+      {/* HEADER (matches your CSS) */}
       <header className="td-top">
-        <button className="td-back" onClick={() => nav(-1)} disabled={isLoading} type="button">
-          ←
-        </button>
-
-        <div className="td-tabs">
-          <button
-            className={"td-tab " + (tab === "active" ? "is-active" : "")}
-            type="button"
-            onClick={() => setTab("active")}
-            disabled={isLoading}
-          >
-            Active Order
+        <div className="td-topInner">
+          <button className="td-back" onClick={() => nav(-1)} disabled={isLoading} type="button">
+            ←
           </button>
 
-          <button
-            className={"td-tab " + (tab === "completed" ? "is-active" : "")}
-            type="button"
-            onClick={() => setTab("completed")}
-            disabled={isLoading}
-          >
-            Completed ({completedCount})
-          </button>
-        </div>
+          <div className="td-headMid">
+            <div className="td-titleRow">
+              <div className="td-pageTitle">Task Details</div>
+              <div className="td-pageSub">
+                Task <b>{task.stepNo}</b> of <b>{task.totalTasks}</b> • {task.id}
+              </div>
+            </div>
 
-        <div className="td-balance">
-          {/* ✅ show wallet balance */}
-          <div className="td-balanceBlock">
-            <span className="td-balanceLabel">Wallet Balance</span>
-            <span className="td-balanceValue">${money(balance)}</span>
+            <div className="td-tabs">
+              <button
+                className={"td-tab " + (tab === "active" ? "is-active" : "")}
+                type="button"
+                onClick={() => setTab("active")}
+                disabled={isLoading}
+              >
+                Active
+              </button>
+
+              <button
+                className={"td-tab " + (tab === "completed" ? "is-active" : "")}
+                type="button"
+                onClick={() => setTab("completed")}
+                disabled={isLoading}
+              >
+                Completed <span className="td-tabCount">{completedCount}</span>
+              </button>
+            </div>
           </div>
 
-          <div className="td-balanceBlock">
-            <span className="td-balanceLabel">This Order Profit</span>
-            <span className="td-balanceValue profit">+${money(taskProfit)}</span>
-          </div>
+          <div className="td-finance">
+            <div className="td-finItem">
+              <div className="td-finLabel">Wallet Balance</div>
+              <div className="td-finValue">${money(balance)}</div>
+            </div>
 
-          <div className="td-balanceBlock">
-            <span className="td-balanceLabel">Total Profit (This Session)</span>
-            <span className="td-balanceValue profit">${money(totalProfit)}</span>
+            <div className="td-finItem">
+              <div className="td-finLabel">This Order Profit</div>
+              <div className="td-finValue is-profit">+${money(taskProfit)}</div>
+            </div>
+
+            <div className="td-finItem">
+              <div className="td-finLabel">Total Profit</div>
+              <div className="td-finValue is-profit">${money(totalProfit)}</div>
+            </div>
           </div>
         </div>
       </header>
 
       {/* BODY */}
       <main className="td-wrap">
-        {tab === "completed" ? (
-          <section className="td-card">
-            <div className="td-cardTop">
-              <div className="td-date">Completed Order History</div>
-              <span className="td-status is-ok">Completed</span>
-            </div>
+        <div className="td-container">
+          {tab === "completed" ? (
+            <section className="td-card">
+              <div className="td-cardHead">
+                <div>
+                  <div className="td-cardTitle">Completed Order History</div>
+                  <div className="td-cardSub">Orders completed in this session.</div>
+                </div>
+                <span className="td-pill ok">Completed</span>
+              </div>
 
-            {/* ✅ API-based completed tasks: tasks[0 .. currentIndex-1] */}
-            {currentIndex <= 0 ? (
-              <div className="td-empty">No completed orders yet.</div>
-            ) : (
-              <div className="td-completedList">
-                {tasks.slice(0, currentIndex).map((ct, idx) => {
-                  const qty = Number(ct.quantity || 1);
-                  const unitPrice = Number(ct.rate || 0);
-                  const amount = qty * unitPrice;
-                  const profit = (amount * Number(ct.commission_rate || 0)) / 100;
+              {currentIndex <= 0 ? (
+                <div className="td-empty">No completed orders yet.</div>
+              ) : (
+                <div className="td-completedList">
+                  {tasks.slice(0, currentIndex).map((ct, idx) => {
+                    const qty = Number(ct.quantity || 1);
+                    const unitPrice = Number(ct.rate || 0);
+                    const amount = qty * unitPrice;
+                    const profit = (amount * Number(ct.commission_rate || 0)) / 100;
 
-                  return (
-                    <div key={ct.id} className="td-completedItem">
-                      <div className="td-ciMain">
-                        <div className="td-ciTitle">{ct.title || `Order ${idx + 1}`}</div>
-                        <div className="td-ciMeta">
-                          <span>
-                            <b>{ct.id}</b>
-                          </span>
-                          <span className="td-ciDot">•</span>
-                          <span>
-                            SET-{activeSet?.set?.name ?? "-"}-#{idx + 1} / {totalTasks}
-                          </span>
+                    return (
+                      <div key={ct.id} className="td-completedItem">
+                        <div className="td-ciMain">
+                          <div className="td-ciTitle">{ct.title || `Order ${idx + 1}`}</div>
+                          <div className="td-ciMeta">
+                            <span className="td-ciId">{ct.id}</span>
+                            <span className="td-ciDot">•</span>
+                            <span>
+                              SET-{activeSet?.set?.name ?? "-"}-#{idx + 1} / {totalTasks}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="td-ciRight">
+                          <div className="td-ciAmount">${money(amount)}</div>
+                          <div className="td-ciProfit">+${money(profit)}</div>
                         </div>
                       </div>
-
-                      <div className="td-ciRight">
-                        <div className="td-ciAmount">${money(amount)}</div>
-                        <div className="td-ciProfit">+${money(profit)}</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </section>
-        ) : (
-          <section className="td-card">
-            <div className="td-cardTop">
-              <div className="td-date">{fmtGMT(task.assignedAt)}</div>
-              <span className="td-status">{viewedStatusText}</span>
-            </div>
-
-            {err && <div className="td-error" style={{ marginTop: 10 }}>{err}</div>}
-
-            <div className="td-title">{task.title}</div>
-            {task.description ? <div className="td-desc">{task.description}</div> : null}
-
-            <div className="td-summary" style={{ marginTop: 10 }}>
-              <div className="td-row">
-                <span>Ref</span>
-                <span className="td-strong">{task.sponsorRef}</span>
-              </div>
-              <div className="td-row">
-                <span>Set / Step</span>
-                <span className="td-strong">
-                  SET-{task.setId}-#{task.stepNo} / {task.totalTasks}
-                </span>
-              </div>
-
-              {/* ✅ show balance vs required */}
-              <div className="td-row">
-                <span>Required Balance</span>
-                <span className="td-strong">${money(orderAmount)}</span>
-              </div>
-              <div className="td-row">
-                <span>Your Balance</span>
-                <span className={"td-strong " + (balance < orderAmount ? "td-danger" : "")}>
-                  ${money(balance)}
-                </span>
-              </div>
-            </div>
-
-            <div className="td-productRow">
-              <div className="td-imageWrap">
-                {task.image ? (
-                  <img className="td-image" src={task.image} alt="order" />
-                ) : (
-                  <div className="td-imagePlaceholder">Your product image will appear here</div>
-                )}
-              </div>
-
-              <div className="td-metrics">
-                <div className="td-grid">
-                  <div className="td-box">
-                    <div className="td-label">Quantity</div>
-                    <div className="td-value">{task.qty}</div>
-                  </div>
-
-                  <div className="td-box">
-                    <div className="td-label">Unit Price</div>
-                    <div className="td-value">${money(task.unitPrice)}</div>
-                  </div>
-
-                  <div className="td-box">
-                    <div className="td-label">Commission Rate</div>
-                    <div className="td-value">{task.commissionRate}%</div>
-                  </div>
-
-                  <div className="td-box">
-                    <div className="td-label">Order Amount</div>
-                    <div className="td-value">${money(orderAmount)}</div>
-                  </div>
-                </div>
-
-                <div className="td-summary">
-                  <div className="td-row">
-                    <span>Estimated Order Commission</span>
-                    <span className="td-commission">+${money(taskProfit)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="td-actions">
-              <button
-                className="td-submit"
-                onClick={submit}
-                disabled={isLoading || !isCurrentTask}
-                type="button"
-              >
-                Submit Order
-              </button>
-
-              {!isCurrentTask ? (
-                <div className="td-hint">Submit is enabled only for the current order.</div>
-              ) : balance < orderAmount ? (
-                <div className="td-hint">
-                  Insufficient balance — you will be redirected to Deposit.
-                </div>
-              ) : (
-                <div className="td-hint">
-                  Please wait while the system verifies and processes this order.
+                    );
+                  })}
                 </div>
               )}
-            </div>
-          </section>
-        )}
+            </section>
+          ) : (
+            <>
+              <section className="td-card">
+                <div className="td-cardHead">
+                  <div>
+                    <div className="td-cardTitle">{task.title}</div>
+                  </div>
+                  <span className="td-pill warn">{isCurrentTask ? "Pending" : "Locked"}</span>
+                </div>
+
+                <div className="td-detailGrid">
+                  {/* LEFT */}
+                  <div className="td-left">
+                    <div className="td-imageBox">
+                      {task.image ? (
+                        <img
+                          src={task.image}
+                          alt="product"
+                          style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 16 }}
+                        />
+                      ) : (
+                        <div className="td-imagePlaceholder">Your product image will appear here</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* RIGHT */}
+                  <div className="td-right">
+                    {err ? (
+                      <div className="td-empty" style={{ marginBottom: 10 }}>
+                        {err}
+                      </div>
+                    ) : null}
+
+                    <div className="td-grid">
+                      <div className="td-box">
+                        <div className="td-label">Quantity</div>
+                        <div className="td-value">{task.qty}</div>
+                      </div>
+
+                      <div className="td-box">
+                        <div className="td-label">Unit Price</div>
+                        <div className="td-value">${money(task.unitPrice)}</div>
+                      </div>
+
+                      <div className="td-box">
+                        <div className="td-label">Commission Rate</div>
+                        <div className="td-value">{task.commissionRate}%</div>
+                      </div>
+
+                      <div className="td-box">
+                        <div className="td-label">Order Total</div>
+                        <div className="td-value">${money(orderAmount)}</div>
+                      </div>
+                    </div>
+
+                    <div className="td-actions">
+                      <button
+                        className="td-submit"
+                        onClick={submit}
+                        disabled={isLoading || !isCurrentTask}
+                        type="button"
+                      >
+                        Submit Order
+                      </button>
+
+                      {!isCurrentTask ? (
+                        <div className="td-hint">Submit is enabled only for the current order.</div>
+                      ) : balance < orderAmount ? (
+                        <div className="td-hint">Insufficient balance — you will be redirected to Deposit.</div>
+                      ) : (
+                        <div className="td-hint">Please wait while the system verifies and processes this order.</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* ✅ FULL WIDTH BELOW BOTH */}
+                  <div className="td-miniMeta" style={{ gridColumn: "1 / -1" }}>
+{/*                    <div className="td-miniRow">
+                      <span>Created</span>
+                      <b>{fmtGMT(task.assignedAt)}</b>
+                    </div>
+
+                    <div className="td-miniRow">
+                      <span>Order Amount</span>
+                      <b>${money(orderAmount)}</b>
+                    </div>
+
+                    <div className="td-miniRow">
+                      <span>Estimated Commission</span>
+                      <b className="td-profitText">+${money(taskProfit)}</b>
+                    </div>
+*/}
+                    {/* ✅ Product Description */}
+                    {task.description ? (
+                      <div className="td-miniRow" style={{ alignItems: "flex-start" }}>
+                        <span>Description</span>
+                        <b style={{ maxWidth: "70%", lineHeight: 1.45 }}>
+                          {task.description}
+                        </b>
+                      </div>
+                    ) : null}
+                  </div>
+
+                </div>
+
+              </section>
+
+              <section className="td-rules">
+                <div className="td-rulesTitle">Rules & Notes</div>
+                <ul className="td-rulesList">
+                  <li>Confirm the order amount and commission before submitting.</li>
+                  <li>Do not submit incorrect information or fake proof.</li>
+                  <li>Tasks should be completed within the required time window.</li>
+                  <li>If you face issues, contact Customer Service and attach screenshots.</li>
+                </ul>
+              </section>
+            </>
+          )}
+        </div>
       </main>
 
-      {/* BOTTOM BAR */}
+      {/* BOTTOM BAR (matches your CSS) */}
       <footer className="td-bottomBar">
-        <div>
-          <div className="td-progressTitle">Orders Completed</div>
-          <div className="td-progressValue">
-            {completedCount} / {task.totalTasks}
+        <div className="td-bottomInner">
+          <div className="td-progress">
+            <div className="td-progressTitle">Completed</div>
+            <div className="td-progressValue">
+              {completedCount} / {task.totalTasks}
+            </div>
           </div>
-        </div>
 
-        {/* ✅ bottom-right: Previous + Next side by side */}
-        <div className="td-navBtns">
-          <button
-            className="td-navBtn"
-            onClick={goPrevUI}
-            disabled={isLoading || !canPrev}
-            type="button"
-          >
-            ← Previous
-          </button>
+          <div className="td-navBtns">
+            <button className="td-navBtn" onClick={goPrevUI} disabled={isLoading || !canPrev} type="button">
+              ← Previous
+            </button>
 
-          <button
-            className="td-navBtn is-primary"
-            onClick={goNextUI}
-            disabled={isLoading || !canNext}
-            type="button"
-          >
-            Next →
-          </button>
+            <button className="td-navBtn is-primary" onClick={goNextUI} disabled={isLoading || !canNext} type="button">
+              Next →
+            </button>
+          </div>
         </div>
       </footer>
 
+      {/* LOADING OVERLAY (matches your CSS) */}
       {isLoading && (
         <div className="td-overlay">
-          <div className="td-loader"></div>
-          <div className="td-loadingText">Processing order, please wait…</div>
-          <div className="td-progressBar">
-            <div className="td-progressFill" style={{ width: `${progress}%` }} />
+          <div className="td-loadingCard">
+            <div className="td-loader"></div>
+            <div className="td-loadingText">Processing order, please wait…</div>
+            <div className="td-progressBar">
+              <div className="td-progressFill" style={{ width: `${progress}%` }} />
+            </div>
           </div>
         </div>
       )}
 
+      {/* SUCCESS OVERLAY (matches your CSS) */}
       {isSuccess && (
         <div className="td-overlay success">
           <div className="td-successCard">
@@ -492,7 +503,6 @@ export default function TaskDetail() {
                 View Completed
               </button>
 
-              {/* ✅ ONLY this button completes backend task */}
               <button className="td-finishBtn is-next" onClick={proceedToNextTask} type="button">
                 Proceed to Next Order →
               </button>
@@ -500,6 +510,9 @@ export default function TaskDetail() {
           </div>
         </div>
       )}
+
+      {/* ✅ SAME bottom bar (reusable) */}
+      <MemberBottomNav active="mine" />            
     </div>
   );
 }
