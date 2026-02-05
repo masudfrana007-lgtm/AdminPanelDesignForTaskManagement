@@ -321,12 +321,6 @@ export default function TaskDetail() {
                 <div className="td-cardHead">
                   <div>
                     <div className="td-cardTitle">{task.title}</div>
-                    <div className="td-cardSub">
-                      Verify details carefully before submitting.
-                      <br />
-                      <b>Assigned:</b> {fmtGMT(task.assignedAt)} • <b>Ref:</b> {task.sponsorRef} •{" "}
-                      <b>SET-{task.setId}</b>
-                    </div>
                   </div>
                   <span className="td-pill warn">{isCurrentTask ? "Pending" : "Locked"}</span>
                 </div>
