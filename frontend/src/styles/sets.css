@@ -229,7 +229,7 @@
 .sx-tableWrap{
   border:1px solid var(--sx-line);
   border-radius: 14px;
-  overflow-x: visible;   /* ✅ desktop: no horizontal scroll */
+  overflow-x: auto;   /* ✅ desktop: no horizontal scroll */
   overflow-y: hidden;
   background:#fff;
 }
@@ -238,8 +238,8 @@
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  table-layout: fixed;     /* ✅ force fit into container */
-  min-width: 0;            /* ✅ remove forced width */
+  table-layout: auto;   /* ✅ desktop: columns size naturally */
+  min-width: 980px;     /* ✅ ensures all columns exist; scroll if container smaller */
 }
 
 .sx-table thead th{
@@ -305,8 +305,3 @@
   .sx-detailRow{ grid-template-columns: 1fr; }
 }
 
-@media (max-width: 900px){
-  .sx-tableWrap{
-    overflow-x: auto;    /* ✅ mobile: horizontal scroll is OK */
-  }
-}
