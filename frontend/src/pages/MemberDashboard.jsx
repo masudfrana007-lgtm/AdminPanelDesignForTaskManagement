@@ -135,6 +135,13 @@ useEffect(() => {
     },
   ];
 
+  const user = {
+    name: "User",
+    vip: 3,
+    inviteCode: "ABCD-1234",
+    balance: 97280.12,
+  };
+
   return (
     <div className="homeClean">
       <div className="bgLayer" aria-hidden="true" />
@@ -172,7 +179,7 @@ useEffect(() => {
               {/* need to add balance here */}
               <div className="welcomeBalance">                
                 <span className="balanceAmount">
-                  Current Balance: USD {money(balance)}
+                  Current Balance: <span className="AmountSt">USD {money(balance)}</span>
                 </span>
               </div>
             </div>
