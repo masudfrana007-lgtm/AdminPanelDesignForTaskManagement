@@ -265,24 +265,38 @@ export default function MemberDepositCrypto() {
 
       <main className="dc-wrap">
         {/* Top summary */}
-        <section className="dc-gridTop">
-          <div className="dc-card dc-balance dc-balance--highlight dc-wallet-card">
-            <div className="dc-balanceTop">
-              <div className="dc-balanceTitleRow">
-                <div className="dc-dot dc-dot--cyan" />
-                <div className="dc-balanceTitle">Wallet Balance</div>
-              </div>
+        <section className="balanceCardAx">
+          <div className="balanceLeft">
+            <div className="balanceLabelAx">Wallet Balance</div>
 
-              <div className="dc-balanceAmounts">
-                <div className="dc-balanceMain">
-                  <span className="dc-balanceUsd">${money(walletUsd)}</span>
-                  <span className="dc-balanceUnit">USD</span>
-                </div>
-                <div className="dc-balanceSub">≈ {money(walletUsdt)} USDT</div>
+            <div className="balanceValueW">
+              ${money(walletUsd)} <span className="unitW">USD</span>
+            </div>
+            <div className="dc-balanceSub">≈ {money(walletUsdt)} USDT</div>
+
+            <div className="metaRowW">
+              <span className="pillW pillAx">Pending: {pendingCount}</span>
+              <span className="pillW pillAx">Completed: {completedCount}</span>
+              <span className="pillW pillAx">
+                Crypto Deposit
+              </span>
+            </div>
+          </div>
+
+          <div className="balanceRightW balanceRightAx">
+            <div className="miniInfo">
+              <div className="miniLabelAx">Deposit Status</div>
+              <div className="miniValue">
+                {pendingCount} Pending
               </div>
             </div>
 
-            <div className="dc-balanceActions">
+            <div className="miniInfo">
+              <div className="miniLabelAx">Processing Time</div>
+              <div className="miniValue">1-30 min</div>
+            </div>
+            
+            <div className="dc-balanceActions" style={{ marginTop: '12px' }}>
               <button className="dc-miniBtn" onClick={() => nav("/member/deposit/records")} type="button">
                 View History
               </button>
@@ -290,15 +304,6 @@ export default function MemberDepositCrypto() {
                 Refresh
               </button>
             </div>
-          </div>
-
-          <div className="dc-card dc-status">
-            <div className="dc-statusTitle">Deposit Status</div>
-            <div className="dc-statusRow">
-              <div className="dc-chip">Pending: {pendingCount}</div>
-              <div className="dc-chip">Completed: {completedCount}</div>
-            </div>
-            <div className="dc-mutedSmall">Deposits are credited after required confirmations and owner approval.</div>
           </div>
         </section>
 

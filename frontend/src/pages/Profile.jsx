@@ -1,8 +1,10 @@
 import { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "../styles/Profile.css";
 import MemberBottomNav from "../components/MemberBottomNav";
 
 export default function Profile() {
+  const navigate = useNavigate();
   const fileRef = useRef(null);
   const [avatar, setAvatar] = useState(null);
 
@@ -46,33 +48,62 @@ export default function Profile() {
       <main className="pf-wrap">
         {/* Top profile card */}
         <section className="pf-card pf-top">
-          <div className="pf-avatarWrap" onClick={pickAvatar}>
-            <div className="pf-avatar">
-              {avatar ? <img src={avatar} alt="avatar" /> : "JD"}
-            </div>
-            <div className="pf-avatarHint">Change photo</div>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={onAvatarChange}
-            />
-          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+            
+            {/* Left Side: Avatar + User Info */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flex: 1 }}>
+              <div className="pf-avatarWrap" onClick={pickAvatar}>
+                <div className="pf-avatar">
+                  {/* {avatar ? <img src={avatar} alt="avatar" /> : "JD"} */}
+                  <img
+                    src={`https://i.pravatar.cc/150?u=${user.uid}`}
+                    alt="User Avatar"
+                    className="mine-avatar-img"
+                  />
+                </div>
+                <div className="pf-avatarHint">Change photo</div>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={onAvatarChange}
+                />
+              </div>
 
-          <div className="pf-basic">
-            <div className="pf-name">{user.name}</div>
-            <div className="pf-uid">
-              UID: {user.uid}
-              <button onClick={() => navigator.clipboard.writeText(user.uid)}>
-                Copy
+              <div className="pf-basic">
+                <div className="pf-name">{user.name}</div>
+                <div className="pf-uid">
+                  UID: {user.uid}
+                  <button onClick={() => navigator.clipboard.writeText(user.uid)}>
+                    Copy
+                  </button>
+                </div>
+
+                <div className="pf-tags">
+                  <span className="pf-tag gold">{user.level}</span>
+                  <span className="pf-tag green">{user.status}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Side: Support Button */}
+            <div className="pf-support">
+              <button 
+                className="pf-btn primary"
+                onClick={() => navigate('/member/service')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '14px',
+                  padding: '10px 16px'
+                }}
+              >
+                🎧 Support
               </button>
             </div>
 
-            <div className="pf-tags">
-              <span className="pf-tag gold">{user.level}</span>
-              <span className="pf-tag green">{user.status}</span>
-            </div>
           </div>
         </section>
 

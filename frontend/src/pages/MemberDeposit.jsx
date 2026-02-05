@@ -22,20 +22,54 @@ export default function DepositMethod() {
 
   const [me, setMe] = useState(null);
   const [err, setErr] = useState("");
+  const [balance, setBalance] = useState(0);
+  const [balanceShimmer, setBalanceShimmer] = useState(false);
 
   const load = async () => {
     setErr("");
     try {
       const r = await memberApi.get("/member/me");
       setMe(r.data || null);
+      setBalance(Number(r.data?.balance || 0));
     } catch (e) {
       setErr(e?.response?.data?.message || "Failed to load profile");
+      setBalance(1500.75); // fallback demo balance
     }
+  };
+
+  const demo = {
+    accountBalance: balance,
+    vipLevel: vipLabel(me?.ranking) || "VIP 1",
+    commissionRate: 3,
+    availableMin: 10,
+    availableMax: 50000,
+  };
+
+  const user = {
+    referenceCode: "ABCD-1234",
+    me: [
+      { 
+        nickname: "JohnDoe",
+        ranking: "V3",
+        sponsor_short_id: "SPONSOR123",
+        balance: 1500.75,
+        profileImage: null,
+        uid: "U92837465",
+
+      }
+
+    ],
   };
 
   useEffect(() => {
     load();
   }, []);
+
+  useEffect(() => {
+    setBalanceShimmer(true);
+    const t = setTimeout(() => setBalanceShimmer(false), 1100);
+    return () => clearTimeout(t);
+  }, [balance]);
 
   return (
     <div className="page deposit-method">
@@ -59,38 +93,56 @@ export default function DepositMethod() {
         {err && <div className="dm-error">{err}</div>}
 
         {/* Profile + Balance card */}
-        <div className="dm-profileCard">
-          <div className="dm-profLeft">
-            <div className="mine-avatar">
-              <img
-                src={`https://i.pravatar.cc/150?u=${user.referenceCode}`}
-                alt="User Avatar"
-                className="mine-avatar-img"
-              />
+        <section className="balanceCardAx">
+          <div className="balanceLeft">
+            {/* Profile Image and Info - Same Line */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '15px' }}>
+              <div className="pf-avatar">
+                <img
+                  src={`https://i.pravatar.cc/150?u=${me?.short_id || user.referenceCode}`}
+                  alt="User Avatar"
+                  className="mine-avatar-img"
+                />
+              </div>
+              
+              {/* Balance and UID Info */}
+              <div className="balance-info">
+                <div className="balanceLabelAx">Account Balance</div>
+                <div className={`balanceValueW ${balanceShimmer ? "isShimmer" : ""}`}>
+                  {money(demo.accountBalance)} <span className="unitW">USDT</span>
+                </div>
+                
+                {/* UID Information */}
+                <div className="uid-info">
+                  <span className="uid-label">UID:</span>
+                  <span className="uid-value">{me?.short_id || user.uid || "U92837465"}</span>
+                </div>
+              </div>
             </div>
-            {/* <div className="dm-avatar" aria-hidden="true" /> */}
-            <div className="dm-profMeta">
-              <div className="dm-profRow">
-                <span className="dm-profName">{me?.nickname || "Member"}</span>
-                <span className="dm-vip">{vipLabel(me?.ranking)}</span>
-              </div>
 
-              <div className="dm-codeRow">
-                <span className="dm-codeLabel">Reference code:</span>
-                <span className="dm-codePill">{me?.sponsor_short_id || "-"}</span>
-              </div>
+            <div className="metaRowW">
+              <span className="pillW pillAx">{demo.vipLevel}</span>
+              <span className="pillW pillAx">{demo.commissionRate}% Commission</span>
+              <span className="pillW pillAx">
+                {demo.availableMin}–{demo.availableMax} USDT
+              </span>
             </div>
           </div>
 
-          <div className="dm-balanceBox">
-            <div className="dm-balLabel">Current Balance</div>
-            <div className="dm-balValue">
-              <span className="dm-balUnit">USDT</span>
-              <span className="dm-balNum">{money(me?.balance)}</span>
+          <div className="balanceRightW balanceRightAx">
+            <div className="miniInfo">
+              <div className="miniLabelAx">Available Range</div>
+              <div className="miniValue">
+                {demo.availableMin}–{demo.availableMax} USDT
+              </div>
             </div>
-            <div className="dm-balHint">Available to deposit and trade</div>
+
+            <div className="miniInfo">
+              <div className="miniLabelAx">Commission Rate</div>
+              <div className="miniValue">{demo.commissionRate}%</div>
+            </div>
           </div>
-        </div>
+        </section>
 
         {/* Deposit Options */}
         <div className="dm-options">

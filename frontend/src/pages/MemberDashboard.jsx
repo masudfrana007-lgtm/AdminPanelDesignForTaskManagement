@@ -179,7 +179,7 @@ useEffect(() => {
               {/* need to add balance here */}
               <div className="welcomeBalance">                
                 <span className="balanceAmount">
-                  Current Balance: USD {money(balance)}
+                  Current Balance: <span className="AmountSt">USD {money(balance)}</span>
                 </span>
               </div>
             </div>

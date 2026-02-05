@@ -187,7 +187,6 @@
   border-radius: 16px;
   border: 1px solid rgba(12,22,38,0.08);
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.35), rgba(255,255,255,0.55)),
     url("/home/hero-2.png") center / cover no-repeat;
   box-shadow: 0 14px 40px rgba(10,20,35,0.08);
 }
@@ -427,4 +426,12 @@
   .howGrid{ grid-template-columns: 1fr; }
   /* need to hide image when screen is narrow */
   .headerMiniPhoto{ display: none; }
+}
+
+.AmountSt {
+  font-size: 16px;
+  font-weight: 950;
+  letter-spacing: -0.15px;
+  color: rgb(195 216 51);
+  
 }

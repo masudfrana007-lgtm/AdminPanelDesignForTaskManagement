@@ -4,10 +4,13 @@ import "../styles/WithdrawalMethod.css";
 import withdrawBg from "../assets/bg/withdraw.png";
 import MemberBottomNav from "../components/MemberBottomNav";
 
+import usdtIcon from "../assets/icons/usdt.png";
+
 const user = {
   name: "User",
   vip: 3,
   inviteCode: "ABCD-1234",
+  uid: "U92837465",
   balance: 97280.12,
 };
 
@@ -44,23 +47,31 @@ export default function WithdrawalMethod() {
 
       <div className="wd-wrap">
         {/* Profile + Balance */}
-        <div className="wd-profileCard">
-          <div className="wd-profLeft">
-            <div className="wd-avatar" aria-hidden="true" />
-            <div className="wd-profMeta">
-              <div className="wd-profRow">
-                <span className="wd-profName">{user.name}</span>
-                <span className="wd-vip">VIP {user.vip}</span>
+        <section className="balanceCardAx">
+          <div className="balanceLeft">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+              <div className="pf-avatar">
+                <img
+                  src={`https://i.pravatar.cc/150?u=${user?.short_id || user.uid}`}
+                  alt="User Avatar"
+                  className="mine-avatar-img"
+                />
               </div>
+              <div className="wd-profMeta">
+                <div className="wd-profRow">
+                  <span className="wd-profName">{user.name}</span>
+                  <span className="wd-vip">VIP {user.vip}</span>
+                </div>
 
-              <div className="wd-codeRow">
-                <span className="wd-codeLabel">Reference code:</span>
-                <span className="wd-codePill">{user.inviteCode}</span>
+                <div className="wd-codeRow">
+                  <span className="wd-codeLabel">UID:</span>
+                  <span className="wd-codePill">{user.uid}</span>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="wd-balanceBox">
+          <div className="balanceRightW balanceRightAx">
             <div className="wd-balLabel">Available Balance</div>
             <div className="wd-balValue">
               <span className="wd-balUnit">USDT</span>
@@ -68,7 +79,7 @@ export default function WithdrawalMethod() {
             </div>
             <div className="wd-balHint">Withdrawals may require verification</div>
           </div>
-        </div>
+        </section>
 
         {/* Options */}
         <div className="wd-options">
@@ -79,7 +90,9 @@ export default function WithdrawalMethod() {
             tabIndex={0}
           >
             <div className="wd-cardHead">
-              <div className="wd-icon usdt-badge">USDT</div>
+              <div className="dm-icon crypto usdt-badge">
+                <img src={usdtIcon} alt="USDT" className="dm-icon-img" width="35" />
+              </div>
               <div className="wd-cardText">
                 <div className="wd-cardTitle">Withdraw by Crypto</div>
                 <div className="wd-cardDesc">Send USDT to your external wallet securely</div>
