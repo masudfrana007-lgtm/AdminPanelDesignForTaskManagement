@@ -95,3 +95,33 @@
 .mNavSpacer {
   height: 84px;
 }
+
+/* Hide text on smaller screens, show only icons */
+@media (max-width: 480px) {
+  
+  .mNavText {
+    display: none;
+  }
+  
+  .mNavItem {
+    gap: 0;
+  }
+  
+  .mNavIcon {
+    font-size: 28px;
+  }
+}
+
+@media (max-width: 520px) {
+  .mNav {
+    height: 50px;
+    grid-template-columns: repeat(5, 1fr);
+    /* margin: 8px 6px; */
+  }
+
+  .mNavItem.mine .mNavIcon {
+    font-size: 18px;
+    width: 24px;
+    height: 24px;
+  }
+}
