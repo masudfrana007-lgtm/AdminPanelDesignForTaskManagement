@@ -54,17 +54,21 @@ export default function MemberHistory() {
       const sum = sumRes.data || null;
 
       // ----- map deposits -> UI rows -----
-      const depRows = deposits.map((d) => ({
-        id: `dep-${d.id}`,
-        type: "deposit",
-        method: d.method
-          ? `${d.method}${d.asset ? ` (${d.asset}${d.network ? ` ${d.network}` : ""})` : ""}`
-          : "Deposit",
-        amount: safeNum(d.amount),
-        status: normalizeStatus(d.status),
-        date: d.created_at || d.reviewed_at || null,
-        txId: d.tx_ref || `DEP-${d.id}`,
-      }));
+      const depRows = deposits.map((d) => {
+        const isCrypto = String(d.method || "").toLowerCase().includes("crypto");
+
+        return {
+          id: `dep-${d.id}`,
+          type: "deposit",
+          method: isCrypto
+            ? `Crypto${d.asset ? ` (${d.asset}${d.network ? ` ${d.network}` : ""})` : ""}`
+            : titleCase(d.method) || "Deposit",
+          amount: safeNum(d.amount),
+          status: normalizeStatus(d.status),
+          date: d.created_at || d.reviewed_at || null,
+          txId: d.tx_ref || `DEP-${d.id}`,
+        };
+      });
 
       // ----- map withdrawals -> UI rows -----
       const wdRows = withdrawals.map((w) => ({
@@ -88,7 +92,7 @@ export default function MemberHistory() {
         id: `set-${s.id}`,
         type: "task",
         setName: s.set_name || `Set #${s.set_id}`,
-        taskCount: Number(s.total_tasks || 0),
+        taskCount: Number(s.current_task_index || 0),
         commission: safeNum(s.earned_commission), // keep your UI field name "commission"
         status: normalizeStatus(s.status === "completed" ? "Completed" : s.status),
         date: s.updated_at || s.created_at || null,
