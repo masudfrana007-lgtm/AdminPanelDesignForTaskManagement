@@ -674,10 +674,12 @@ router.get("/withdrawals", memberAuth, async (req, res) => {
     const memberId = req.member.member_id;
 
     const r = await pool.query(
-        `SELECT id, amount, method, account_details, tx_ref, status, admin_note, created_at, reviewed_at
-         FROM withdrawals
-         WHERE member_id = $1
-         ORDER BY id DESC`       
+      `SELECT 
+         id, amount, method, account_details, tx_ref,
+         status, admin_note, created_at, reviewed_at
+       FROM withdrawals
+       WHERE member_id = $1
+       ORDER BY id DESC`,
       [memberId]
     );
 
