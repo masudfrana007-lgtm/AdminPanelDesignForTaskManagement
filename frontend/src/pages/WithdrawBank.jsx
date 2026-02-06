@@ -1,5 +1,7 @@
-import { useMemo, useState } from "react";
+// src/pages/WithdrawBankV3.jsx
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import memberApi from "../services/memberApi"; // ✅ member auth axios
 import "../styles/WithdrawBank.css";
 import MemberBottomNav from "../components/MemberBottomNav"; // ✅ bottom bar
 
@@ -40,35 +42,7 @@ function canCancel(status) {
   return status === "Submitted" || status === "Reviewing" || status === "Processing";
 }
 
-const INITIAL_HISTORY = [
-  {
-    id: "WD-10021",
-    date: "2026-01-27 14:30",
-    amount: 500,
-    status: "Processing",
-    timeline: ["Submitted", "Reviewing", "Processing"],
-  },
-  {
-    id: "WD-10018",
-    date: "2026-01-25 09:10",
-    amount: 1200,
-    status: "Completed",
-    timeline: ["Submitted", "Reviewing", "Processing", "Completed"],
-  },
-  {
-    id: "WD-10012",
-    date: "2026-01-22 11:45",
-    amount: 300,
-    status: "Failed",
-    timeline: ["Submitted", "Reviewing", "Failed"],
-  },
-];
-
-/**
- * Put these logo images in: public/partners/
- * - visa.png, mastercard.png, unionpay.png, paypal.png, stripe.png
- * - swift.png, hsbc.png, citi.png, standardchartered.png, barclays.png
- */
+// Partner logos (UI only)
 const PARTNER_LOGOS = [
   { name: "Visa", src: "/partners/visa.png" },
   { name: "Mastercard", src: "/partners/mastercard.png" },
@@ -82,10 +56,29 @@ const PARTNER_LOGOS = [
   { name: "Barclays", src: "/partners/barclays.png" },
 ];
 
+function statusToUi(dbStatus) {
+  const s = String(dbStatus || "").toLowerCase();
+  if (s === "approved") return "Completed";
+  if (s === "rejected") return "Failed";
+  return "Submitted";
+}
+
+function uiTimeline(uiStatus) {
+  if (uiStatus === "Completed") return ["Submitted", "Reviewing", "Processing", "Completed"];
+  if (uiStatus === "Failed") return ["Submitted", "Reviewing", "Failed"];
+  return ["Submitted"];
+}
+
+function fmtDate(d) {
+  if (!d) return "-";
+  const dt = new Date(d);
+  if (Number.isNaN(dt.getTime())) return String(d);
+  return dt.toISOString().slice(0, 16).replace("T", " ");
+}
+
 export default function WithdrawBankV3() {
   const nav = useNavigate();
 
-  const balance = 97280.12;
   const feeRate = 0.01;
   const MIN_WITHDRAW = 10;
 
@@ -102,7 +95,11 @@ export default function WithdrawBankV3() {
 
   const [amount, setAmount] = useState("");
 
-  const [history, setHistory] = useState(INITIAL_HISTORY);
+  // ✅ from backend
+  const [me, setMe] = useState(null);
+  const balance = Number(me?.balance || 0);
+
+  const [history, setHistory] = useState([]);
 
   // Inline validation + submit lock
   const [errors, setErrors] = useState({});
@@ -120,7 +117,7 @@ export default function WithdrawBankV3() {
     if (!accountNumber.trim()) next.accountNumber = "Please enter account number.";
 
     const amt = Number(amount || 0);
-    if (!amount || isNaN(amt) || amt <= 0) next.amount = "Enter a valid amount.";
+    if (!amount || Number.isNaN(amt) || amt <= 0) next.amount = "Enter a valid amount.";
     else if (amt < MIN_WITHDRAW) next.amount = `Minimum withdrawal is ${MIN_WITHDRAW} USD.`;
     else if (amt > balance) next.amount = "Amount exceeds available balance.";
 
@@ -128,6 +125,46 @@ export default function WithdrawBankV3() {
   };
 
   const isReadyToSubmit = () => Object.keys(validateWithdrawal()).length === 0;
+
+  const loadMeAndWithdrawals = async () => {
+    // profile/balance
+    const meRes = await memberApi.get("/member/me");
+    setMe(meRes.data || null);
+
+    // withdrawals list
+    const wRes = await memberApi.get("/member/withdrawals");
+    const rows = Array.isArray(wRes.data) ? wRes.data : [];
+
+    // ✅ ONLY BANK withdrawals
+    const onlyBank = rows.filter((x) => String(x?.method || "").toLowerCase() === "bank");
+
+    const mapped = onlyBank.map((x) => {
+      const uiStatus = statusToUi(x.status);
+      return {
+        id: x.tx_ref || `WD-${x.id}`,
+        date: fmtDate(x.created_at),
+        amount: Number(x.amount || 0),
+        status: uiStatus,
+        timeline: uiTimeline(uiStatus),
+      };
+    });
+
+    setHistory(mapped);
+  };
+
+  useEffect(() => {
+    (async () => {
+      try {
+        await loadMeAndWithdrawals();
+      } catch (e) {
+        setErrors((p) => ({
+          ...p,
+          form: e?.response?.data?.message || "Failed to load wallet/withdrawals",
+        }));
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const submit = async () => {
     if (isSubmitting) return;
@@ -137,28 +174,48 @@ export default function WithdrawBankV3() {
     if (Object.keys(next).length) return;
 
     setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 900)); // simulate API
+    try {
+      const amt = Number(amount || 0);
 
-    const newId = "WD-" + Math.floor(10000 + Math.random() * 90000);
-    const now = new Date();
-    const date = now.toISOString().slice(0, 10) + " " + now.toTimeString().slice(0, 5);
+      const { data } = await memberApi.post("/member/withdrawals", {
+        amount: amt,
+        method: "bank",
+        bank_country: country,
+        bank_name: bank,
+        account_holder_name: accountName.trim(),
+        account_number: accountNumber.trim(),
+        routing_number: routingNumber.trim() || null,
+        branch_name: branchNumber.trim() || null,
+      });
 
-    const newItem = {
-      id: newId,
-      date,
-      amount: Number(amount),
-      status: "Submitted",
-      timeline: ["Submitted"],
-    };
+      const newItem = {
+        id: data?.tx_ref || `WD-${data?.id || Math.floor(10000 + Math.random() * 90000)}`,
+        date: fmtDate(data?.created_at || new Date()),
+        amount: Number(data?.amount || amt),
+        status: "Submitted",
+        timeline: ["Submitted"],
+      };
 
-    setHistory((prev) => [newItem, ...prev]);
-    setAmount("");
-    setIsSubmitting(false);
+      setHistory((prev) => [newItem, ...prev]);
 
-    setErrors((prev) => ({ ...prev, form: "Withdrawal submitted ✅" }));
-    setTimeout(() => setErrors((p) => ({ ...p, form: "" })), 2500);
+      // refresh balance after lock
+      const meRes = await memberApi.get("/member/me");
+      setMe(meRes.data || null);
+
+      setAmount("");
+      setErrors((prev) => ({ ...prev, form: "Withdrawal submitted ✅" }));
+      setTimeout(() => setErrors((p) => ({ ...p, form: "" })), 2500);
+    } catch (e) {
+      setErrors((prev) => ({
+        ...prev,
+        form: e?.response?.data?.message || "Withdrawal failed",
+      }));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
+  // ⚠️ UI-only cancel (no backend endpoint yet)
   const cancelWithdrawal = (id) => {
     const ok = window.confirm("Cancel this withdrawal request?");
     if (!ok) return;
@@ -176,7 +233,7 @@ export default function WithdrawBankV3() {
       })
     );
 
-    setErrors((prev) => ({ ...prev, form: "Withdrawal cancelled ✅" }));
+    setErrors((prev) => ({ ...prev, form: "Withdrawal cancelled ✅ (UI only)" }));
     setTimeout(() => setErrors((p) => ({ ...p, form: "" })), 2500);
   };
 
@@ -227,7 +284,7 @@ export default function WithdrawBankV3() {
       </section>
 
       <main className="wrapW">
-        {/* Balance block (same as AliexpressVip3) */}
+        {/* Balance block */}
         <section className="balanceCardAx">
           <div className="balanceLeft">
             <div className="balanceLabelAx">Available Balance</div>
@@ -256,7 +313,7 @@ export default function WithdrawBankV3() {
           </div>
         </section>
 
-        {/* Withdrawal Request (highlighted) */}
+        {/* Withdrawal Request */}
         <section className="cardW wb3-requestCard" id="withdraw-request">
           <div className="wb3-cardHead">
             <h2 className="h2W">Withdrawal Request</h2>
@@ -281,11 +338,7 @@ export default function WithdrawBankV3() {
                   </option>
                 ))}
               </select>
-              {errors.country ? (
-                <div className="wb3-error">{errors.country}</div>
-              ) : (
-                <div className="wb3-help">Select your bank country/region.</div>
-              )}
+              {errors.country ? <div className="wb3-error">{errors.country}</div> : <div className="wb3-help">Select your bank country/region.</div>}
             </div>
 
             <div className="wb3-field">
@@ -310,11 +363,7 @@ export default function WithdrawBankV3() {
                   </option>
                 )}
               </select>
-              {errors.bank ? (
-                <div className="wb3-error">{errors.bank}</div>
-              ) : (
-                <div className="wb3-help">Banks load by selected country (demo list).</div>
-              )}
+              {errors.bank ? <div className="wb3-error">{errors.bank}</div> : <div className="wb3-help">Banks load by selected country (demo list).</div>}
             </div>
 
             <div className="wb3-field">
@@ -365,11 +414,7 @@ export default function WithdrawBankV3() {
                 placeholder="Enter amount"
                 inputMode="decimal"
               />
-              {errors.amount ? (
-                <div className="wb3-error">{errors.amount}</div>
-              ) : (
-                <div className="wb3-help">Minimum: {MIN_WITHDRAW} USD • Fee: 1%</div>
-              )}
+              {errors.amount ? <div className="wb3-error">{errors.amount}</div> : <div className="wb3-help">Minimum: {MIN_WITHDRAW} USD • Fee: 1%</div>}
             </div>
           </div>
 
@@ -384,13 +429,7 @@ export default function WithdrawBankV3() {
             </div>
           </div>
 
-          {/* Desktop button */}
-          <button
-            className="wb3-primaryBtn wb3-desktopOnly"
-            onClick={submit}
-            type="button"
-            disabled={isSubmitting || !isReadyToSubmit()}
-          >
+          <button className="wb3-primaryBtn wb3-desktopOnly" onClick={submit} type="button" disabled={isSubmitting || !isReadyToSubmit()}>
             {isSubmitting ? "Submitting..." : "Confirm Withdrawal"}
           </button>
 
@@ -451,13 +490,8 @@ export default function WithdrawBankV3() {
                   })}
                 </div>
 
-                {h.status === "Failed" && (
-                  <div className="wb3-failHint">Reason: Bank details mismatch or compliance review.</div>
-                )}
-
-                {h.status === "Cancelled" && (
-                  <div className="wb3-cancelHint">Cancelled by user. Funds returned to wallet (demo).</div>
-                )}
+                {h.status === "Failed" && <div className="wb3-failHint">Reason: Bank details mismatch or compliance review.</div>}
+                {h.status === "Cancelled" && <div className="wb3-cancelHint">Cancelled by user. Funds returned to wallet (demo).</div>}
               </div>
             ))}
           </div>
@@ -487,8 +521,7 @@ export default function WithdrawBankV3() {
         </button>
       </div>
 
-      {/* ✅ bottom bar */}
-      <MemberBottomNav active="mine" />      
+      <MemberBottomNav active="mine" />
     </div>
   );
 }

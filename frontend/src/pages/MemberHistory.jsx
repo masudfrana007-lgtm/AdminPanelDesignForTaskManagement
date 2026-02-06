@@ -1,78 +1,147 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import memberApi from "../services/memberApi";
 import MemberBottomNav from "../components/MemberBottomNav";
 import "../styles/memberHistory.css";
 
+function safeNum(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function normalizeStatus(s) {
+  // backend: pending/approved/rejected (or processing etc)
+  // UI expects: Completed / Pending / Processing / Failed etc
+  const x = String(s || "").toLowerCase();
+  if (x === "approved" || x === "completed") return "Completed";
+  if (x === "rejected" || x === "failed") return "Failed";
+  if (x === "pending") return "Pending";
+  if (x === "processing") return "Processing";
+  return s || "-";
+}
+
+function titleCase(x) {
+  const s = String(x || "");
+  if (!s) return s;
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 export default function MemberHistory() {
-  const [rows, setRows] = useState([]);
-  const [summary, setSummary] = useState(null);
+  const [rows, setRows] = useState([]);        // unified list: deposits + withdrawals + tasks
+  const [summary, setSummary] = useState(null); // from /member/history-summary
+  const [totals, setTotals] = useState({
+    deposits: { count: 0, total: 0 },
+    withdrawals: { count: 0, total: 0 },
+    tasks: { count: 0, total: 0 },
+  });
   const [err, setErr] = useState("");
   const [activeTab, setActiveTab] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // Static data for testing
-  const staticSummary = {
-    deposits: { count: 15, total: 2500.50 },
-    withdrawals: { count: 8, total: 1200.00 },
-    tasks: { count: 45, total: 850.25 },
-    today_sets: 2,
-    today_tasks: 12,
-    today_commission: 45.50,
-    week_sets: 8,
-    week_tasks: 35,
-    week_commission: 180.75,
-    lifetime_sets: 25,
-    lifetime_tasks: 150,
-    lifetime_commission: 975.25
-  };
-
-  const staticHistory = [
-    // Deposits
-    { id: 1, type: 'deposit', method: 'Bank Transfer', amount: 500.00, status: 'Completed', date: '2025-01-30T10:30:00Z', txId: 'DEP001' },
-    { id: 2, type: 'deposit', method: 'USDT', amount: 250.00, status: 'Completed', date: '2025-01-29T15:45:00Z', txId: 'DEP002' },
-    { id: 3, type: 'deposit', method: 'Crypto', amount: 1000.00, status: 'Pending', date: '2025-01-28T09:15:00Z', txId: 'DEP003' },
-    { id: 4, type: 'deposit', method: 'Bank Transfer', amount: 300.50, status: 'Completed', date: '2025-01-27T14:20:00Z', txId: 'DEP004' },
-    { id: 5, type: 'deposit', method: 'USDT', amount: 450.00, status: 'Completed', date: '2025-01-26T11:10:00Z', txId: 'DEP005' },
-    
-    // Withdrawals  
-    { id: 6, type: 'withdrawal', method: 'Bank Transfer', amount: 200.00, status: 'Completed', date: '2025-01-25T16:30:00Z', txId: 'WTH001' },
-    { id: 7, type: 'withdrawal', method: 'USDT', amount: 150.00, status: 'Processing', date: '2025-01-24T13:45:00Z', txId: 'WTH002' },
-    { id: 8, type: 'withdrawal', method: 'Crypto', amount: 350.00, status: 'Completed', date: '2025-01-23T10:15:00Z', txId: 'WTH003' },
-    { id: 9, type: 'withdrawal', method: 'Bank Transfer', amount: 500.00, status: 'Completed', date: '2025-01-22T12:00:00Z', txId: 'WTH004' },
-    
-    // Tasks
-    { id: 10, type: 'task', setName: 'Amazon VIP 1', taskCount: 5, commission: 25.50, status: 'Completed', date: '2025-01-30T08:30:00Z' },
-    { id: 11, type: 'task', setName: 'Alibaba VIP 2', taskCount: 8, commission: 45.75, status: 'Completed', date: '2025-01-29T14:15:00Z' },
-    { id: 12, type: 'task', setName: 'Amazon VIP 1', taskCount: 3, commission: 18.25, status: 'In Progress', date: '2025-01-28T16:45:00Z' },
-    { id: 13, type: 'task', setName: 'Aliexpress VIP 3', taskCount: 12, commission: 85.50, status: 'Completed', date: '2025-01-27T09:20:00Z' },
-    { id: 14, type: 'task', setName: 'Amazon VIP 1', taskCount: 4, commission: 22.00, status: 'Completed', date: '2025-01-26T13:10:00Z' }
-  ];
-
   const load = async () => {
     setErr("");
     try {
-      // Using static data for now
-      setRows(staticHistory);
-      setSummary(staticSummary);
-      
-      // Uncomment below for dynamic data
-      // const [hist, sum] = await Promise.all([
-      //   memberApi.get("/member/history"),
-      //   memberApi.get("/member/history-summary"),
-      // ]);
-      // setRows(hist.data || []);
-      // setSummary(sum.data);
-    } catch {
-      setErr("Failed to load history");
+      const [depRes, wdRes, setsRes, sumRes] = await Promise.all([
+        memberApi.get("/member/deposits"),
+        memberApi.get("/member/withdrawals"),
+        memberApi.get("/member/my-sets"),
+        memberApi.get("/member/history-summary"),
+      ]);
+
+      const deposits = Array.isArray(depRes.data) ? depRes.data : [];
+      const withdrawals = Array.isArray(wdRes.data) ? wdRes.data : [];
+      const mySets = Array.isArray(setsRes.data) ? setsRes.data : [];
+      const sum = sumRes.data || null;
+
+      // ----- map deposits -> UI rows -----
+      const depRows = deposits.map((d) => ({
+        id: `dep-${d.id}`,
+        type: "deposit",
+        method: d.method
+          ? `${d.method}${d.asset ? ` (${d.asset}${d.network ? ` ${d.network}` : ""})` : ""}`
+          : "Deposit",
+        amount: safeNum(d.amount),
+        status: normalizeStatus(d.status),
+        date: d.created_at || d.reviewed_at || null,
+        txId: d.tx_ref || `DEP-${d.id}`,
+      }));
+
+      // ----- map withdrawals -> UI rows -----
+      const wdRows = withdrawals.map((w) => ({
+        id: `wd-${w.id}`,
+        type: "withdrawal",
+        method:
+          w.method === "crypto"
+            ? `Crypto${w.asset ? ` (${w.asset}${w.network ? ` ${w.network}` : ""})` : ""}`
+            : titleCase(w.method) || "Withdrawal",
+        amount: safeNum(w.amount),
+        status: normalizeStatus(w.status),
+        date: w.created_at || w.reviewed_at || null,
+        txId: w.tx_ref || `WTH-${w.id}`,
+      }));
+
+      // ----- map my-sets -> task rows (set completion records) -----
+      // Note: member_task_history already drives commissions; for per-set commission here,
+      // we use set_amount as a "total earned-like" proxy only if you want.
+      // If you want exact commission per set, we can query member_task_history grouped by member_set_id.
+      const taskRows = mySets.map((s) => ({
+        id: `set-${s.id}`,
+        type: "task",
+        setName: s.set_name || `Set #${s.set_id}`,
+        taskCount: Number(s.total_tasks || 0),
+        commission: safeNum(s.earned_commission), // keep your UI field name "commission"
+        status: normalizeStatus(s.status === "completed" ? "Completed" : s.status),
+        date: s.updated_at || s.created_at || null,
+      }));
+
+      // ----- unify + sort by date desc -----
+      const all = [...depRows, ...wdRows, ...taskRows].sort((a, b) => {
+        const ta = a.date ? new Date(a.date).getTime() : 0;
+        const tb = b.date ? new Date(b.date).getTime() : 0;
+        return tb - ta;
+      });
+
+      // ----- compute totals for top 3 cards -----
+      const depTotal = deposits.reduce((acc, d) => acc + safeNum(d.amount), 0);
+      const wdTotal = withdrawals.reduce((acc, w) => acc + safeNum(w.amount), 0);
+
+      // For "Tasks Earned" we should use lifetime_commission from history-summary (most correct)
+      // If not available, fallback to sum of set_amount from mySets.
+      const taskEarned =
+        sum && sum.lifetime_commission != null
+          ? safeNum(sum.lifetime_commission)
+          : mySets.reduce((acc, s) => acc + safeNum(s.earned_commission), 0);
+
+      const taskCount =
+        sum && sum.lifetime_tasks != null
+          ? Number(sum.lifetime_tasks || 0)
+          : mySets.reduce((acc, s) => acc + Number(s.total_tasks || 0), 0);
+
+      setRows(all);
+      setSummary(sum);
+      setTotals({
+        deposits: { count: deposits.length, total: depTotal },
+        withdrawals: { count: withdrawals.length, total: wdTotal },
+        tasks: { count: taskCount, total: taskEarned },
+      });
+    } catch (e) {
+      setRows([]);
+      setSummary(null);
+      setTotals({
+        deposits: { count: 0, total: 0 },
+        withdrawals: { count: 0, total: 0 },
+        tasks: { count: 0, total: 0 },
+      });
+      setErr(e?.response?.data?.message || "Failed to load history");
     }
   };
 
-  // Filter data based on active tab
-  const filteredData = staticHistory.filter(item => {
-    if (activeTab === "All") return true;
-    return item.type === activeTab.toLowerCase();
-  });
+  // Filter data based on active tab (use REAL rows now)
+  const filteredData = useMemo(() => {
+    const tab = String(activeTab || "All");
+    if (tab === "All") return rows;
+    return rows.filter((item) => item.type === tab.toLowerCase());
+  }, [rows, activeTab]);
 
   // Pagination logic
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
@@ -102,9 +171,7 @@ export default function MemberHistory() {
       <div className="historyContent">
         <div className="historyHeader">
           <h2 className="historyTitle">History & Earnings</h2>
-          <div className="historySub">
-            Daily · Weekly · Lifetime performance
-          </div>
+          <div className="historySub">Daily · Weekly · Lifetime performance</div>
         </div>
 
         {err && <div className="historyAlert error">{err}</div>}
@@ -117,11 +184,13 @@ export default function MemberHistory() {
             <div className="summaryGrid">
               <div>
                 <div className="summaryLabel">Count</div>
-                <div className="summaryValue">{staticSummary.deposits.count}</div>
+                <div className="summaryValue">{totals.deposits.count}</div>
               </div>
               <div>
                 <div className="summaryLabel">Total Amount</div>
-                <div className="summaryValue strong">${staticSummary.deposits.total.toFixed(2)}</div>
+                <div className="summaryValue strong">
+                  ${totals.deposits.total.toFixed(2)}
+                </div>
               </div>
             </div>
           </div>
@@ -131,11 +200,13 @@ export default function MemberHistory() {
             <div className="summaryGrid">
               <div>
                 <div className="summaryLabel">Count</div>
-                <div className="summaryValue">{staticSummary.withdrawals.count}</div>
+                <div className="summaryValue">{totals.withdrawals.count}</div>
               </div>
               <div>
                 <div className="summaryLabel">Total Amount</div>
-                <div className="summaryValue strong">${staticSummary.withdrawals.total.toFixed(2)}</div>
+                <div className="summaryValue strong">
+                  ${totals.withdrawals.total.toFixed(2)}
+                </div>
               </div>
             </div>
           </div>
@@ -145,11 +216,13 @@ export default function MemberHistory() {
             <div className="summaryGrid">
               <div>
                 <div className="summaryLabel">Completed</div>
-                <div className="summaryValue">{staticSummary.tasks.count}</div>
+                <div className="summaryValue">{totals.tasks.count}</div>
               </div>
               <div>
                 <div className="summaryLabel">Earned</div>
-                <div className="summaryValue strong">${staticSummary.tasks.total.toFixed(2)}</div>
+                <div className="summaryValue strong">
+                  ${totals.tasks.total.toFixed(2)}
+                </div>
               </div>
             </div>
           </div>
@@ -195,7 +268,7 @@ export default function MemberHistory() {
                   <div>
                     <div className="summaryLabel">Commission</div>
                     <div className="summaryValue strong">
-                      ${Number(s.amount).toFixed(2)}
+                      ${Number(s.amount || 0).toFixed(2)}
                     </div>
                   </div>
                 </div>
@@ -206,10 +279,10 @@ export default function MemberHistory() {
 
         {/* ================= FILTER TABS ================= */}
         <div className="historyTabs">
-          {['All', 'Deposit', 'Withdrawal', 'Task'].map((tab) => (
+          {["All", "Deposit", "Withdrawal", "Task"].map((tab) => (
             <button
               key={tab}
-              className={`historyTab ${activeTab === tab ? 'active' : ''}`}
+              className={`historyTab ${activeTab === tab ? "active" : ""}`}
               onClick={() => setActiveTab(tab)}
             >
               {tab}
@@ -220,7 +293,9 @@ export default function MemberHistory() {
         {/* ================= HISTORY LIST ================= */}
         {!paginatedData.length ? (
           <div className="historyCard">
-            <div className="historyEmpty">No {activeTab.toLowerCase()} history yet.</div>
+            <div className="historyEmpty">
+              No {activeTab.toLowerCase()} history yet.
+            </div>
           </div>
         ) : (
           paginatedData.map((item, i) => (
@@ -228,27 +303,33 @@ export default function MemberHistory() {
               <div className="historyTop">
                 <div className="historyIndex">#{startIndex + i + 1}</div>
                 <div className={`historyBadge ${item.type}`}>
-                  {item.type === 'deposit' && '💰 DEPOSIT'}
-                  {item.type === 'withdrawal' && '💸 WITHDRAWAL'}
-                  {item.type === 'task' && '✅ TASK'}
+                  {item.type === "deposit" && "💰 DEPOSIT"}
+                  {item.type === "withdrawal" && "💸 WITHDRAWAL"}
+                  {item.type === "task" && "✅ TASK"}
                 </div>
-                <div className={`historyStatus ${item.status.toLowerCase().replace(' ', '-')}`}>
+                <div
+                  className={`historyStatus ${String(item.status || "")
+                    .toLowerCase()
+                    .replace(/\s+/g, "-")}`}
+                >
                   {item.status}
                 </div>
               </div>
 
               {/* Deposit/Withdrawal Details */}
-              {(item.type === 'deposit' || item.type === 'withdrawal') && (
+              {(item.type === "deposit" || item.type === "withdrawal") && (
                 <>
                   <div className="historyName">{item.method}</div>
                   <div className="historyGrid">
                     <div>
                       <div className="historyLabel">Amount</div>
-                      <div className="historyValue strong">${item.amount.toFixed(2)}</div>
+                      <div className="historyValue strong">
+                        ${safeNum(item.amount).toFixed(2)}
+                      </div>
                     </div>
                     <div>
                       <div className="historyLabel">Transaction ID</div>
-                      <div className="historyValue">{item.txId}</div>
+                      <div className="historyValue">{item.txId || "-"}</div>
                     </div>
                     <div>
                       <div className="historyLabel">Date</div>
@@ -259,7 +340,7 @@ export default function MemberHistory() {
               )}
 
               {/* Task Details */}
-              {item.type === 'task' && (
+              {item.type === "task" && (
                 <>
                   <div className="historyName">{item.setName}</div>
                   <div className="historyGrid">
@@ -269,7 +350,9 @@ export default function MemberHistory() {
                     </div>
                     <div>
                       <div className="historyLabel">Commission</div>
-                      <div className="historyValue strong">${item.commission.toFixed(2)}</div>
+                      <div className="historyValue strong">
+                        ${safeNum(item.commission).toFixed(2)}
+                      </div>
                     </div>
                     <div>
                       <div className="historyLabel">Date</div>
@@ -287,7 +370,7 @@ export default function MemberHistory() {
           <div className="historyPagination">
             <button
               className="paginationBtn"
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
             >
               ← Previous
@@ -299,7 +382,7 @@ export default function MemberHistory() {
 
             <button
               className="paginationBtn"
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
             >
               Next →

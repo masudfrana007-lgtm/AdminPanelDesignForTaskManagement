@@ -404,6 +404,89 @@ router.post("/complete-task", memberAuth, async (req, res) => {
   }
 });
 
+/**
+ * GET /member/my-sets
+ * Member-only: list my assigned sets (active + completed) with progress + amounts + earned commission
+ */
+router.get("/my-sets", memberAuth, async (req, res) => {
+  try {
+    const memberId = req.member.member_id;
+
+    const q = `
+      WITH set_task_rows AS (
+        SELECT
+          st.set_id,
+          st.task_id,
+          ROW_NUMBER() OVER (PARTITION BY st.set_id ORDER BY st.id ASC) AS rn
+        FROM set_tasks st
+      ),
+      set_stats AS (
+        SELECT
+          s.id AS set_id,
+          COUNT(t.id)::int AS total_tasks,
+          COALESCE(SUM(t.price), 0)::numeric(12,2) AS set_amount
+        FROM sets s
+        LEFT JOIN set_tasks st ON st.set_id = s.id
+        LEFT JOIN tasks t ON t.id = st.task_id
+        GROUP BY s.id
+      ),
+      current_task_price AS (
+        SELECT
+          ms.id AS member_set_id,
+          COALESCE(t.price, 0)::numeric(12,2) AS current_task_amount
+        FROM member_sets ms
+        LEFT JOIN set_task_rows str
+          ON str.set_id = ms.set_id
+         AND str.rn = (ms.current_task_index + 1)
+        LEFT JOIN tasks t ON t.id = str.task_id
+        WHERE ms.member_id = $1
+      ),
+      earned AS (
+        SELECT
+          mth.member_set_id,
+          COALESCE(SUM(mth.commission_amount), 0)::numeric(12,2) AS earned_commission
+        FROM member_task_history mth
+        WHERE mth.member_id = $1
+        GROUP BY mth.member_set_id
+      )
+      SELECT
+        ms.id,
+        ms.current_task_index,
+        ms.created_at,
+        ms.updated_at,
+
+        s.id AS set_id,
+        s.name AS set_name,
+        s.max_tasks,
+
+        ss.total_tasks,
+        ss.set_amount,
+        ctp.current_task_amount,
+
+        COALESCE(e.earned_commission, 0)::numeric(12,2) AS earned_commission,
+
+        CASE
+          WHEN ms.current_task_index >= COALESCE(ss.total_tasks, 0) AND COALESCE(ss.total_tasks, 0) > 0
+            THEN 'completed'
+          ELSE ms.status
+        END AS status
+
+      FROM member_sets ms
+      JOIN sets s ON s.id = ms.set_id
+      LEFT JOIN set_stats ss ON ss.set_id = s.id
+      LEFT JOIN current_task_price ctp ON ctp.member_set_id = ms.id
+      LEFT JOIN earned e ON e.member_set_id = ms.id
+      WHERE ms.member_id = $1
+      ORDER BY ms.created_at DESC
+    `;
+
+    const r = await pool.query(q, [memberId]);
+    res.json(r.rows);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 /**
  * GET /member/history

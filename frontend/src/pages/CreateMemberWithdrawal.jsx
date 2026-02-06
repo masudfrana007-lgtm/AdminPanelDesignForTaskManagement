@@ -6,13 +6,12 @@ import AppLayout from "../components/AppLayout";
 import { getUser } from "../auth";
 import "../styles/app.css";
 
-const CRYPTO_ASSETS = ["USDT", "BTC", "ETH", "BNB", "TRX"];
+const CRYPTO_ASSETS = ["USDT", "BTC", "ETH", "BNB"];
 const NETWORKS_BY_ASSET = {
   USDT: ["TRC20", "ERC20", "BEP20"],
   BTC: ["BTC"],
   ETH: ["ERC20"],
   BNB: ["BEP20"],
-  TRX: ["TRC20"],
 };
 
 // optional: you can replace this with your real list
@@ -246,7 +245,7 @@ export default function CreateMemberWithdrawal() {
                 disabled={busy}
                 autoComplete="off"
               />
-              
+
               <div className="small" style={{ marginTop: 8, opacity: 0.8 }}>
                 TX Ref is generated automatically after creation.
               </div>

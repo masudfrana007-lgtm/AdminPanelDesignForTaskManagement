@@ -1,51 +1,79 @@
-import React, { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import memberApi from "../services/memberApi";
 import "./WithdrawalRecord.css";
-
-const records = [
-  {
-    id: "WD-10231",
-    date: "2026-02-01 14:22",
-    amount: 120.5,
-    method: "USDT (TRC20)",
-    status: "Completed",
-    txHash: "b8f1a2e9c91f7d9a5c7a81a9f91d88b3",
-    address: "TQ9L7Pp9D9dY2fQ7QpA1dYpFfR9D9A",
-    completedAt: "2026-02-01 14:40",
-  },
-  {
-    id: "WD-10218",
-    date: "2026-01-31 09:10",
-    amount: 300,
-    method: "USDT (ERC20)",
-    status: "Pending",
-    txHash: "-",
-    address: "0xA19f8d91F98dF91A8f9D91dF98F9",
-    completedAt: "-",
-  },
-  {
-    id: "WD-10199",
-    date: "2026-01-30 17:44",
-    amount: 75,
-    method: "USDT (TRC20)",
-    status: "Rejected",
-    txHash: "-",
-    address: "T7A1pQ9dP9A1dY2fQ7QpA1dYpFfR",
-    completedAt: "-",
-  },
-];
 
 function money(n) {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n);
 }
 
+function fmtDate(d) {
+  if (!d) return "-";
+  const dt = new Date(d);
+  if (Number.isNaN(dt.getTime())) return String(d);
+  return dt.toISOString().slice(0, 16).replace("T", " ");
+}
+
+/** DB → UI status */
+function uiStatus(db) {
+  const s = String(db || "").toLowerCase();
+  if (s === "approved") return "Completed";
+  if (s === "rejected") return "Rejected";
+  return "Pending"; // pending / reviewing / processing
+}
+
 export default function WithdrawalRecord() {
   const nav = useNavigate();
+
+  const [me, setMe] = useState(null);
+  const [records, setRecords] = useState([]);
   const [filter, setFilter] = useState("All");
   const [active, setActive] = useState(null);
+  const [err, setErr] = useState("");
 
-  const filtered = records.filter(
-    (r) => filter === "All" || r.status === filter
+  /** load profile + withdrawals */
+  useEffect(() => {
+    (async () => {
+      try {
+        const [meRes, wRes] = await Promise.all([
+          memberApi.get("/member/me"),
+          memberApi.get("/member/withdrawals"),
+        ]);
+
+        setMe(meRes.data || null);
+
+        const rows = Array.isArray(wRes.data) ? wRes.data : [];
+
+        const mapped = rows.map((x) => {
+          const status = uiStatus(x.status);
+
+          const method =
+            x.method === "crypto"
+              ? `${x.asset || "USDT"} (${x.network || "-"})`
+              : `${x.bank_name || "Bank"} (${x.bank_country || "-"})`;
+
+          return {
+            id: x.tx_ref || `WD-${x.id}`,
+            date: fmtDate(x.created_at),
+            amount: Number(x.amount || 0),
+            method,
+            status,
+            txHash: x.tx_ref || "-",
+            address: x.wallet_address || x.account_details || "-",
+            completedAt: fmtDate(x.reviewed_at),
+          };
+        });
+
+        setRecords(mapped);
+      } catch (e) {
+        setErr(e?.response?.data?.message || "Failed to load withdrawals");
+      }
+    })();
+  }, []);
+
+  const filtered = useMemo(
+    () => records.filter((r) => filter === "All" || r.status === filter),
+    [records, filter]
   );
 
   return (
@@ -53,25 +81,40 @@ export default function WithdrawalRecord() {
       {/* Top Bar */}
       <header className="wdTop">
         <button className="wdBack" onClick={() => nav(-1)}>←</button>
+
         <div className="wdTitle">Withdrawal Records</div>
-        <div style={{ width: 40 }} />
+
       </header>
 
-      {/* Filters */}
-      <section className="wdFilters">
-        {["All", "Pending", "Completed", "Rejected"].map((f) => (
-          <button
-            key={f}
-            className={`wdFilterBtn ${filter === f ? "active" : ""}`}
-            onClick={() => setFilter(f)}
-          >
-            {f}
-          </button>
-        ))}
+      {err && <div className="wdError">{err}</div>}
+
+      {/* Filters + Locked (same row) */}
+      <section className="wdFiltersRow">
+        <div className="wdFilters">
+          {["All", "Pending", "Completed", "Rejected"].map((f) => (
+            <button
+              key={f}
+              className={`wdFilterBtn ${filter === f ? "active" : ""}`}
+              onClick={() => setFilter(f)}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+
+        {/* ✅ Locked Balance top-right aligned with filters */}
+        <div className="wdLockedInline">
+          <div className="wdLockedLabel">Locked</div>
+          <div className="wdLockedValue">{money(me?.locked_balance || 0)} USDT</div>
+        </div>
       </section>
 
       {/* Records */}
       <main className="wdWrap">
+        {filtered.length === 0 && (
+          <div className="wdEmpty">No withdrawal records</div>
+        )}
+
         {filtered.map((r) => (
           <div
             key={r.id}
@@ -118,12 +161,11 @@ export default function WithdrawalRecord() {
             </div>
 
             <div className="wdModalBody">
-              {/* ✅ Animated Timeline */}
               <StatusTimeline status={active.status} />
 
               <DetailRow label="Amount" value={`${money(active.amount)} USDT`} />
-              <DetailRow label="Network" value={active.method} />
-              <DetailRow label="Wallet Address" mono value={active.address} />
+              <DetailRow label="Method" value={active.method} />
+              <DetailRow label="Destination" mono value={active.address} />
               <DetailRow label="TX Hash" mono value={active.txHash} />
               <DetailRow label="Requested At" value={active.date} />
               <DetailRow label="Completed At" value={active.completedAt} />
@@ -133,6 +175,7 @@ export default function WithdrawalRecord() {
               <button className="wdBtnSoft" onClick={() => setActive(null)}>
                 Close
               </button>
+
               {active.txHash !== "-" && (
                 <button
                   className="wdBtnPrimary"
@@ -178,7 +221,6 @@ function StatusTimeline({ status }) {
               }`}
               style={{ animationDelay: `${i * 120}ms` }}
             />
-
             <div className="wdStepLabel">{label}</div>
 
             {i < steps.length - 1 && (
@@ -187,7 +229,6 @@ function StatusTimeline({ status }) {
                   className={`wdLineFill ${
                     reached && !dotRejected ? "fillOn" : ""
                   } ${dotRejected ? "fillRejected" : ""}`}
-                  style={{ animationDelay: `${i * 200 + 200}ms` }}
                 />
               </div>
             )}
