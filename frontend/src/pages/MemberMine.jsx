@@ -1,15 +1,15 @@
 // src/pages/MemberMine.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaUserFriends } from "react-icons/fa";
+import { FaUsers,FaUserFriends, FaCaretSquareUp } from "react-icons/fa";
 import MemberBottomNav from "../components/MemberBottomNav";
 import TeamJoinPopup from "../components/TeamJoinPopup";
 import InviteFriendsPopup from "../components/InviteFriendsPopup";
 import "../styles/memberMine.css";
 
 /* ✅ icons (adjust path if your structure is different) */
-import teamIcon from "../assets/icons/Team.jpg";
-import depositIcon from "../assets/icons/deposit-new.jpg";
+import teamIcon from "../assets/icons/team.png";
+import depositIcon from "../assets/icons/deposit-new.png";
 import withdrawalIcon from "../assets/icons/withdrawal-new.png";
 
 import profileIcon from "../assets/icons/profile.png";
@@ -60,7 +60,13 @@ export default function MemberMine() {
         {/* ✅ NEW HEADER (from new page) */}
         <div className="mine-hero">
           <div className="mine-hero-top">
-            <div className="mine-avatar" />
+            <div className="mine-avatar">
+              <img
+                src={`https://i.pravatar.cc/150?u=${user.referenceCode}`}
+                alt="User Avatar"
+                className="mine-avatar-img"
+              />
+            </div>
             <div className="mine-meta">
               <div className="mine-vip">
                 <span className="mine-vip-pill">VIP {user.vip}</span>
@@ -86,7 +92,8 @@ export default function MemberMine() {
         <div className="mine-actions-wrap">
           <div className="mine-actions">
             <CardButton
-              icon={<img src={teamIcon} alt="Teams" className="custom-icon" />}
+              // icon={<img src={teamIcon} alt="Teams" className="custom-icon" />}
+              icon={<FaUsers />}
               label="Teams"
               onClick={() => setShowTeamPopup(true)}
             />
@@ -154,11 +161,7 @@ export default function MemberMine() {
             />
             <ListItem
               icon={
-                <img
-                  src={depositRec2Icon}
-                  alt="Withdrawal Records"
-                  className="list-icon-img"
-                />
+                <FaCaretSquareUp />
               }
               label="Withdrawal Records"
               onClick={() => nav("/member/withdraw/records")}

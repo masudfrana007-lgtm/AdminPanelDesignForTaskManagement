@@ -1,7 +1,9 @@
+// src/pages/MemberDepositBank.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/memberDepositBank.css";
 import MemberBottomNav from "../components/MemberBottomNav";
+import memberApi from "../services/memberApi"; // ✅ member-side axios instance
 
 function money(n) {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n);
@@ -49,16 +51,30 @@ const DEMO_PAYEE_DETAILS = {
   note: "Use the Reference Code exactly. Deposits without reference may be delayed.",
 };
 
-const DEMO_HISTORY = [
-  { id: "H-1", date: "2026-01-27 18:24", method: "Bank Transfer", amount: 500, status: "Pending", ref: "DP-812334" },
-  { id: "H-2", date: "2026-01-26 10:12", method: "Bank Transfer", amount: 1200, status: "Completed", ref: "DP-771223" },
-  { id: "H-3", date: "2026-01-25 09:40", method: "Bank Transfer", amount: 300, status: "Failed", ref: "DP-661298" },
-];
+// --- status helpers (DB -> UI) ---
+function uiStatus(dbStatus) {
+  const s = String(dbStatus || "").toLowerCase();
+  if (s === "approved") return "Completed";
+  if (s === "rejected") return "Failed";
+  return "Pending"; // pending / others
+}
+
+function fmtDate(iso) {
+  if (!iso) return "-";
+  const d = new Date(iso);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
+}
 
 export default function MemberDepositBank() {
   const nav = useNavigate();
 
-  const [balance] = useState(1280.45);
+  // ✅ real balance from /member/me
+  const [balance, setBalance] = useState(0);
 
   const countries = useMemo(() => getAllCountries(), []);
   const [country, setCountry] = useState("US");
@@ -82,10 +98,9 @@ export default function MemberDepositBank() {
 
   const [historyTab, setHistoryTab] = useState("All");
 
-  const filteredHistory = useMemo(() => {
-    if (historyTab === "All") return DEMO_HISTORY;
-    return DEMO_HISTORY.filter((h) => h.status === historyTab);
-  }, [historyTab]);
+  // ✅ deposits from backend
+  const [deposits, setDeposits] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   const fileRef = useRef(null);
 
@@ -105,12 +120,86 @@ export default function MemberDepositBank() {
     e.target.value = "";
   };
 
-  const submit = () => {
+  // ✅ load balance + deposits
+  const loadMe = async () => {
+    try {
+      const { data } = await memberApi.get("/member/me");
+      setBalance(Number(data?.balance || 0));
+    } catch {
+      setBalance(0);
+    }
+  };
+
+  const loadDeposits = async () => {
+    setLoadingHistory(true);
+    try {
+      const { data } = await memberApi.get("/member/deposits");
+      const arr = Array.isArray(data) ? data : [];
+      setDeposits(arr);
+    } catch (e) {
+      setDeposits([]);
+      alert(e?.response?.data?.message || "Failed to load deposit history");
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  useEffect(() => {
+    loadMe();
+    loadDeposits();
+  }, []);
+
+  // ✅ ONLY BANK deposit history (method === "Bank")
+  // ✅ show bank name in "Method" column (from network)
+  const historyRows = useMemo(() => {
+    const bankOnly = (Array.isArray(deposits) ? deposits : []).filter(
+      (d) => String(d?.method || "").toLowerCase() === "bank"
+    );
+
+    const mapped = bankOnly.map((d) => ({
+      id: String(d.id),
+      date: fmtDate(d.created_at),
+      method: d.network || "Bank", // 👈 show selected bank name
+      amount: Number(d.amount || 0),
+      status: uiStatus(d.status), // Pending/Completed/Failed
+      ref: d.tx_ref || `DP-${d.id}`,
+    }));
+
+    if (historyTab === "All") return mapped;
+    return mapped.filter((h) => h.status === historyTab);
+  }, [deposits, historyTab]);
+
+  // ✅ create BANK deposit request
+  // asset = USD
+  // network = selected bank name
+  const submit = async () => {
     if (!country) return alert("Please select a country.");
     if (!selectedBank) return alert("Please select a bank.");
-    if (!amount || Number(amount) <= 0) return alert("Please enter a valid amount.");
+
+    const n = Number(amount);
+    if (!Number.isFinite(n) || n <= 0) return alert("Please enter a valid amount.");
     if (!senderName.trim()) return alert("Please enter Sender Name.");
-    alert("Deposit request submitted ✅ (wire to backend)");
+
+    try {
+      await memberApi.post("/member/deposits", {
+        amount: n,
+        method: "Bank", // ✅ to separate from crypto
+        asset: "USD", // ✅ as you requested
+        network: selectedBank.name, // ✅ bank name as "network"
+        tx_ref: reference,
+        proof_url: "", // no upload endpoint yet
+      });
+
+      alert("Deposit request submitted ✅");
+
+      setAmount("");
+      setSenderName("");
+      setReceipt(null);
+
+      await loadDeposits();
+    } catch (e) {
+      alert(e?.response?.data?.message || "Failed to submit deposit");
+    }
   };
 
   return (
@@ -152,7 +241,9 @@ export default function MemberDepositBank() {
           <div className="db-card db-status">
             <div className="db-statusTitle">Deposit Rules</div>
             <ul className="db-list">
-              <li>Use the exact <b>Reference Code</b> provided.</li>
+              <li>
+                Use the exact <b>Reference Code</b> provided.
+              </li>
               <li>Send from an account you own (name must match).</li>
               <li>Upload payment receipt for faster processing.</li>
             </ul>
@@ -173,9 +264,13 @@ export default function MemberDepositBank() {
               <div className="db-label">Country</div>
               <select className="db-select" value={country} onChange={(e) => setCountry(e.target.value)}>
                 {countries.map((c) => (
-                  <option key={c.code} value={c.code} style={{
-                    backgroundColor: "#051436"
-                  }}>
+                  <option
+                    key={c.code}
+                    value={c.code}
+                    style={{
+                      backgroundColor: "#051436",
+                    }}
+                  >
                     {c.name}
                   </option>
                 ))}
@@ -359,7 +454,7 @@ export default function MemberDepositBank() {
               <span>Action</span>
             </div>
 
-            {filteredHistory.map((d) => (
+            {historyRows.map((d) => (
               <div key={d.id} className="db-historyRow">
                 <span>{d.date}</span>
                 <span>{d.method}</span>
@@ -372,7 +467,10 @@ export default function MemberDepositBank() {
               </div>
             ))}
 
-            {!filteredHistory.length && <div className="db-historyEmpty">No records found for this status.</div>}
+            {loadingHistory && <div className="db-historyEmpty">Loading…</div>}
+            {!loadingHistory && !historyRows.length && (
+              <div className="db-historyEmpty">No records found for this status.</div>
+            )}
           </div>
         </section>
       </main>
