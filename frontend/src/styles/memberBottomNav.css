@@ -10,11 +10,11 @@
   grid-template-columns: repeat(5, 1fr);
   align-items: center;
 
-  background: linear-gradient(180deg, rgba(10, 28, 66, 0.75), rgba(5, 14, 35, 0.95)); */
+  background: linear-gradient(180deg, rgba(10, 28, 66, 0.75), rgba(5, 14, 35, 0.95)); 
   border-top: 1px solid rgba(255,255,255,0.15);
-  backdrop-filter: blur(20px); */
+  backdrop-filter: blur(20px); 
   box-shadow: 0 -4px 20px rgba(0,0,0,0.25);
-  opacity: 0.58; */
+  opacity: 0.58; 
 }
 
 .mNavItem {
@@ -97,7 +97,7 @@
 }
 
 /* Hide text on smaller screens, show only icons */
-@media (max-width: 480px) {
+@media (max-width: 780px) {
   
   .mNavText {
     display: none;
@@ -112,7 +112,7 @@
   }
 }
 
-@media (max-width: 520px) {
+@media (max-width: 780px) {
   .mNav {
     height: 50px;
     grid-template-columns: repeat(5, 1fr);

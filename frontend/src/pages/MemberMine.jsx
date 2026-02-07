@@ -1,11 +1,13 @@
 // src/pages/MemberMine.jsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaUsers,FaUserFriends, FaCaretSquareUp } from "react-icons/fa";
+import { FaUsers, FaUserFriends, FaCaretSquareUp } from "react-icons/fa";
 import MemberBottomNav from "../components/MemberBottomNav";
 import TeamJoinPopup from "../components/TeamJoinPopup";
 import InviteFriendsPopup from "../components/InviteFriendsPopup";
 import "../styles/memberMine.css";
+
+import memberApi from "../services/memberApi";
 
 /* ✅ icons (adjust path if your structure is different) */
 import teamIcon from "../assets/icons/team.png";
@@ -18,14 +20,9 @@ import settingsIcon from "../assets/icons/settings.PNG";
 import depositRec1Icon from "../assets/icons/DepositR.PNG";
 import depositRec2Icon from "../assets/icons/DepositRR.PNG";
 
-const user = {
-  vip: 3,
-  balance: 97280.12,
-  referenceCode: "ABCD-1234",
-};
-
 function money(n) {
-  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n);
+  const num = Number(n || 0);
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(num);
 }
 
 function CardButton({ icon, label, onClick }) {
@@ -54,27 +51,57 @@ export default function MemberMine() {
   const [showTeamPopup, setShowTeamPopup] = useState(false);
   const [showInvitePopup, setShowInvitePopup] = useState(false);
 
+  const [me, setMe] = useState(null);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    (async () => {
+      setErr("");
+      try {
+        const { data } = await memberApi.get("/member/me");
+        setMe(data || null);
+      } catch (e) {
+        setMe(null);
+        setErr(e?.response?.data?.message || "Failed to load profile");
+      }
+    })();
+  }, []);
+
+  // ✅ map API -> UI fields (keep UI identical)
+  const vip = me?.ranking ?? "-";
+  const balance = Number(me?.balance || 0);
+
+  // "Reference code" shown in UI:
+  // best available is member.short_id (you already return it)
+  const referenceCode = me?.sponsor_short_id || "-";
+
+  // stable avatar seed
+  const avatarSeed = referenceCode === "-" ? "guest" : referenceCode;
+
   return (
     <div className="minePage">
       <div className="mineContainer">
-        {/* ✅ NEW HEADER (from new page) */}
+        {/* optional (doesn't change design if your css ignores it) */}
+        {err && <div className="mineAlert error">{err}</div>}
+
+        {/* ✅ HEADER (same design) */}
         <div className="mine-hero">
           <div className="mine-hero-top">
             <div className="mine-avatar">
               <img
-                src={`https://i.pravatar.cc/150?u=${user.referenceCode}`}
+                src={`https://i.pravatar.cc/150?u=${encodeURIComponent(avatarSeed)}`}
                 alt="User Avatar"
                 className="mine-avatar-img"
               />
             </div>
             <div className="mine-meta">
               <div className="mine-vip">
-                <span className="mine-vip-pill">VIP {user.vip}</span>
+                <span className="mine-vip-pill">{vip}</span>
               </div>
 
               <div className="mine-ref">
                 <span className="mine-ref-label">Reference code:</span>
-                <span className="mine-ref-code">{user.referenceCode}</span>
+                <span className="mine-ref-code">{referenceCode}</span>
               </div>
             </div>
           </div>
@@ -83,16 +110,15 @@ export default function MemberMine() {
             <div className="mine-balance-title">My Account</div>
             <div className="mine-balance-row">
               <span className="mine-balance-unit">USDT</span>
-              <span className="mine-balance-val">{money(user.balance)}</span>
+              <span className="mine-balance-val">{money(balance)}</span>
             </div>
           </div>
         </div>
 
-        {/* ✅ NEW QUICK ACTIONS */}
+        {/* ✅ QUICK ACTIONS (same design) */}
         <div className="mine-actions-wrap">
           <div className="mine-actions">
             <CardButton
-              // icon={<img src={teamIcon} alt="Teams" className="custom-icon" />}
               icon={<FaUsers />}
               label="Teams"
               onClick={() => setShowTeamPopup(true)}
@@ -103,13 +129,7 @@ export default function MemberMine() {
               onClick={() => nav("/member/deposit")}
             />
             <CardButton
-              icon={
-                <img
-                  src={withdrawalIcon}
-                  alt="Withdrawal"
-                  className="custom-icon"
-                />
-              }
+              icon={<img src={withdrawalIcon} alt="Withdrawal" className="custom-icon" />}
               label="Withdrawal"
               onClick={() => nav("/member/withdraw")}
             />
@@ -121,7 +141,7 @@ export default function MemberMine() {
           </div>
         </div>
 
-        {/* ✅ NEW LISTS */}
+        {/* ✅ LISTS (same design) */}
         <div className="mine-lists">
           <div className="mine-list">
             <ListItem
@@ -130,13 +150,7 @@ export default function MemberMine() {
               onClick={() => nav("/profile")}
             />
             <ListItem
-              icon={
-                <img
-                  src={withdrawalIcon}
-                  alt="Withdrawal Management"
-                  className="list-icon-img"
-                />
-              }
+              icon={<img src={withdrawalIcon} alt="Withdrawal Management" className="list-icon-img" />}
               label="Withdrawal Management"
               onClick={() => nav("/withdrawal-management")}
             />
@@ -149,20 +163,12 @@ export default function MemberMine() {
 
           <div className="mine-list">
             <ListItem
-              icon={
-                <img
-                  src={depositRec1Icon}
-                  alt="Deposit Records"
-                  className="list-icon-img"
-                />
-              }
+              icon={<img src={depositRec1Icon} alt="Deposit Records" className="list-icon-img" />}
               label="Deposit Records"
               onClick={() => nav("/member/deposit/records")}
             />
             <ListItem
-              icon={
-                <FaCaretSquareUp />
-              }
+              icon={<FaCaretSquareUp />}
               label="Withdrawal Records"
               onClick={() => nav("/member/withdraw/records")}
             />
@@ -175,19 +181,16 @@ export default function MemberMine() {
         </div>
       </div>
 
-      {/* ✅ OLD bottom bar (reusable) */}
       <MemberBottomNav active="mine" />
 
-      {/* ✅ Team Join Popup */}
-      <TeamJoinPopup 
-        isOpen={showTeamPopup} 
-        onClose={() => setShowTeamPopup(false)} 
+      <TeamJoinPopup
+        isOpen={showTeamPopup}
+        onClose={() => setShowTeamPopup(false)}
       />
 
-      {/* ✅ Invite Friends Popup */}
-      <InviteFriendsPopup 
-        isOpen={showInvitePopup} 
-        onClose={() => setShowInvitePopup(false)} 
+      <InviteFriendsPopup
+        isOpen={showInvitePopup}
+        onClose={() => setShowInvitePopup(false)}
       />
     </div>
   );

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "../styles/TaskDetail.css";
 import memberApi from "../services/memberApi";
 import MemberBottomNav from "../components/MemberBottomNav";
+import confetti from "canvas-confetti";
 
 function money(n) {
   const num = Number(n || 0);
@@ -53,6 +54,8 @@ export default function TaskDetail() {
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  const [showComboWin, setShowComboWin] = useState(false);
 
   // ✅ UI navigation index (Prev/Next changes this only)
   const [viewIndex, setViewIndex] = useState(0);
@@ -105,6 +108,7 @@ export default function TaskDetail() {
 
   // ✅ map backend -> UI
   const task = useMemo(() => {
+
     if (!activeSet?.active || !t) return null;
 
     return {
@@ -112,6 +116,8 @@ export default function TaskDetail() {
       title: t.title || "Order",
       description: t.description || "",
       image: toImageUrl(t.image_url),
+
+      type: String(t.task_type || t.taskType || "regular"),
 
       qty: Number(t.quantity || 1),
       unitPrice: Number(t.rate || 0),
@@ -144,6 +150,39 @@ export default function TaskDetail() {
 
   // ✅ completed count is backend progress
   const completedCount = currentIndex;
+
+  // ✅ Combo task: show big win confetti when page loads (per task)
+  useEffect(() => {
+    if (!task) return;
+
+    const type = String(task.type || "").toLowerCase();
+    if (type !== "combo") return;
+    if (!isCurrentTask) return;
+
+    setShowComboWin(true);
+
+    // 🎉 festival-style confetti for ~2.2s
+    const end = Date.now() + 2200;
+
+    const frame = () => {
+      confetti({
+        particleCount: 18,
+        spread: 70,
+        startVelocity: 20,
+        gravity: 1.2,
+        ticks: 300,
+        origin: { x: Math.random(), y: -0.05 }, // ✅ from top
+      });
+
+      if (Date.now() < end) requestAnimationFrame(frame);
+    };
+
+    frame();
+
+    // auto close after a bit (optional)
+    const tmr = setTimeout(() => setShowComboWin(false), 2600);
+    return () => clearTimeout(tmr);
+  }, [task ? `${task.id}:${task.type}` : null, isCurrentTask]);
 
   const submit = () => {
     if (!task || isLoading || !isCurrentTask) return;
@@ -458,6 +497,43 @@ export default function TaskDetail() {
           </div>
         </div>
       </footer>
+
+      {/* ✅ COMBO BIG WIN OVERLAY */}
+      {showComboWin && (
+        <div
+          className="td-overlay"
+          style={{ background: "rgba(0,0,0,.70)", zIndex: 9999 }}
+          onClick={() => setShowComboWin(false)}
+        >
+          <div
+            className="td-successCard"
+            style={{ maxWidth: 560, textAlign: "center", transform: "scale(1.06)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={{ fontSize: 32, marginBottom: 8 }}>🎉 Congratulations!</h2>
+            <p style={{ fontSize: 16, opacity: 0.95, marginBottom: 16 }}>
+              You received a <b>COMBO</b> task — <b>Big Win Festival</b> 🎊
+            </p>
+
+            <div className="td-successMeta" style={{ justifyContent: "center" }}>
+              <div>
+                <div className="td-smLabel">Order Profit</div>
+                <div className="td-smValue">+${money(taskProfit)}</div>
+              </div>
+              <div>
+                <div className="td-smLabel">Order Amount</div>
+                <div className="td-smValue">${money(orderAmount)}</div>
+              </div>
+            </div>
+
+            <div className="td-successBtns" style={{ justifyContent: "center" }}>
+              <button className="td-finishBtn is-next" type="button" onClick={() => setShowComboWin(false)}>
+                Start Now →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* LOADING OVERLAY (matches your CSS) */}
       {isLoading && (

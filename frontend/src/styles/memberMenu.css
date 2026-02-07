@@ -127,7 +127,7 @@
   background: rgba(255,255,255,0.14);
   border: 1px solid rgba(255,255,255,0.18);
   margin-left: 6px;
-  font-size: 12px;
+  font-size: 20px;
 }
 
 .vipError {
@@ -401,4 +401,16 @@
   font-weight: 600;
   opacity: 0.9;
   margin-bottom: 6px;
+}
+
+.vipPill.isActive{
+  background: rgba(22,163,74,.14);
+  color: #16a34a;
+  border: 1px solid rgba(22,163,74,.30);
+}
+
+.vipPill.isInactive{
+  background: rgba(239,68,68,.14);
+  color: #ef4444;
+  border: 1px solid rgba(239,68,68,.30);
 }

@@ -318,6 +318,7 @@ router.get("/:id/wallet", auth, allowRoles("owner", "agent"), async (req, res) =
         amount::numeric(12,2) AS amount,
         method,
         account_details,
+        tx_ref, 
         status,
         admin_note,
         created_at,

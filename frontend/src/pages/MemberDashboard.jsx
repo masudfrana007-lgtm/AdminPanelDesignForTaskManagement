@@ -9,6 +9,14 @@ function money(n) {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(num);
 }
 
+function rankLabel(r) {
+  const x = String(r || "").trim().toUpperCase();
+  if (x === "V1") return "VIP 1";
+  if (x === "V2") return "VIP 2";
+  if (x === "V3") return "VIP 3";
+  return "Trial";
+}
+
 export default function Home() {
 
   const me = getMember(); // from local storage (logged in member)
@@ -36,6 +44,7 @@ useEffect(() => {
   })();
 }, []);
 
+const rankText = rankLabel(profile?.ranking);
 
   const stats = [
     { label: "Account status", value: "Active", tone: "good" },
@@ -173,7 +182,7 @@ useEffect(() => {
               <div className="welcomeBalance">Welcome back</div>
               <div className="welcomeName">
                 {profile?.nickname || profile?.name || "—"}
-                <span className="vip">{profile?.ranking ? profile.ranking : "Trial"}</span>
+                <span className="vip">{rankText}</span>
               </div>
               <div className="welcomeBalance">ID: {profile?.short_id || me?.short_id || "-"}</div>
               {/* need to add balance here */}

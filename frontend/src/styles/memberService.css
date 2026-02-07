@@ -200,6 +200,7 @@ html, body, #root{
 .cs-agentName{
   font-weight: 1000;
   letter-spacing: .2px;
+  color:white;
 }
 .cs-verified{
   font-size: 12px;

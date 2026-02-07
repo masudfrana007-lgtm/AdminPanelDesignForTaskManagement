@@ -16,7 +16,12 @@ router.get("/me", memberAuth, async (req, res) => {
         m.id,
         m.short_id,
         m.nickname,
+        m.email,  
         m.phone,
+        m.country,            
+        m.created_at,
+        m.last_login,         
+        m.approval_status,      
         m.ranking,
         m.withdraw_privilege,
         u.short_id AS sponsor_short_id,
@@ -55,6 +60,7 @@ router.get("/dashboard", memberAuth, async (req, res) => {
         m.id,
         m.short_id,
         m.nickname,
+        m.email, 
         m.phone,
         m.country,
         m.ranking,
@@ -188,11 +194,12 @@ router.get("/active-set", memberAuth, async (req, res) => {
         t.quantity,
         t.rate,
         t.commission_rate,
-        t.price
+        t.price,
+        t.task_type          
       FROM set_tasks st
       JOIN tasks t ON t.id = st.task_id
       WHERE st.set_id = $1
-      ORDER BY st.id ASC
+      ORDER BY st.position ASC
       `,
       [ms.set_id]
     );
@@ -293,7 +300,7 @@ router.post("/complete-task", memberAuth, async (req, res) => {
       FROM set_tasks st
       JOIN tasks t ON t.id = st.task_id
       WHERE st.set_id = $1
-      ORDER BY st.id ASC
+      ORDER BY st.position ASC
       OFFSET $2
       LIMIT 1
       `,
@@ -403,6 +410,89 @@ router.post("/complete-task", memberAuth, async (req, res) => {
   }
 });
 
+/**
+ * GET /member/my-sets
+ * Member-only: list my assigned sets (active + completed) with progress + amounts + earned commission
+ */
+router.get("/my-sets", memberAuth, async (req, res) => {
+  try {
+    const memberId = req.member.member_id;
+
+    const q = `
+      WITH set_task_rows AS (
+        SELECT
+          st.set_id,
+          st.task_id,
+          ROW_NUMBER() OVER (PARTITION BY st.set_id ORDER BY st.id ASC) AS rn
+        FROM set_tasks st
+      ),
+      set_stats AS (
+        SELECT
+          s.id AS set_id,
+          COUNT(t.id)::int AS total_tasks,
+          COALESCE(SUM(t.price), 0)::numeric(12,2) AS set_amount
+        FROM sets s
+        LEFT JOIN set_tasks st ON st.set_id = s.id
+        LEFT JOIN tasks t ON t.id = st.task_id
+        GROUP BY s.id
+      ),
+      current_task_price AS (
+        SELECT
+          ms.id AS member_set_id,
+          COALESCE(t.price, 0)::numeric(12,2) AS current_task_amount
+        FROM member_sets ms
+        LEFT JOIN set_task_rows str
+          ON str.set_id = ms.set_id
+         AND str.rn = (ms.current_task_index + 1)
+        LEFT JOIN tasks t ON t.id = str.task_id
+        WHERE ms.member_id = $1
+      ),
+      earned AS (
+        SELECT
+          mth.member_set_id,
+          COALESCE(SUM(mth.commission_amount), 0)::numeric(12,2) AS earned_commission
+        FROM member_task_history mth
+        WHERE mth.member_id = $1
+        GROUP BY mth.member_set_id
+      )
+      SELECT
+        ms.id,
+        ms.current_task_index,
+        ms.created_at,
+        ms.updated_at,
+
+        s.id AS set_id,
+        s.name AS set_name,
+        s.max_tasks,
+
+        ss.total_tasks,
+        ss.set_amount,
+        ctp.current_task_amount,
+
+        COALESCE(e.earned_commission, 0)::numeric(12,2) AS earned_commission,
+
+        CASE
+          WHEN ms.current_task_index >= COALESCE(ss.total_tasks, 0) AND COALESCE(ss.total_tasks, 0) > 0
+            THEN 'completed'
+          ELSE ms.status
+        END AS status
+
+      FROM member_sets ms
+      JOIN sets s ON s.id = ms.set_id
+      LEFT JOIN set_stats ss ON ss.set_id = s.id
+      LEFT JOIN current_task_price ctp ON ctp.member_set_id = ms.id
+      LEFT JOIN earned e ON e.member_set_id = ms.id
+      WHERE ms.member_id = $1
+      ORDER BY ms.created_at DESC
+    `;
+
+    const r = await pool.query(q, [memberId]);
+    res.json(r.rows);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 /**
  * GET /member/history
@@ -602,13 +692,55 @@ router.post("/withdrawals", memberAuth, async (req, res) => {
     const memberId = req.member.member_id;
 
     const amount = Number(req.body.amount || 0);
-    const method = String(req.body.method || "").trim();
-    const account_details = String(req.body.account_details || "").trim();
+
+    // method: "crypto" | "bank" (accept also "Crypto"/"Bank")
+    const methodRaw = String(req.body.method || "").trim();
+    const method = methodRaw.toLowerCase();
+
+    // crypto-only
+    const asset = String(req.body.asset || "").trim();
+    const network = String(req.body.network || "").trim();
+    const wallet_address = String(req.body.wallet_address || "").trim();
+
+    // bank-only
+    const bank_country = String(req.body.bank_country || "").trim(); // e.g. KH
+    const bank_name = String(req.body.bank_name || "").trim();       // e.g. ABA
+    const account_holder_name = String(req.body.account_holder_name || "").trim();
+    const account_number = String(req.body.account_number || "").trim();
+    const routing_number = String(req.body.routing_number || "").trim(); // optional
+    const branch_name = String(req.body.branch_name || "").trim();       // optional
 
     if (!amount || amount <= 0) return res.status(400).json({ message: "Invalid amount" });
     if (!method) return res.status(400).json({ message: "Method required" });
-    if (!account_details) return res.status(400).json({ message: "Account details required" });
 
+    const isCrypto = method === "crypto";
+    const isBank = method === "bank";
+    if (!isCrypto && !isBank) {
+      return res.status(400).json({ message: "Method must be crypto or bank" });
+    }
+
+    // ✅ method-specific required fields
+    if (isCrypto) {
+      if (!asset) return res.status(400).json({ message: "Asset required" });
+      if (!network) return res.status(400).json({ message: "Network required" });
+      if (!wallet_address) return res.status(400).json({ message: "Wallet address required" });
+    }
+
+    if (isBank) {
+      if (!bank_country) return res.status(400).json({ message: "Bank country required" });
+      if (!bank_name) return res.status(400).json({ message: "Bank name required" });
+      if (!account_holder_name) return res.status(400).json({ message: "Account holder name required" });
+      if (!account_number) return res.status(400).json({ message: "Account number required" });
+    }
+
+    // ✅ build account_details automatically (DB requires NOT NULL)
+    const account_details = isCrypto
+      ? `${asset} ${network} → ${wallet_address}`
+      : `${bank_name} (${bank_country}) • ${account_holder_name} • ${account_number}`
+          + (routing_number ? ` • Routing: ${routing_number}` : "")
+          + (branch_name ? ` • Branch: ${branch_name}` : "");
+
+    // member checks
     const m = await pool.query(
       `SELECT approval_status, withdraw_privilege FROM members WHERE id=$1`,
       [memberId]
@@ -634,12 +766,13 @@ router.post("/withdrawals", memberAuth, async (req, res) => {
       [memberId]
     );
 
-    const bal = Number(w.rows[0].balance || 0);
+    const bal = Number(w.rows[0]?.balance || 0);
     if (bal < amount) {
       await client.query("ROLLBACK");
       return res.status(400).json({ message: "Insufficient balance" });
     }
 
+    // lock money
     await client.query(
       `UPDATE wallets
        SET balance = balance - $1,
@@ -649,11 +782,50 @@ router.post("/withdrawals", memberAuth, async (req, res) => {
       [amount, memberId]
     );
 
+    // insert withdrawal
     const wd = await client.query(
-      `INSERT INTO withdrawals (member_id, amount, method, account_details)
-       VALUES ($1,$2,$3,$4)
-       RETURNING *`,
-      [memberId, amount, method, account_details]
+      `
+      INSERT INTO withdrawals (
+        member_id,
+        amount,
+        method,
+        account_details,
+
+        asset,
+        network,
+        wallet_address,
+
+        bank_country,
+        bank_name,
+        account_holder_name,
+        account_number,
+        routing_number,
+        branch_name
+      )
+      VALUES (
+        $1,$2,$3,$4,
+        $5,$6,$7,
+        $8,$9,$10,$11,$12,$13
+      )
+      RETURNING *
+      `,
+      [
+        memberId,
+        amount,
+        method,           // store "crypto" or "bank"
+        account_details,
+
+        isCrypto ? asset : null,
+        isCrypto ? network : null,
+        isCrypto ? wallet_address : null,
+
+        isBank ? bank_country : null,
+        isBank ? bank_name : null,
+        isBank ? account_holder_name : null,
+        isBank ? account_number : null,
+        isBank ? (routing_number || null) : null,
+        isBank ? (branch_name || null) : null,
+      ]
     );
 
     await client.query("COMMIT");
@@ -667,16 +839,37 @@ router.post("/withdrawals", memberAuth, async (req, res) => {
   }
 });
 
+
 // MEMBER: list my withdrawals
 router.get("/withdrawals", memberAuth, async (req, res) => {
   try {
     const memberId = req.member.member_id;
 
     const r = await pool.query(
-      `SELECT id, amount, method, account_details, status, admin_note, created_at, reviewed_at
-       FROM withdrawals
-       WHERE member_id = $1
-       ORDER BY id DESC`,
+      `SELECT
+        id,
+        amount,
+        method,
+        tx_ref,
+        status,
+        account_details,
+
+        asset,
+        network,
+        wallet_address,
+
+        bank_country,
+        bank_name,
+        account_holder_name,
+        account_number,
+        routing_number,
+        branch_name,
+
+        created_at,
+        reviewed_at
+      FROM withdrawals
+      WHERE member_id = $1
+      ORDER BY id DESC`,
       [memberId]
     );
 
@@ -686,6 +879,5 @@ router.get("/withdrawals", memberAuth, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
-
 
 export default router;

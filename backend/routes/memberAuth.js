@@ -38,6 +38,11 @@ router.post("/login", async (req, res) => {
     const ok = await bcrypt.compare(password, m.password);
     if (!ok) return res.status(401).json({ message: "Invalid credentials" });
 
+    await pool.query(
+      `UPDATE members SET last_login = now() WHERE id = $1`,
+      [m.id]
+    );
+
     const token = jwt.sign(
       { member_id: m.id, sponsor_id: m.sponsor_id },
       process.env.JWT_SECRET,
