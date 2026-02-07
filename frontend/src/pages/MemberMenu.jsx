@@ -14,10 +14,10 @@ const LOGOS = import.meta.glob("../assets/img/*.png", {
 
 const getLogoSrc = (logoType) => LOGOS[`../assets/img/${logoType}.png`];
 
-// ✅ VIP requirements (based on your card ranges)
+// ✅ NO overlap, NO gap
 const VIP_RULES = {
   "VIP 1": { min: 20, max: 499 },
-  "VIP 2": { min: 499, max: 899 },
+  "VIP 2": { min: 500, max: 998 },
   "VIP 3": { min: 999, max: Infinity },
 };
 
@@ -26,23 +26,17 @@ function safeNum(v) {
   return Number.isFinite(n) ? n : 0;
 }
 
-function rankToVipTier(ranking) {
-  const x = String(ranking || "").trim().toUpperCase();
-  if (x === "V1") return "VIP 1";
-  if (x === "V2") return "VIP 2";
-  if (x === "V3") return "VIP 3";
-  return null;
+function isBelowMinForTier(balance, tier) {
+  const rule = VIP_RULES[tier];
+  if (!rule) return true;
+  return safeNum(balance) < rule.min;
 }
 
-function isAllowedByTier(eligibleTier, cardTier) {
-  // ✅ can access amazon OR their package:
-  // VIP 1 -> only VIP1
-  // VIP 2 -> VIP1 + VIP2
-  // VIP 3 -> VIP1 + VIP2 + VIP3
-  const order = { "VIP 1": 1, "VIP 2": 2, "VIP 3": 3 };
-  const e = order[eligibleTier] || 0;
-  const c = order[cardTier] || 0;
-  return c <= e;
+function isAboveMaxForTier(balance, tier) {
+  const rule = VIP_RULES[tier];
+  if (!rule) return false;
+  const b = safeNum(balance);
+  return Number.isFinite(rule.max) && b > rule.max;
 }
 
 function meetsBalanceForTier(balance, tier) {
@@ -50,6 +44,30 @@ function meetsBalanceForTier(balance, tier) {
   if (!rule) return false;
   const b = safeNum(balance);
   return b >= rule.min && b <= rule.max;
+}
+
+// ✅ choose correct tier based on balance (100k -> VIP 3)
+function tierByBalance(balance) {
+  const b = safeNum(balance);
+  if (b >= VIP_RULES["VIP 3"].min) return "VIP 3";
+  if (b >= VIP_RULES["VIP 2"].min && b <= VIP_RULES["VIP 2"].max) return "VIP 2";
+  if (b >= VIP_RULES["VIP 1"].min && b <= VIP_RULES["VIP 1"].max) return "VIP 1";
+  return null; // below VIP1 min
+}
+
+function rankToVipTier(ranking) {
+  const x = String(ranking || "").trim().toUpperCase();
+  if (x === "V1") return "VIP 1";
+  if (x === "V2") return "VIP 2";
+  if (x === "V3") return "VIP 3";
+  return null; // trial / not assigned
+}
+
+function isAllowedByTier(eligibleTier, cardTier) {
+  const order = { "VIP 1": 1, "VIP 2": 2, "VIP 3": 3 };
+  const e = order[eligibleTier] || 0;
+  const c = order[cardTier] || 0;
+  return c <= e;
 }
 
 function requiredText(tier) {
@@ -88,7 +106,7 @@ export default function MemberMenu() {
         tier: "VIP 2",
         brand: "Alibaba",
         balanceTop: "Available Balance",
-        balanceRange: "499USDT-899USDT",
+        balanceRange: "500USDT-998USDT",
         commission: "8%",
         theme: "vip2",
         logoType: "alibaba",
@@ -143,27 +161,66 @@ export default function MemberMenu() {
   const balance = safeNum(data?.me?.balance);
 
   const goToVip = (card) => {
-    // ✅ ranking not eligible
+    setErr("");
+
+    // ✅ if trial/not assigned, but has balance in some VIP => suggest upgrade tier
     if (!eligibleTier) {
-      setErr("You are not eligible for VIP packages. Please contact your sponsor.");
-      setTimeout(() => setErr(""), 1800);
+      const suggested = tierByBalance(balance);
+      if (suggested) {
+        setErr(`Your balance requires ${suggested}. Please contact your agent to upgrade your package.`);
+      } else {
+        setErr("You are not eligible for VIP packages. Please contact your sponsor.");
+      }
+      setTimeout(() => setErr(""), 2400);
       return;
     }
 
-    // ✅ allow amazon OR their tier (tier <= eligibleTier)
+    // ✅ rank gate
     if (!isAllowedByTier(eligibleTier, card.tier)) {
-      setErr("You are not eligible.");
-      setTimeout(() => setErr(""), 1800);
+      // optional: if they click higher tier, show upgrade suggestion
+      const suggested = tierByBalance(balance);
+      setErr(
+        suggested && suggested !== eligibleTier
+          ? `Your balance requires ${suggested}. Please contact your agent to upgrade.`
+          : "You are not eligible."
+      );
+      setTimeout(() => setErr(""), 2400);
       return;
     }
 
-    // ✅ balance gate for the selected package
-    if (!meetsBalanceForTier(balance, card.tier)) {
+    // ✅ balance gate (FIXED):
+    // below min => deposit modal
+    if (isBelowMinForTier(balance, card.tier)) {
       setNeedDeposit({
         tier: card.tier,
         required: requiredText(card.tier),
         balance,
       });
+      return;
+    }
+
+    // above max => upgrade/go correct package (NOT deposit)
+    if (isAboveMaxForTier(balance, card.tier)) {
+      const suggested = tierByBalance(balance);
+
+      if (suggested === "VIP 3" && eligibleTier === "VIP 3") {
+        setErr(`Your balance is above ${card.tier}. Please enter VIP 3 package.`);
+      } else if (suggested && suggested !== eligibleTier) {
+        setErr(`Your balance requires ${suggested}. Please contact your agent to upgrade your package.`);
+      } else if (suggested) {
+        setErr(`Your balance matches ${suggested}. Please enter ${suggested} package.`);
+      } else {
+        setErr("Please contact your agent.");
+      }
+
+      setTimeout(() => setErr(""), 2600);
+      return;
+    }
+
+    // in range => allow
+    if (!meetsBalanceForTier(balance, card.tier)) {
+      setErr("Balance does not match the package range.");
+      setTimeout(() => setErr(""), 1800);
       return;
     }
 
@@ -183,8 +240,7 @@ export default function MemberMenu() {
     }
   };
 
-  // ✅ display ranking text as VIP tier (V1->VIP1)
-  const rankDisplay = eligibleTier ? eligibleTier : (rankingRaw || "-");
+  const rankDisplay = eligibleTier ? eligibleTier : rankingRaw || "-";
 
   return (
     <div className="vipPage">
@@ -198,7 +254,6 @@ export default function MemberMenu() {
                 Welcome, <b>{meLS?.nickname || "Member"}</b>
               </div>
 
-              {/* ✅ show ranking mapped */}
               <div className="vipBrandSub">
                 Rank: <b>{rankDisplay}</b>
               </div>
@@ -252,9 +307,7 @@ export default function MemberMenu() {
           return (
             <div
               key={c.tier}
-              className={`vipCard ${c.theme} ${
-                eligible ? "eligibleCard" : "notEligibleCard"
-              }`}
+              className={`vipCard ${c.theme} ${eligible ? "eligibleCard" : "notEligibleCard"}`}
               role="button"
               tabIndex={0}
               onClick={() => goToVip(c)}
@@ -293,7 +346,7 @@ export default function MemberMenu() {
         })}
       </div>
 
-      {/* ✅ Deposit popup (no CSS changes required, basic inline overlay) */}
+      {/* ✅ Deposit popup */}
       {needDeposit && (
         <div
           style={{
@@ -327,7 +380,8 @@ export default function MemberMenu() {
               To enter <b style={{ color: "#fff" }}>{needDeposit.tier}</b>, your balance must match:{" "}
               <b style={{ color: "#fff" }}>{needDeposit.required}</b>.
               <br />
-              Your current balance: <b style={{ color: "#fff" }}>{needDeposit.balance.toFixed(2)} USDT</b>
+              Your current balance:{" "}
+              <b style={{ color: "#fff" }}>{needDeposit.balance.toFixed(2)} USDT</b>
             </div>
 
             <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
@@ -356,7 +410,7 @@ export default function MemberMenu() {
         </div>
       )}
 
-      {/* ✅ REUSABLE BOTTOM NAV */}
+      {/* ✅ Bottom nav */}
       <div className="vipBottomNav">
         <MemberBottomNav active="menu" />
       </div>

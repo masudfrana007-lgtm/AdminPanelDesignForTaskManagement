@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "../styles/memberDashboard.css";
 import memberApi from "../services/memberApi";
 import { getMember } from "../memberAuth";
@@ -18,7 +19,7 @@ function rankLabel(r) {
 }
 
 export default function Home() {
-
+  const navigate = useNavigate();
   const me = getMember(); // from local storage (logged in member)
   const [profile, setProfile] = useState(null);
   const [pErr, setPErr] = useState("");
@@ -60,7 +61,7 @@ const rankText = rankLabel(profile?.ranking);
       icon: "👤",
       photo: "/home/hero-4.png",
       actionLabel: "Open Profile",
-      onClick: () => alert("Later: Open Profile page /profile"),
+      onClick: () => navigate("/profile/complete-guide"),
     },
     {
       t: "Read rules & instructions",
@@ -68,7 +69,7 @@ const rankText = rankLabel(profile?.ranking);
       icon: "📘",
       photo: "/home/hero-1.png",
       actionLabel: "Read Rules",
-      onClick: () => alert("Later: Open Rules page /rules"),
+      onClick: () => navigate("/rules-and-instructions"),
     },
     {
       t: "Do tasks correctly",
@@ -76,7 +77,7 @@ const rankText = rankLabel(profile?.ranking);
       icon: "🧩",
       photo: "/home/profile.png",
       actionLabel: "View Tasks",
-      onClick: () => alert("Later: Open Tasks page /tasks"),
+      onClick: () => navigate("/task-instructions-guide"),
     },
     {
       t: "Request withdrawal",
@@ -84,7 +85,7 @@ const rankText = rankLabel(profile?.ranking);
       icon: "⬇️",
       photo: "/home/winwin.png",
       actionLabel: "Withdraw",
-      onClick: () => alert("Later: Open Withdraw page /withdraw"),
+      onClick: () => navigate("/withdrawal-guide"),
     },
   ];
 
@@ -264,6 +265,18 @@ const rankText = rankLabel(profile?.ranking);
               <article
                 className={`infoPanel lift enter enter-${(idx % 4) + 1}`}
                 key={b.title}
+                onClick={() => {
+                  if (b.title === "Platform Profile") {
+                    navigate("/platform-guide");
+                  } else if (b.title === "Security & Account Safety") {
+                    navigate("/security-account-safety");
+                  } else if (b.title === "Platform Rules") {
+                    navigate("/platform-rules-guide");
+                  }
+                }}
+                style={{
+                  cursor: (b.title === "Platform Profile" || b.title === "Security & Account Safety" || b.title === "Platform Rules") ? "pointer" : "default"
+                }}
               >
                 <div
                   className="infoPanelPhoto"

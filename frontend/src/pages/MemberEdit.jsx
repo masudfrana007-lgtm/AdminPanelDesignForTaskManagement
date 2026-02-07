@@ -51,7 +51,9 @@ function buildPatch(original, form) {
 export default function MemberEdit() {
   const me = getUser();
   const nav = useNavigate();
-  const { id } = useParams();
+  const { memberId } = useParams();
+  const id = memberId; // keep rest of your code unchanged
+
 
   const [loading, setLoading] = useState(true);
   const [orig, setOrig] = useState(null);
@@ -77,6 +79,12 @@ export default function MemberEdit() {
 
   useEffect(() => {
     if (!isOwner) return; // UI guard
+    if (!id) {
+          setErr("Invalid member id in URL");
+          setLoading(false);
+          return;
+        }
+
     (async () => {
       setErr("");
       setOk("");
@@ -131,36 +139,34 @@ export default function MemberEdit() {
     return "";
   };
 
-  const save = async () => {
-    setErr("");
-    setOk("");
+const save = async () => {
+  setErr("");
+  setOk("");
 
-    const v = validate();
-    if (v) return setErr(v);
+  const v = validate();
+  if (v) return setErr(v);
+  if (!orig) return;
 
-    if (!orig) return;
+  const patch = buildPatch(orig, form);
+  if (!Object.keys(patch).length) return setErr("No changes to save");
 
-    const patch = buildPatch(orig, form);
-    if (!Object.keys(patch).length) return setErr("No changes to save");
+  // ✅ confirmation
+  const yes = window.confirm("Save these changes to this member?");
+  if (!yes) return;
 
-    try {
-      await api.patch(`/members/${id}`, patch);
+  try {
+    await api.patch(`/members/${id}`, patch);
 
-      // reload to get fresh data
-      const { data } = await api.get(`/members/${id}`);
-      setOrig(data || null);
-      setForm((f) => ({
-        ...f,
-        new_password: "",
-        confirm_password: "",
-      }));
+    const { data } = await api.get(`/members/${id}`);
+    setOrig(data || null);
+    setForm((f) => ({ ...f, new_password: "", confirm_password: "" }));
 
-      setOk("Saved");
-      setTimeout(() => setOk(""), 1200);
-    } catch (e) {
-      setErr(e?.response?.data?.message || "Save failed");
-    }
-  };
+    setOk("Saved");
+    setTimeout(() => setOk(""), 1200);
+  } catch (e) {
+    setErr(e?.response?.data?.message || "Save failed");
+  }
+};
 
   if (!isOwner) {
     return (

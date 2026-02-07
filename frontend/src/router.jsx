@@ -49,6 +49,34 @@ import WithdrawalRecord from "./pages/WithdrawalRecord";
 
 import MemberEdit from "./pages/MemberEdit";
 
+// import Teams from "./pages/Teams";
+
+// Beneficiary Management
+import BeneficiaryManagement from "./pages/BeneficiaryManagement";
+import AddCryptoBeneficiary from "./pages/AddCryptoBeneficiary";
+import AddBankBeneficiary from "./pages/AddBankBeneficiary";
+
+// Profile Guide
+import CompleteProfileGuide from "./pages/CompleteProfileGuide";
+
+// Rules and Instructions
+import RulesAndInstructions from "./pages/RulesAndInstructions";
+
+// Task Instructions Guide
+import TaskInstructionsGuide from "./pages/TaskInstructionsGuide";
+
+// Withdrawal Guide
+import WithdrawalGuide from "./pages/WithdrawalGuide";
+
+// Platform Guide
+import PlatformGuide from "./pages/PlatformGuide";
+
+// Security Account Safety
+import SecurityAccountSafety from "./pages/SecurityAccountSafety";
+
+// Platform Rules Guide
+import PlatformRulesGuide from "./pages/PlatformRulesGuide";
+
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
   
@@ -350,5 +378,111 @@ export const router = createBrowserRouter([
   )
 },
 
+// {
+//   path: "/member/teams",
+//   element: (
+//     <MemberProtectedRoute>
+//       <Teams />
+//     </MemberProtectedRoute>
+//   ),
+// },
+
+// Beneficiary Management Routes
+{
+  path: "/beneficiary-management",
+  element: (
+    <MemberProtectedRoute>
+      <BeneficiaryManagement />
+    </MemberProtectedRoute>
+  ),
+},
+
+{
+  path: "/beneficiary/add/crypto",
+  element: (
+    <MemberProtectedRoute>
+      <AddCryptoBeneficiary />
+    </MemberProtectedRoute>
+  ),
+},
+
+{
+  path: "/beneficiary/add/bank",
+  element: (
+    <MemberProtectedRoute>
+      <AddBankBeneficiary />
+    </MemberProtectedRoute>
+  ),
+},
+
+// Profile Guide
+{
+  path: "/profile/complete-guide",
+  element: (
+    <MemberProtectedRoute>
+      <CompleteProfileGuide />
+    </MemberProtectedRoute>
+  ),
+},
+
+// Rules and Instructions
+{
+  path: "/rules-and-instructions",
+  element: (
+    <MemberProtectedRoute>
+      <RulesAndInstructions />
+    </MemberProtectedRoute>
+  ),
+},
+
+// Task Instructions Guide
+{
+  path: "/task-instructions-guide",
+  element: (
+    <MemberProtectedRoute>
+      <TaskInstructionsGuide />
+    </MemberProtectedRoute>
+  ),
+},
+
+// Withdrawal Guide
+{
+  path: "/withdrawal-guide",
+  element: (
+    <MemberProtectedRoute>
+      <WithdrawalGuide />
+    </MemberProtectedRoute>
+  ),
+},
+
+// Platform Guide
+{
+  path: "/platform-guide",
+  element: (
+    <MemberProtectedRoute>
+      <PlatformGuide />
+    </MemberProtectedRoute>
+  ),
+},
+
+// Security Account Safety
+{
+  path: "/security-account-safety",
+  element: (
+    <MemberProtectedRoute>
+      <SecurityAccountSafety />
+    </MemberProtectedRoute>
+  ),
+},
+
+// Platform Rules Guide
+{
+  path: "/platform-rules-guide",
+  element: (
+    <MemberProtectedRoute>
+      <PlatformRulesGuide />
+    </MemberProtectedRoute>
+  ),
+},
 
 ]);

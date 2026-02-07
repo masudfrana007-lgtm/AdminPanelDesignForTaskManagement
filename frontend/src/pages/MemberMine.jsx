@@ -14,11 +14,11 @@ import teamIcon from "../assets/icons/team.png";
 import depositIcon from "../assets/icons/deposit-new.png";
 import withdrawalIcon from "../assets/icons/withdrawal-new.png";
 
-import profileIcon from "../assets/icons/profile.png";
-import securityIcon from "../assets/icons/Security.png";
-import settingsIcon from "../assets/icons/settings.png";
-import depositRec1Icon from "../assets/icons/DepositR.png";
-import depositRec2Icon from "../assets/icons/DepositRR.png";
+import profileIcon from "../assets/icons/profile.PNG";
+import securityIcon from "../assets/icons/Security.PNG";
+import settingsIcon from "../assets/icons/settings.PNG";
+import depositRec1Icon from "../assets/icons/DepositR.PNG";
+import depositRec2Icon from "../assets/icons/DepositRR.PNG";
 
 function money(n) {
   const num = Number(n || 0);
@@ -81,36 +81,43 @@ export default function MemberMine() {
   return (
     <div className="minePage">
       <div className="mineContainer">
-        {/* optional (doesn't change design if your css ignores it) */}
         {err && <div className="mineAlert error">{err}</div>}
-
-        {/* ✅ HEADER (same design) */}
         <div className="mine-hero">
-          <div className="mine-hero-top">
-            <div className="mine-avatar">
-              <img
-                src={`https://i.pravatar.cc/150?u=${encodeURIComponent(avatarSeed)}`}
-                alt="User Avatar"
-                className="mine-avatar-img"
-              />
-            </div>
-            <div className="mine-meta">
-              <div className="mine-vip">
-                <span className="mine-vip-pill">{vip}</span>
+          <div className="mine-hero-main">
+            <div className="mine-hero-left">
+              <div className="mine-hero-top">
+                <div className="mine-avatar">
+                  <img
+                    src={`https://i.pravatar.cc/150?u=${encodeURIComponent(avatarSeed)}`}
+                    alt="User Avatar"
+                    className="mine-avatar-img"
+                  />
+                </div>
+                <div className="mine-meta">
+                  <div className="mine-vip">
+                    <span className="mine-vip-pill">{vip}</span>
+                  </div>
+
+                  <div className="mine-ref">
+                    <span className="mine-ref-label">Reference code:</span>
+                    <span className="mine-ref-code">{referenceCode}</span>
+                  </div>
+                </div>
               </div>
 
-              <div className="mine-ref">
-                <span className="mine-ref-label">Reference code:</span>
-                <span className="mine-ref-code">{referenceCode}</span>
+              <div className="mine-balance">
+                <div className="mine-balance-title">My Account</div>
+                <div className="mine-balance-row">
+                  <span className="mine-balance-unit">USDT</span>
+                  <span className="mine-balance-val">{money(balance)}</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="mine-balance">
-            <div className="mine-balance-title">My Account</div>
-            <div className="mine-balance-row">
-              <span className="mine-balance-unit">USDT</span>
-              <span className="mine-balance-val">{money(balance)}</span>
+            <div className="mine-support">
+              <button className="mine-support-btn" onClick={() => nav("/member/service")}>
+                Contact Support
+              </button>
             </div>
           </div>
         </div>
@@ -150,9 +157,9 @@ export default function MemberMine() {
               onClick={() => nav("/profile")}
             />
             <ListItem
-              icon={<img src={withdrawalIcon} alt="Withdrawal Management" className="list-icon-img" />}
-              label="Withdrawal Management"
-              onClick={() => nav("/withdrawal-management")}
+              icon={<img src={withdrawalIcon} alt="Beneficiary Management" className="list-icon-img" />}
+              label="Beneficiary Management"
+              onClick={() => nav("/beneficiary-management")}
             />
             <ListItem
               icon={<img src={settingsIcon} alt="Setting" className="list-icon-img" />}
