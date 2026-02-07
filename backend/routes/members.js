@@ -152,10 +152,44 @@ router.get("/", auth, allowRoles("owner", "agent"), async (req, res) => {
   }
 });
 
-/**
- * UPDATE MEMBER (owner only)
- * - allows editing nickname, phone, country, ranking, withdraw_privilege, gender, approval_status
- */
+// GET /members/:id  (owner only) - for edit page prefill
+router.get("/:id", auth, allowRoles("owner"), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ message: "Invalid member id" });
+
+    const r = await pool.query(
+      `
+      SELECT
+        m.id,
+        m.short_id,
+        m.nickname,
+        m.email,
+        m.phone,
+        m.country,
+        m.ranking,
+        m.withdraw_privilege,
+        m.approval_status,
+        m.gender,
+        m.created_at,
+        m.last_login,
+        u.short_id AS sponsor_short_id
+      FROM members m
+      LEFT JOIN users u ON u.id = m.sponsor_id
+      WHERE m.id = $1
+      `,
+      [id]
+    );
+
+    if (!r.rowCount) return res.status(404).json({ message: "Member not found" });
+    res.json(r.rows[0]);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// UPDATE MEMBER (owner only) - supports password + sponsor change too
 router.patch("/:id", auth, allowRoles("owner"), async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -163,9 +197,14 @@ router.patch("/:id", auth, allowRoles("owner"), async (req, res) => {
 
     const nickname = req.body.nickname != null ? String(req.body.nickname).trim() : null;
     const phone = req.body.phone != null ? String(req.body.phone).trim() : null;
+    const email = req.body.email != null ? String(req.body.email).trim() : null;
     const country = req.body.country != null ? String(req.body.country).trim() : null;
     const ranking = req.body.ranking != null ? String(req.body.ranking).trim() : null;
     const gender = req.body.gender != null ? String(req.body.gender).trim() : null;
+
+    // sponsor can be changed by sponsor_short_id (owner/agent short_id)
+    const sponsor_short_id =
+      req.body.sponsor_short_id != null ? String(req.body.sponsor_short_id).trim() : null;
 
     const withdraw_privilege =
       req.body.withdraw_privilege === undefined ? undefined : !!req.body.withdraw_privilege;
@@ -173,9 +212,13 @@ router.patch("/:id", auth, allowRoles("owner"), async (req, res) => {
     const approval_status =
       req.body.approval_status != null ? String(req.body.approval_status).trim() : null;
 
-    // ✅ only allow safe values (prevent random status/ranking)
+    // password change (optional)
+    const new_password =
+      req.body.new_password != null ? String(req.body.new_password).trim() : null;
+
     const allowedStatuses = ["pending", "approved", "rejected"];
     const allowedRankings = ["Trial", "V1", "V2", "V3", "V4", "V5", "V6"];
+    const allowedGenders = ["male", "female", "other"];
 
     if (approval_status && !allowedStatuses.includes(approval_status)) {
       return res.status(400).json({ message: "Invalid approval_status" });
@@ -183,8 +226,37 @@ router.patch("/:id", auth, allowRoles("owner"), async (req, res) => {
     if (ranking && !allowedRankings.includes(ranking)) {
       return res.status(400).json({ message: "Invalid ranking" });
     }
+    if (gender && !allowedGenders.includes(gender)) {
+      return res.status(400).json({ message: "Invalid gender" });
+    }
 
-    // Build dynamic update query (only update fields provided)
+    // resolve sponsor id (if sponsor_short_id provided)
+    let sponsor_id = null;
+    if (sponsor_short_id !== null) {
+      if (!sponsor_short_id) {
+        sponsor_id = null; // allow clearing sponsor if you want
+      } else {
+        const ref = await pool.query(
+          `SELECT id FROM users WHERE short_id=$1 AND role IN ('owner','agent') LIMIT 1`,
+          [sponsor_short_id]
+        );
+        if (!ref.rowCount) {
+          return res.status(400).json({ message: "Invalid sponsor short id" });
+        }
+        sponsor_id = ref.rows[0].id;
+      }
+    }
+
+    // hash password (if provided)
+    let password_hash = null;
+    if (new_password !== null) {
+      if (new_password.length < 4) {
+        return res.status(400).json({ message: "Password too short" });
+      }
+      password_hash = await bcrypt.hash(new_password, 10);
+    }
+
+    // Build dynamic update
     const sets = [];
     const vals = [];
     let i = 1;
@@ -196,22 +268,28 @@ router.patch("/:id", auth, allowRoles("owner"), async (req, res) => {
 
     if (nickname !== null) add("nickname", nickname);
     if (phone !== null) add("phone", phone);
-    if (country !== null) add("country", country);
+    if (email !== null) add("email", email || null);
+    if (country !== null) add("country", country || null);
     if (ranking !== null) add("ranking", ranking);
     if (gender !== null) add("gender", gender);
     if (approval_status !== null) add("approval_status", approval_status);
     if (withdraw_privilege !== undefined) add("withdraw_privilege", withdraw_privilege);
+    if (sponsor_short_id !== null) add("sponsor_id", sponsor_id); // sponsor_id can become null
+    if (new_password !== null) add("password", password_hash);
 
     if (!sets.length) return res.status(400).json({ message: "No fields to update" });
 
     vals.push(id);
 
     const r = await pool.query(
-      `UPDATE members
-       SET ${sets.join(", ")}
-       WHERE id = $${i}
-       RETURNING id, short_id, nickname, phone, country, sponsor_id,
-                 ranking, withdraw_privilege, approval_status, created_by, created_at, gender`,
+      `
+      UPDATE members
+      SET ${sets.join(", ")}
+      WHERE id = $${i}
+      RETURNING
+        id, short_id, nickname, email, phone, country,
+        ranking, withdraw_privilege, approval_status, gender, sponsor_id, created_at
+      `,
       vals
     );
 
@@ -220,12 +298,9 @@ router.patch("/:id", auth, allowRoles("owner"), async (req, res) => {
     return res.json(r.rows[0]);
   } catch (e) {
     const msg = String(e);
-    if (msg.includes("members_nickname_key")) {
-      return res.status(400).json({ message: "Username already exists" });
-    }
-    if (msg.includes("members_phone_key")) {
-      return res.status(400).json({ message: "Phone number already exists" });
-    }
+    if (msg.includes("members_nickname_key")) return res.status(400).json({ message: "Username already exists" });
+    if (msg.includes("members_phone_key")) return res.status(400).json({ message: "Phone number already exists" });
+    if (msg.includes("members_email_key")) return res.status(400).json({ message: "Email already exists" });
     console.error(e);
     return res.status(500).json({ message: "Server error" });
   }

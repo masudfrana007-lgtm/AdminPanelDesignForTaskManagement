@@ -47,6 +47,8 @@ import CreateMemberWithdrawal from "./pages/CreateMemberWithdrawal";
 import DepositRecord from "./pages/DepositRecord";
 import WithdrawalRecord from "./pages/WithdrawalRecord";
 
+import MemberEdit from "./pages/MemberEdit";
+
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
   
@@ -338,5 +340,15 @@ export const router = createBrowserRouter([
     </MemberProtectedRoute>
   ),
 },
+
+{
+  path: "/members/:memberId/edit",
+  element: (
+    <ProtectedRoute roles={["owner"]}>
+      <MemberEdit />
+    </ProtectedRoute>
+  )
+},
+
 
 ]);

@@ -424,3 +424,20 @@
   align-items: center;
   flex-wrap: wrap;
 }
+
+.grid2{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 900px){
+  .grid2{ grid-template-columns: 1fr; }
+}
+.label{
+  font-size: 12px;
+  opacity: .75;
+  margin-bottom: 6px;
+}
+.input{
+  width: 100%;
+}
