@@ -145,6 +145,50 @@
   color: #fff;
 }
 
+/* Hero main container */
+.mine-hero-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.mine-hero-left {
+  flex: 1;
+}
+
+/* Support button styling */
+.mine-support {
+  display: flex;
+  align-items: flex-start;
+  padding-top: 8px;
+}
+
+.mine-support-btn {
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+  white-space: nowrap;
+}
+
+.mine-support-btn:hover {
+  background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(76, 175, 80, 0.4);
+}
+
+.mine-support-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
 /* Quick actions */
 .mine-actions-wrap {
   margin-top: 18px;
