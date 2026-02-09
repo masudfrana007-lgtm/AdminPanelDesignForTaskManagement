@@ -80,11 +80,18 @@ import PlatformRulesGuide from "./pages/PlatformRulesGuide";
 import SupportInbox from "./pages/SupportInbox";
 import SupportChat from "./pages/SupportChat";
 
+import CsLogin from "./pages/CsLogin";
+
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
   
   { path: "/member/login", element: <MemberLogin /> },
   { path: "/member/signup", element: <MemberSignup /> },
+
+  {
+    path: "/cs/login",
+    element: <CsLogin />,
+  },
 
   { path: "/", element: <ProtectedRoute><Dashboard /></ProtectedRoute> },
 

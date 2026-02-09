@@ -18,6 +18,7 @@ import depositsRoutes from "./routes/deposits.js";
 import withdrawalsRoutes from "./routes/withdrawals.js";
 import supportRoutes from "./routes/support.js";
 import memberSupportRoutes from "./routes/memberSupport.js";
+import csLoginRoutes from "./routes/csLogin.js";
 
 const app = express();
 app.use(cors({
@@ -54,6 +55,7 @@ app.use("/deposits", depositsRoutes);
 app.use("/withdrawals", withdrawalsRoutes);
 app.use("/support", supportRoutes);
 app.use("/member/support", memberSupportRoutes);
+app.use("/cs", csLoginRoutes);
 
 const port = process.env.PORT || 5000;
 app.listen(port, "0.0.0.0", () => {
