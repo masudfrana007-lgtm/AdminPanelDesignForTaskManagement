@@ -1,7 +1,7 @@
 // src/pages/MemberService.jsx
-// ✅ FIXED — uses memberApi interceptor like all other member pages (no manual headers)
+// ✅ FULLY FIXED — efficient polling + no manual headers (memberApi interceptor)
 // ✅ design/layout unchanged
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/memberService.css";
 import MemberBottomNav from "../components/MemberBottomNav";
@@ -15,6 +15,17 @@ function toHHMM(iso) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "--:--";
   return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+}
+
+function safeId(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+// user scroll behavior: only autoscroll if user is near bottom
+function isNearBottom(el, px = 140) {
+  if (!el) return true;
+  return el.scrollHeight - el.scrollTop - el.clientHeight < px;
 }
 
 export default function CustomerService() {
@@ -32,9 +43,18 @@ export default function CustomerService() {
 
   // ✅ DB state
   const [conversationId, setConversationId] = useState(null);
-  const [messages, setMessages] = useState([]); // DB messages (mapped to UI)
-  const [agentTyping, setAgentTyping] = useState(false); // keep UI slot
+  const [messages, setMessages] = useState([]);
+  const [agentTyping, setAgentTyping] = useState(false);
   const [err, setErr] = useState("");
+
+  // ✅ polling refs (no extra renders)
+  const pollTimerRef = useRef(null);
+  const inFlightRef = useRef(false);
+  const aliveRef = useRef(true);
+  const lastSigRef = useRef(""); // signature of latest messages (prevents re-render)
+  const stickToBottomRef = useRef(true);
+  const visRef = useRef(!document.hidden);
+  const focusRef = useRef(document.hasFocus());
 
   const faqs = useMemo(
     () => [
@@ -58,81 +78,184 @@ export default function CustomerService() {
     []
   );
 
-  // ✅ load conversation + messages once (reload page to refresh)
-  useEffect(() => {
-    (async () => {
-      try {
-        setErr("");
+  // ✅ map DB -> UI shape (stable)
+  const mapMsgs = useCallback((arr) => {
+    const a = Array.isArray(arr) ? arr : [];
+    return a.map((m) => ({
+      id: String(m.id),
+      from: m.sender_type === "agent" ? "agent" : "user",
+      kind: m.kind || "text",
+      text: m.text || "",
+      time: toHHMM(m.created_at),
+      status:
+        m.sender_type === "member"
+          ? m.read_by_agent
+            ? "read"
+            : "delivered"
+          : undefined,
+    }));
+  }, []);
 
-        // If token missing, same behavior as other member pages (redirect)
+  // ✅ cheap signature to avoid unnecessary setMessages()
+  const signatureOf = useCallback((arr) => {
+    const a = Array.isArray(arr) ? arr : [];
+    if (!a.length) return "0";
+    const last = a[a.length - 1];
+    return `${a.length}|${last?.id ?? ""}|${last?.created_at ?? ""}|${last?.sender_type ?? ""}|${last?.text ?? ""}`;
+  }, []);
+
+  // ✅ single loader used by polling + initial load + manual reload
+  const loadAll = useCallback(
+    async ({ silent = false } = {}) => {
+      if (inFlightRef.current) return; // prevent overlaps
+      inFlightRef.current = true;
+
+      try {
+        if (!silent) setErr("");
+
         const token = localStorage.getItem("member_token");
         if (!token) {
-          setErr("Session expired. Please login again.");
+          if (!silent) setErr("Session expired. Please login again.");
           nav("/member/login");
           return;
         }
 
-        // 1) get/create conversation (✅ NO manual headers; interceptor handles auth)
-        const { data: convo } = await memberApi.get("/member/support/conversation");
-
-        const cid = convo?.id || null;
-        setConversationId(cid);
-
+        // create/get conversation (only if missing)
+        let cid = conversationId;
         if (!cid) {
-          setErr("Conversation not ready. Please reload.");
-          return;
+          const { data: convo } = await memberApi.get("/member/support/conversation");
+          cid = safeId(convo?.id);
+          if (!cid) {
+            if (!silent) setErr("Conversation not ready. Please reload.");
+            return;
+          }
+          if (!aliveRef.current) return;
+          setConversationId(cid);
         }
 
-        // 2) load messages (✅ NO manual headers)
+        // load messages
         const { data: msgs } = await memberApi.get("/member/support/messages", {
           params: { conversation_id: cid },
         });
 
-        const arr = Array.isArray(msgs) ? msgs : [];
+        const sig = signatureOf(msgs);
+        if (!aliveRef.current) return;
 
-        // map DB -> same UI shape you already use (design unchanged)
-        const mapped = arr.map((m) => ({
-          id: String(m.id),
-          from: m.sender_type === "agent" ? "agent" : "user",
-          kind: m.kind || "text",
-          text: m.text || "",
-          time: toHHMM(m.created_at),
-          status:
-            m.sender_type === "member"
-              ? m.read_by_agent
-                ? "read"
-                : "delivered"
-              : undefined,
-        }));
+        // only update UI if changed
+        if (sig !== lastSigRef.current) {
+          lastSigRef.current = sig;
+          setMessages(mapMsgs(msgs));
 
-        setMessages(mapped);
-
-        // optional: mark agent msgs read by member (✅ NO manual headers)
-        await memberApi
-          .post("/member/support/mark-read", { conversation_id: cid })
-          .catch(() => {});
+          // optional: mark agent msgs read by member (only when changed)
+          memberApi.post("/member/support/mark-read", { conversation_id: cid }).catch(() => {});
+        }
       } catch (e) {
-        setErr(e?.response?.data?.message || "Failed to load support chat");
-        if (e?.response?.status === 401) nav("/member/login");
+        if (!aliveRef.current) return;
+        const status = e?.response?.status;
+        if (!silent) setErr(e?.response?.data?.message || "Failed to load support chat");
+        if (status === 401) nav("/member/login");
+      } finally {
+        inFlightRef.current = false;
       }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    [conversationId, mapMsgs, nav, signatureOf]
+  );
+
+  // ✅ scroll listener (so polling doesn't yank user to bottom)
+  useEffect(() => {
+    const el = chatRef.current;
+    if (!el) return;
+
+    const onScroll = () => {
+      stickToBottomRef.current = isNearBottom(el);
+    };
+
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Auto scroll (same as yours)
+  // ✅ auto-scroll only when user is near bottom
   useEffect(() => {
-    if (!chatRef.current) return;
-    chatRef.current.scrollTo({ top: chatRef.current.scrollHeight, behavior: "smooth" });
+    const el = chatRef.current;
+    if (!el) return;
+    if (stickToBottomRef.current) {
+      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    }
   }, [messages, agentTyping]);
 
-  // ✅ clear chat (same UI; just reload)
+  // ✅ adaptive polling: fast when visible/focused, slower when hidden
+  useEffect(() => {
+    aliveRef.current = true;
+
+    const pickInterval = () => {
+      // fast when user is looking at chat, slow otherwise (saves server)
+      const visible = visRef.current;
+      const focused = focusRef.current;
+      if (channel !== "direct") return 12000; // telegram tab: slow
+      if (visible && focused) return 2000;    // best UX
+      if (visible && !focused) return 5000;   // tab visible but not focused
+      return 15000;                           // hidden
+    };
+
+    const tick = async () => {
+      if (!aliveRef.current) return;
+      await loadAll({ silent: true });
+      // schedule next tick with latest interval (adaptive)
+      const ms = pickInterval();
+      pollTimerRef.current = setTimeout(tick, ms);
+    };
+
+    // watch tab visibility/focus to adapt interval immediately
+    const onVis = () => {
+      visRef.current = !document.hidden;
+      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+      pollTimerRef.current = setTimeout(tick, 0);
+    };
+    const onFocus = () => {
+      focusRef.current = true;
+      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+      pollTimerRef.current = setTimeout(tick, 0);
+    };
+    const onBlur = () => {
+      focusRef.current = false;
+      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+      pollTimerRef.current = setTimeout(tick, 0);
+    };
+
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("blur", onBlur);
+
+    // initial load (not silent so errors show)
+    loadAll({ silent: false }).finally(() => {
+      if (!aliveRef.current) return;
+      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+      pollTimerRef.current = setTimeout(tick, 0);
+    });
+
+    return () => {
+      aliveRef.current = false;
+      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("blur", onBlur);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [channel, loadAll]);
+
+  // ✅ keep your UI buttons but avoid full reload (more efficient than reload)
   const clearChat = () => {
+    // you don't have a delete endpoint; keep same behavior:
     window.location.reload();
   };
 
-  const reloadPage = () => window.location.reload();
+  const reloadPage = () => {
+    // efficient reload (no page refresh)
+    lastSigRef.current = ""; // force update even if signature same
+    loadAll({ silent: false });
+  };
 
-  // ✅ Send message to DB then reload (✅ NO manual headers)
+  // ✅ Send message to DB then refresh messages (no full reload)
   const sendText = async () => {
     const text = message.trim();
     if (!text) return;
@@ -154,14 +277,29 @@ export default function CustomerService() {
 
     try {
       await memberApi.post("/member/support/send", { conversation_id: conversationId, text });
-      reloadPage();
+
+      // fast UX: optimistically append (optional)
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `local-${Date.now()}`,
+          from: "user",
+          kind: "text",
+          text,
+          time: toHHMM(new Date().toISOString()),
+          status: "delivered",
+        },
+      ]);
+
+      // then pull from server to keep canonical order/ids
+      lastSigRef.current = "";
+      await loadAll({ silent: true });
     } catch (e) {
       setErr(e?.response?.data?.message || "Failed to send message");
       if (e?.response?.status === 401) nav("/member/login");
     }
   };
 
-  // ✅ keep UI icons, but no upload needed
   const addFileMessage = () => {
     setErr("Upload is not available right now. Please send text only.");
   };

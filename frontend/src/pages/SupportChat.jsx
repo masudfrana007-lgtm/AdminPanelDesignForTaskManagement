@@ -1,5 +1,7 @@
 // src/pages/SupportChat.jsx
-import { useEffect, useRef, useState } from "react";
+// ✅ Added efficient adaptive polling (no backend change)
+// ✅ No design/layout change
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api";
 import CsLayout from "../components/CsLayout";
@@ -21,6 +23,12 @@ function getToken() {
   return String(raw).replace(/^bearer\s+/i, "").replace(/^"|"$/g, "").trim();
 }
 
+// only autoscroll if user is near bottom
+function isNearBottom(el, px = 140) {
+  if (!el) return true;
+  return el.scrollHeight - el.scrollTop - el.clientHeight < px;
+}
+
 export default function SupportChat() {
   const nav = useNavigate();
   const { id } = useParams();
@@ -34,67 +42,164 @@ export default function SupportChat() {
 
   const chatRef = useRef(null);
 
-  // ✅ always pass Authorization explicitly (even though interceptor exists)
+  // ✅ polling internals
+  const pollTimerRef = useRef(null);
+  const inFlightRef = useRef(false);
+  const aliveRef = useRef(true);
+  const lastSigRef = useRef(""); // prevent useless re-render
+  const stickToBottomRef = useRef(true);
+  const visRef = useRef(!document.hidden);
+  const focusRef = useRef(document.hasFocus());
+
   function authHeaders() {
     const t = getToken();
     return t ? { Authorization: `Bearer ${t}` } : {};
   }
 
-  const load = async () => {
-    setErr("");
+  const signatureOf = useCallback((arr) => {
+    const a = Array.isArray(arr) ? arr : [];
+    if (!a.length) return "0";
+    const last = a[a.length - 1];
+    return `${a.length}|${last?.id ?? ""}|${last?.created_at ?? ""}|${last?.sender_type ?? ""}|${last?.text ?? ""}`;
+  }, []);
 
-    const t = getToken();
-    if (!t) {
-      nav("/cs/login");
-      return;
-    }
-    if (!Number.isFinite(convoId)) {
-      setErr("Invalid conversation id");
-      return;
-    }
+  const load = useCallback(
+    async ({ silent = false } = {}) => {
+      if (inFlightRef.current) return;
+      inFlightRef.current = true;
 
-    setLoading(true);
-    try {
-      const { data } = await api.get(`/support/conversations/${convoId}/messages`, {
-        headers: authHeaders(),
-      });
-      setMessages(Array.isArray(data) ? data : []);
-    } catch (e) {
-      const status = e?.response?.status;
-      setErr(e?.response?.data?.message || `Failed to load messages`);
-      setMessages([]);
+      if (!silent) setErr("");
 
-      // ✅ show the real error in console too
-      console.log("LOAD ERROR:", status, e?.response?.data, e);
-
-      if (status === 401) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
+      const t = getToken();
+      if (!t) {
         nav("/cs/login");
+        inFlightRef.current = false;
+        return;
       }
-    } finally {
-      setLoading(false);
+      if (!Number.isFinite(convoId)) {
+        if (!silent) setErr("Invalid conversation id");
+        inFlightRef.current = false;
+        return;
+      }
+
+      if (!silent) setLoading(true);
+
+      try {
+        const { data } = await api.get(`/support/conversations/${convoId}/messages`, {
+          headers: authHeaders(),
+        });
+
+        const arr = Array.isArray(data) ? data : [];
+        const sig = signatureOf(arr);
+
+        if (!aliveRef.current) return;
+
+        if (sig !== lastSigRef.current) {
+          lastSigRef.current = sig;
+          setMessages(arr);
+
+          // mark read only when something changed (best-effort)
+          api
+            .post(`/support/conversations/${convoId}/mark-read`, {}, { headers: authHeaders() })
+            .catch(() => {});
+        }
+      } catch (e) {
+        if (!aliveRef.current) return;
+        const status = e?.response?.status;
+
+        if (!silent) {
+          setErr(e?.response?.data?.message || "Failed to load messages");
+          console.log("LOAD ERROR:", status, e?.response?.data, e);
+        }
+
+        if (status === 401) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          nav("/cs/login");
+        }
+      } finally {
+        if (!silent) setLoading(false);
+        inFlightRef.current = false;
+      }
+    },
+    [convoId, nav, signatureOf]
+  );
+
+  // ✅ keep track of whether user is near bottom (polling won't yank)
+  useEffect(() => {
+    const el = chatRef.current;
+    if (!el) return;
+
+    const onScroll = () => {
+      stickToBottomRef.current = isNearBottom(el);
+    };
+
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // ✅ auto scroll only when user is near bottom
+  useEffect(() => {
+    const el = chatRef.current;
+    if (!el) return;
+    if (stickToBottomRef.current) {
+      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
     }
-  };
-
-  useEffect(() => {
-    if (!Number.isFinite(convoId)) return;
-
-    (async () => {
-      await load();
-
-      // mark read (best-effort)
-      await api
-        .post(`/support/conversations/${convoId}/mark-read`, {}, { headers: authHeaders() })
-        .catch((e) => console.log("MARK-READ ERROR:", e?.response?.status, e?.response?.data, e));
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [convoId]);
-
-  useEffect(() => {
-    if (!chatRef.current) return;
-    chatRef.current.scrollTo({ top: chatRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
+
+  // ✅ adaptive polling (2s focused, 5s visible, 15s hidden)
+  useEffect(() => {
+    aliveRef.current = true;
+
+    const pickInterval = () => {
+      if (!Number.isFinite(convoId)) return 8000;
+      if (sending) return 4000; // while sending, slightly slower to avoid overlapping
+      if (visRef.current && focusRef.current) return 2000;
+      if (visRef.current && !focusRef.current) return 5000;
+      return 15000;
+    };
+
+    const tick = async () => {
+      if (!aliveRef.current) return;
+      await load({ silent: true });
+      pollTimerRef.current = setTimeout(tick, pickInterval());
+    };
+
+    const onVis = () => {
+      visRef.current = !document.hidden;
+      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+      pollTimerRef.current = setTimeout(tick, 0);
+    };
+    const onFocus = () => {
+      focusRef.current = true;
+      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+      pollTimerRef.current = setTimeout(tick, 0);
+    };
+    const onBlur = () => {
+      focusRef.current = false;
+      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+      pollTimerRef.current = setTimeout(tick, 0);
+    };
+
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("blur", onBlur);
+
+    // initial visible load
+    load({ silent: false }).finally(() => {
+      if (!aliveRef.current) return;
+      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+      pollTimerRef.current = setTimeout(tick, 0);
+    });
+
+    return () => {
+      aliveRef.current = false;
+      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("blur", onBlur);
+    };
+  }, [convoId, load, sending]);
 
   const send = async () => {
     const msg = text.trim();
@@ -123,18 +228,18 @@ export default function SupportChat() {
       );
 
       setText("");
-      await load(); // ✅ refresh without reloading the page
+
+      // ✅ refresh instantly (no full reload)
+      lastSigRef.current = "";
+      await load({ silent: true });
     } catch (e) {
       const status = e?.response?.status;
-  const data = e?.response?.data;
-  const msg =
-    (typeof data === "string" ? data : data?.message) ||
-    e?.message ||
-    "Failed to send reply";
+      const data = e?.response?.data;
+      const msg2 =
+        (typeof data === "string" ? data : data?.message) || e?.message || "Failed to send reply";
 
-  console.log("SEND ERROR FULL:", { status, data, e });
-
-  setErr(`(${status || "?"}) ${msg}`);
+      console.log("SEND ERROR FULL:", { status, data, e });
+      setErr(`(${status || "?"}) ${msg2}`);
 
       if (status === 401) {
         localStorage.removeItem("token");
@@ -154,7 +259,7 @@ export default function SupportChat() {
             ← Back
           </button>
 
-          <button className="btn" type="button" onClick={load} disabled={loading}>
+          <button className="btn" type="button" onClick={() => load({ silent: false })} disabled={loading}>
             {loading ? "Loading..." : "Reload"}
           </button>
 
