@@ -63,7 +63,7 @@ router.post("/conversations/:id/reply", async (req, res) => {
   const msg = String(req.body?.text || "").trim();
 
   if (!Number.isFinite(conversationId)) return res.status(400).json({ message: "Invalid id" });
-  if (!userId) return res.status(401).json({ message: "Unauthorized" });
+  if (userId == null) return res.status(401).json({ message: "Unauthorized" });
   if (!msg) return res.status(400).json({ message: "Message is empty" });
 
   const ins = await pool.query(

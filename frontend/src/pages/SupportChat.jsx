@@ -1,7 +1,8 @@
+// src/pages/SupportChat.jsx
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api";
-import AppLayout from "../components/AppLayout";
+import CsLayout from "../components/CsLayout";
 import "../styles/app.css";
 
 function pad2(x) {
@@ -13,9 +14,21 @@ function toHHMM(iso) {
   return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 }
 
+// ✅ same key you store in CsLogin.jsx
+function getToken() {
+  const raw = localStorage.getItem("token");
+  if (!raw) return "";
+  return String(raw).replace(/^bearer\s+/i, "").replace(/^"|"$/g, "").trim();
+}
+
+function authHeaders() {
+  const t = getToken();
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
+
 export default function SupportChat() {
   const nav = useNavigate();
-  const { id } = useParams(); // conversation id
+  const { id } = useParams();
   const convoId = Number(id);
 
   const [messages, setMessages] = useState([]);
@@ -26,21 +39,41 @@ export default function SupportChat() {
 
   const load = async () => {
     setErr("");
+
+    const t = getToken();
+    if (!t) {
+      nav("/cs/login");
+      return;
+    }
+
     try {
-      const { data } = await api.get(`/support/conversations/${convoId}/messages`);
+      const { data } = await api.get(`/support/conversations/${convoId}/messages`, {
+        headers: authHeaders(),
+      });
       setMessages(Array.isArray(data) ? data : []);
     } catch (e) {
+      const status = e?.response?.status;
       setErr(e?.response?.data?.message || "Failed to load messages");
       setMessages([]);
+
+      if (status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        nav("/cs/login");
+      }
     }
   };
 
   useEffect(() => {
     if (!Number.isFinite(convoId)) return;
+
     (async () => {
       await load();
-      // mark all member messages as read by agent (no polling)
-      await api.post(`/support/conversations/${convoId}/mark-read`).catch(() => {});
+
+      // mark read (also force header)
+      await api
+        .post(`/support/conversations/${convoId}/mark-read`, {}, { headers: authHeaders() })
+        .catch(() => {});
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [convoId]);
@@ -53,22 +86,46 @@ export default function SupportChat() {
   const send = async () => {
     const msg = text.trim();
     if (!msg) return;
+
     setErr("");
-    setText("");
+
+    const t = getToken();
+    if (!t) {
+      nav("/cs/login");
+      return;
+    }
+
     try {
-      await api.post(`/support/conversations/${convoId}/reply`, { text: msg });
-      window.location.reload(); // ✅ your workflow
+      await api.post(
+        `/support/conversations/${convoId}/reply`,
+        { text: msg },
+        { headers: authHeaders() } // ✅ force auth on POST
+      );
+
+      setText("");
+      window.location.reload(); // keep your workflow
     } catch (e) {
+      const status = e?.response?.status;
       setErr(e?.response?.data?.message || "Failed to send reply");
+
+      if (status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        nav("/cs/login");
+      }
     }
   };
 
   return (
-    <AppLayout title="Support Chat">
+    <CsLayout title="Support Chat">
       <div className="card" style={{ padding: 16 }}>
         <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12 }}>
-          <button className="btn" type="button" onClick={() => nav(-1)}>← Back</button>
-          <button className="btn" type="button" onClick={load}>Reload</button>
+          <button className="btn" type="button" onClick={() => nav(-1)}>
+            ← Back
+          </button>
+          <button className="btn" type="button" onClick={load}>
+            Reload
+          </button>
           {err ? <div style={{ color: "#b91c1c" }}>{err}</div> : null}
         </div>
 
@@ -130,6 +187,6 @@ export default function SupportChat() {
           </button>
         </div>
       </div>
-    </AppLayout>
+    </CsLayout>
   );
 }
