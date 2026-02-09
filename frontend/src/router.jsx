@@ -77,6 +77,9 @@ import SecurityAccountSafety from "./pages/SecurityAccountSafety";
 // Platform Rules Guide
 import PlatformRulesGuide from "./pages/PlatformRulesGuide";
 
+import SupportInbox from "./pages/SupportInbox";
+import SupportChat from "./pages/SupportChat";
+
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
   
@@ -482,6 +485,24 @@ export const router = createBrowserRouter([
     <MemberProtectedRoute>
       <PlatformRulesGuide />
     </MemberProtectedRoute>
+  ),
+},
+
+{
+  path: "/support",
+  element: (
+    <ProtectedRoute roles={["admin", "owner", "agent"]}>
+      <SupportInbox />
+    </ProtectedRoute>
+  ),
+},
+
+{
+  path: "/support/:id",
+  element: (
+    <ProtectedRoute roles={["admin", "owner", "agent"]}>
+      <SupportChat />
+    </ProtectedRoute>
   ),
 },
 
