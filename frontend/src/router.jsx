@@ -52,7 +52,8 @@ import MemberEdit from "./pages/MemberEdit";
 // import Teams from "./pages/Teams";
 
 // Beneficiary Management
-import BeneficiaryManagement from "./pages/BeneficiaryManagement";
+import Beneficiaries from "./pages/Beneficiaries";
+//import BeneficiaryManagement from "./pages/BeneficiaryManagement";
 import AddCryptoBeneficiary from "./pages/AddCryptoBeneficiary";
 import AddBankBeneficiary from "./pages/AddBankBeneficiary";
 
@@ -398,11 +399,20 @@ export const router = createBrowserRouter([
 // },
 
 // Beneficiary Management Routes
+// {
+//   path: "/beneficiary-management",
+//   element: (
+//     <MemberProtectedRoute>
+//       <BeneficiaryManagement />
+//     </MemberProtectedRoute>
+//   ),
+// },
+
 {
   path: "/beneficiary-management",
   element: (
     <MemberProtectedRoute>
-      <BeneficiaryManagement />
+      <Beneficiaries />
     </MemberProtectedRoute>
   ),
 },
