@@ -73,11 +73,49 @@ import SecurityAccountSafety from "./pages/SecurityAccountSafety";
 // Platform Rules Guide
 import PlatformRulesGuide from "./pages/PlatformRulesGuide";
 
+// import Teams from "./pages/Teams";
+
+// Beneficiary Management
+import BeneficiaryManagement from "./pages/BeneficiaryManagement";
+import AddCryptoBeneficiary from "./pages/AddCryptoBeneficiary";
+import AddBankBeneficiary from "./pages/AddBankBeneficiary";
+
+// Profile Guide
+import CompleteProfileGuide from "./pages/CompleteProfileGuide";
+
+// Rules and Instructions
+import RulesAndInstructions from "./pages/RulesAndInstructions";
+
+// Task Instructions Guide
+import TaskInstructionsGuide from "./pages/TaskInstructionsGuide";
+
+// Withdrawal Guide
+import WithdrawalGuide from "./pages/WithdrawalGuide";
+
+// Platform Guide
+import PlatformGuide from "./pages/PlatformGuide";
+
+// Security Account Safety
+import SecurityAccountSafety from "./pages/SecurityAccountSafety";
+
+// Platform Rules Guide
+import PlatformRulesGuide from "./pages/PlatformRulesGuide";
+
+import SupportInbox from "./pages/SupportInbox";
+import SupportChat from "./pages/SupportChat";
+
+import CsLogin from "./pages/CsLogin";
+
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
   
   { path: "/member/login", element: <MemberLogin /> },
   { path: "/member/signup", element: <MemberSignup /> },
+
+  {
+    path: "/cs/login",
+    element: <CsLogin />,
+  },
 
   { path: "/", element: <ProtectedRoute><Dashboard /></ProtectedRoute> },
 
@@ -385,6 +423,28 @@ export const router = createBrowserRouter([
   ),
 },
 
+<<<<<<< HEAD
+=======
+// {
+//   path: "/member/teams",
+//   element: (
+//     <MemberProtectedRoute>
+//       <Teams />
+//     </MemberProtectedRoute>
+//   ),
+// },
+
+// Beneficiary Management Routes
+{
+  path: "/beneficiary-management",
+  element: (
+    <MemberProtectedRoute>
+      <BeneficiaryManagement />
+    </MemberProtectedRoute>
+  ),
+},
+
+>>>>>>> 1ba30e45ec52d38adc53c791d3522916f3da5b0c
 {
   path: "/beneficiary/add/crypto",
   element: (
@@ -425,7 +485,11 @@ export const router = createBrowserRouter([
 
 // Task Instructions Guide
 {
+<<<<<<< HEAD
   path: "/task-instructions-guide", 
+=======
+  path: "/task-instructions-guide",
+>>>>>>> 1ba30e45ec52d38adc53c791d3522916f3da5b0c
   element: (
     <MemberProtectedRoute>
       <TaskInstructionsGuide />
@@ -435,7 +499,11 @@ export const router = createBrowserRouter([
 
 // Withdrawal Guide
 {
+<<<<<<< HEAD
   path: "/withdrawal-guide", 
+=======
+  path: "/withdrawal-guide",
+>>>>>>> 1ba30e45ec52d38adc53c791d3522916f3da5b0c
   element: (
     <MemberProtectedRoute>
       <WithdrawalGuide />
@@ -445,7 +513,11 @@ export const router = createBrowserRouter([
 
 // Platform Guide
 {
+<<<<<<< HEAD
   path: "/platform-guide", 
+=======
+  path: "/platform-guide",
+>>>>>>> 1ba30e45ec52d38adc53c791d3522916f3da5b0c
   element: (
     <MemberProtectedRoute>
       <PlatformGuide />
@@ -455,7 +527,11 @@ export const router = createBrowserRouter([
 
 // Security Account Safety
 {
+<<<<<<< HEAD
   path: "/security-account-safety", 
+=======
+  path: "/security-account-safety",
+>>>>>>> 1ba30e45ec52d38adc53c791d3522916f3da5b0c
   element: (
     <MemberProtectedRoute>
       <SecurityAccountSafety />
@@ -465,12 +541,33 @@ export const router = createBrowserRouter([
 
 // Platform Rules Guide
 {
+<<<<<<< HEAD
   path: "/platform-rules-guide", 
+=======
+  path: "/platform-rules-guide",
+>>>>>>> 1ba30e45ec52d38adc53c791d3522916f3da5b0c
   element: (
     <MemberProtectedRoute>
       <PlatformRulesGuide />
     </MemberProtectedRoute>
   ),
 },
+<<<<<<< HEAD
+=======
+
+{
+  path: "/support",
+  element: (
+      <SupportInbox />
+  ),
+},
+
+{
+  path: "/support/:id",
+  element: (
+      <SupportChat />
+  ),
+},
+>>>>>>> 1ba30e45ec52d38adc53c791d3522916f3da5b0c
 
 ]);

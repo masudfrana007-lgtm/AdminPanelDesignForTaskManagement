@@ -1,17 +1,21 @@
+// src/pages/MemberService.jsx
+// ✅ FIXED — uses memberApi interceptor like all other member pages (no manual headers)
+// ✅ design/layout unchanged
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/memberService.css";
 import MemberBottomNav from "../components/MemberBottomNav";
+import memberApi from "../services/memberApi";
 
 function pad2(x) {
   return String(x).padStart(2, "0");
 }
-function nowTime() {
-  const d = new Date();
+
+function toHHMM(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "--:--";
   return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 }
-
-const LS_KEY = "customer_service_chat_pro_v1";
 
 export default function CustomerService() {
   const nav = useNavigate();
@@ -25,6 +29,12 @@ export default function CustomerService() {
 
   const TELEGRAM_USERNAME = "@YourSupport";
   const TELEGRAM_LINK = "https://t.me/YourSupport";
+
+  // ✅ DB state
+  const [conversationId, setConversationId] = useState(null);
+  const [messages, setMessages] = useState([]); // DB messages (mapped to UI)
+  const [agentTyping, setAgentTyping] = useState(false); // keep UI slot
+  const [err, setErr] = useState("");
 
   const faqs = useMemo(
     () => [
@@ -48,143 +58,112 @@ export default function CustomerService() {
     []
   );
 
-  const seeded = useMemo(
-    () => [
-      {
-        id: "a1",
-        from: "agent",
-        kind: "text",
-        text: "Hello 👋 How can I help you today?",
-        time: "09:12",
-      },
-      {
-        id: "u1",
-        from: "user",
-        kind: "text",
-        text: "My deposit is not showing yet.",
-        time: "09:13",
-        status: "read", // sent | delivered | read
-      },
-      {
-        id: "a2",
-        from: "agent",
-        kind: "text",
-        text: "Please share TXID and network. A screenshot also helps.",
-        time: "09:14",
-      },
-    ],
-    []
-  );
-
-  const [messages, setMessages] = useState(seeded);
-  const [agentTyping, setAgentTyping] = useState(false);
-
-  // Load chat
+  // ✅ load conversation + messages once (reload page to refresh)
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(LS_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) setMessages(parsed);
+    (async () => {
+      try {
+        setErr("");
+
+        // If token missing, same behavior as other member pages (redirect)
+        const token = localStorage.getItem("member_token");
+        if (!token) {
+          setErr("Session expired. Please login again.");
+          nav("/member/login");
+          return;
+        }
+
+        // 1) get/create conversation (✅ NO manual headers; interceptor handles auth)
+        const { data: convo } = await memberApi.get("/member/support/conversation");
+
+        const cid = convo?.id || null;
+        setConversationId(cid);
+
+        if (!cid) {
+          setErr("Conversation not ready. Please reload.");
+          return;
+        }
+
+        // 2) load messages (✅ NO manual headers)
+        const { data: msgs } = await memberApi.get("/member/support/messages", {
+          params: { conversation_id: cid },
+        });
+
+        const arr = Array.isArray(msgs) ? msgs : [];
+
+        // map DB -> same UI shape you already use (design unchanged)
+        const mapped = arr.map((m) => ({
+          id: String(m.id),
+          from: m.sender_type === "agent" ? "agent" : "user",
+          kind: m.kind || "text",
+          text: m.text || "",
+          time: toHHMM(m.created_at),
+          status:
+            m.sender_type === "member"
+              ? m.read_by_agent
+                ? "read"
+                : "delivered"
+              : undefined,
+        }));
+
+        setMessages(mapped);
+
+        // optional: mark agent msgs read by member (✅ NO manual headers)
+        await memberApi
+          .post("/member/support/mark-read", { conversation_id: cid })
+          .catch(() => {});
+      } catch (e) {
+        setErr(e?.response?.data?.message || "Failed to load support chat");
+        if (e?.response?.status === 401) nav("/member/login");
       }
-    } catch {
-      // ignore
-    }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Save chat
-  useEffect(() => {
-    try {
-      localStorage.setItem(LS_KEY, JSON.stringify(messages));
-    } catch {
-      // ignore
-    }
-  }, [messages]);
-
-  // Auto scroll
+  // Auto scroll (same as yours)
   useEffect(() => {
     if (!chatRef.current) return;
     chatRef.current.scrollTo({ top: chatRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, agentTyping]);
 
+  // ✅ clear chat (same UI; just reload)
   const clearChat = () => {
-    localStorage.removeItem(LS_KEY);
-    setMessages(seeded);
+    window.location.reload();
   };
 
-  // Simulate user message status updates: sent -> delivered -> read
-  const simulateStatus = (msgId) => {
-    // delivered
-    setTimeout(() => {
-      setMessages((prev) =>
-        prev.map((m) => (m.id === msgId ? { ...m, status: "delivered" } : m))
-      );
-    }, 450);
+  const reloadPage = () => window.location.reload();
 
-    // read
-    setTimeout(() => {
-      setMessages((prev) =>
-        prev.map((m) => (m.id === msgId ? { ...m, status: "read" } : m))
-      );
-    }, 1000);
-  };
-
-  const agentAutoReply = (text) => {
-    setAgentTyping(true);
-    setTimeout(() => {
-      setAgentTyping(false);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: "a-" + Date.now(),
-          from: "agent",
-          kind: "text",
-          text,
-          time: nowTime(),
-        },
-      ]);
-    }, 1100);
-  };
-
-  const sendText = () => {
+  // ✅ Send message to DB then reload (✅ NO manual headers)
+  const sendText = async () => {
     const text = message.trim();
     if (!text) return;
 
-    const id = "u-" + Date.now();
-    const userMsg = {
-      id,
-      from: "user",
-      kind: "text",
-      text,
-      time: nowTime(),
-      status: "sent",
-    };
+    const token = localStorage.getItem("member_token");
+    if (!token) {
+      setErr("Session expired. Please login again.");
+      nav("/member/login");
+      return;
+    }
 
-    setMessages((prev) => [...prev, userMsg]);
+    if (!conversationId) {
+      setErr("Conversation not ready. Please reload.");
+      return;
+    }
+
+    setErr("");
     setMessage("");
 
-    simulateStatus(id);
-    agentAutoReply("Thanks. Please confirm the network (TRC20 / ERC20) and attach a screenshot if available.");
+    try {
+      await memberApi.post("/member/support/send", { conversation_id: conversationId, text });
+      reloadPage();
+    } catch (e) {
+      setErr(e?.response?.data?.message || "Failed to send message");
+      if (e?.response?.status === 401) nav("/member/login");
+    }
   };
 
-  const addFileMessage = (file, kind) => {
-    if (!file) return;
-
-    const id = "f-" + Date.now();
-    const msg = {
-      id,
-      from: "user",
-      kind, // "photo" | "file"
-      name: file.name,
-      size: file.size,
-      time: nowTime(),
-      status: "sent",
-    };
-
-    setMessages((prev) => [...prev, msg]);
-    simulateStatus(id);
-
-    agentAutoReply("Received. We are reviewing your attachment now.");
+  // ✅ keep UI icons, but no upload needed
+  const addFileMessage = () => {
+    setErr("Upload is not available right now. Please send text only.");
   };
 
   const statusIcon = (status) => {
@@ -215,11 +194,17 @@ export default function CustomerService() {
             Help Center
           </button>
 
+          <button className="cs-headBtn" type="button" onClick={reloadPage}>
+            Reload
+          </button>
+
           <button className="cs-headBtn" type="button" onClick={clearChat}>
             Clear
           </button>
         </div>
       </header>
+
+      {err ? <div style={{ padding: "10px 18px", color: "#b91c1c" }}>{err}</div> : null}
 
       {/* Switch */}
       <section className="cs-switchWrap">
@@ -249,7 +234,6 @@ export default function CustomerService() {
         <section className="cs-main">
           {channel === "direct" ? (
             <>
-              {/* ✅ Agent profile header */}
               <div className="cs-agentBar">
                 <div className="cs-agentAvatar">RS</div>
                 <div className="cs-agentMeta">
@@ -276,9 +260,7 @@ export default function CustomerService() {
                           <div className="cs-fileIcon">🖼️</div>
                           <div className="cs-fileBody">
                             <div className="cs-fileName">{m.name}</div>
-                            <div className="cs-fileMeta">
-                              Photo • {(m.size / 1024).toFixed(1)} KB
-                            </div>
+                            <div className="cs-fileMeta">Photo</div>
                           </div>
                         </div>
                       )}
@@ -288,9 +270,7 @@ export default function CustomerService() {
                           <div className="cs-fileIcon">📄</div>
                           <div className="cs-fileBody">
                             <div className="cs-fileName">{m.name}</div>
-                            <div className="cs-fileMeta">
-                              Document • {(m.size / 1024).toFixed(1)} KB
-                            </div>
+                            <div className="cs-fileMeta">Document</div>
                           </div>
                         </div>
                       )}
@@ -298,7 +278,6 @@ export default function CustomerService() {
                       <div className="cs-metaRow">
                         <span className="cs-time">{m.time}</span>
 
-                        {/* ✅ Read status only for user */}
                         {m.from === "user" && (
                           <span className={"cs-read " + (m.status === "read" ? "is-read" : "")}>
                             {statusIcon(m.status)}
@@ -306,7 +285,6 @@ export default function CustomerService() {
                         )}
                       </div>
 
-                      {/* bubble tail */}
                       <span className="cs-tail" aria-hidden="true" />
                     </div>
                   </div>
@@ -325,9 +303,8 @@ export default function CustomerService() {
                 )}
               </div>
 
-              {/* ✅ Sticky input + safe area */}
               <footer className="cs-inputBar">
-                <button className="cs-iconBtn" type="button" title="Upload photo" onClick={() => photoInputRef.current?.click()}>
+                <button className="cs-iconBtn" type="button" title="Upload photo" onClick={addFileMessage}>
                   📷
                 </button>
                 <input
@@ -335,10 +312,10 @@ export default function CustomerService() {
                   type="file"
                   accept="image/*"
                   style={{ display: "none" }}
-                  onChange={(e) => addFileMessage(e.target.files?.[0], "photo")}
+                  onChange={() => addFileMessage()}
                 />
 
-                <button className="cs-iconBtn" type="button" title="Upload document" onClick={() => fileInputRef.current?.click()}>
+                <button className="cs-iconBtn" type="button" title="Upload document" onClick={addFileMessage}>
                   📎
                 </button>
                 <input
@@ -346,7 +323,7 @@ export default function CustomerService() {
                   type="file"
                   accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
                   style={{ display: "none" }}
-                  onChange={(e) => addFileMessage(e.target.files?.[0], "file")}
+                  onChange={() => addFileMessage()}
                 />
 
                 <input
@@ -365,7 +342,6 @@ export default function CustomerService() {
             </>
           ) : (
             <div className="cs-telegramCardWrap">
-              {/* ✅ Verified channel card */}
               <div className="cs-tgCard">
                 <div className="cs-tgTop">
                   <div className="cs-tgLogo">✈️</div>
@@ -415,7 +391,6 @@ export default function CustomerService() {
         </section>
       </main>
 
-      {/* ✅ Help Center Modal */}
       {helpOpen && (
         <div className="cs-modalOverlay" role="dialog" aria-modal="true">
           <div className="cs-modal">
@@ -456,9 +431,7 @@ export default function CustomerService() {
         </div>
       )}
 
-      {/* keep bottom bar exactly */}
       <MemberBottomNav active="service" />
-
     </div>
   );
 }
