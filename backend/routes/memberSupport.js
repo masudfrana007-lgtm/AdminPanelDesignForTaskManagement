@@ -2,16 +2,13 @@
 import express from "express";
 import { pool } from "../db.js";
 import { memberAuth } from "../middleware/memberAuth.js";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 
 const router = express.Router();
 
-// helper: support multiple middleware shapes safely
 function getMemberId(req) {
-  // common shapes:
-  // req.member = { member_id, ... }  (your JWT payload)
-  // req.member = { id, ... }
-  // req.memberId = ...
-  // req.user = { member_id / id } (if reused middleware)
   return (
     req.member?.member_id ||
     req.member?.id ||
@@ -22,7 +19,51 @@ function getMemberId(req) {
   );
 }
 
-// ✅ create / get conversation for this member
+// ---------- upload setup ----------
+function ensureDir(dir) {
+  fs.mkdirSync(dir, { recursive: true });
+}
+
+// store: uploads/chats/member/<memberId>/<conversationId>/
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const memberId = getMemberId(req);
+    const conversationId = Number(req.body?.conversation_id);
+
+    const dir = path.join(
+      process.cwd(),
+      "uploads",
+      "chats",
+      "member",
+      String(memberId || "0"),
+      String(Number.isFinite(conversationId) ? conversationId : "0")
+    );
+    ensureDir(dir);
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname || "").toLowerCase();
+    const safeExt = ext && ext.length <= 10 ? ext : ".jpg";
+
+    // ✅ deterministic enough, avoids collisions
+    const name = `${Date.now()}-${Math.random().toString(16).slice(2)}${safeExt}`;
+    cb(null, name);
+  },
+});
+
+function fileFilter(req, file, cb) {
+  const ok = /^image\/(png|jpe?g|webp|gif)$/i.test(file.mimetype || "");
+  if (!ok) return cb(new Error("Only image files are allowed"), false);
+  cb(null, true);
+}
+
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: 3 * 1024 * 1024 }, // ✅ 3MB
+});
+
+// ✅ create/get conversation
 router.get("/conversation", memberAuth, async (req, res) => {
   const memberId = getMemberId(req);
   if (!memberId) return res.status(401).json({ message: "Unauthorized" });
@@ -42,7 +83,7 @@ router.get("/conversation", memberAuth, async (req, res) => {
   res.json(created.rows[0]);
 });
 
-// ✅ list messages (member can only read own conversation)
+// ✅ list messages
 router.get("/messages", memberAuth, async (req, res) => {
   const memberId = getMemberId(req);
   const conversationId = Number(req.query.conversation_id);
@@ -60,7 +101,7 @@ router.get("/messages", memberAuth, async (req, res) => {
 
   const r = await pool.query(
     `SELECT id, conversation_id, sender_type, kind, text,
-            read_by_agent, read_by_member, created_at
+            file_name, read_by_agent, read_by_member, created_at
      FROM support_messages
      WHERE conversation_id = $1
      ORDER BY created_at ASC, id ASC`,
@@ -70,7 +111,7 @@ router.get("/messages", memberAuth, async (req, res) => {
   res.json(r.rows);
 });
 
-// ✅ send message (text only)
+// ✅ send text
 router.post("/send", memberAuth, async (req, res) => {
   const memberId = getMemberId(req);
   const { conversation_id, text } = req.body || {};
@@ -109,7 +150,46 @@ router.post("/send", memberAuth, async (req, res) => {
   res.status(201).json(ins.rows[0]);
 });
 
-// ✅ mark agent messages read by member (optional)
+// ✅ send photo (multipart/form-data)
+router.post("/send-photo", memberAuth, upload.single("photo"), async (req, res) => {
+  const memberId = getMemberId(req);
+  const conversationId = Number(req.body?.conversation_id);
+
+  if (!memberId) return res.status(401).json({ message: "Unauthorized" });
+  if (!Number.isFinite(conversationId))
+    return res.status(400).json({ message: "conversation_id required" });
+  if (!req.file) return res.status(400).json({ message: "Photo is required" });
+
+  const ok = await pool.query(
+    "SELECT id FROM support_conversations WHERE id = $1 AND member_id = $2",
+    [conversationId, memberId]
+  );
+  if (!ok.rows[0]) return res.status(403).json({ message: "Forbidden" });
+
+  // ✅ build public URL path that frontend can load
+  const urlPath = `/uploads/chats/member/${memberId}/${conversationId}/${req.file.filename}`;
+
+  const ins = await pool.query(
+    `INSERT INTO support_messages (
+      conversation_id, sender_type, sender_member_id,
+      kind, text, file_name, read_by_agent, read_by_member
+    )
+    VALUES ($1,'member',$2,'photo',$3,$4,false,true)
+    RETURNING *`,
+    [conversationId, memberId, urlPath, req.file.originalname || ""]
+  );
+
+  await pool.query(
+    `UPDATE support_conversations
+     SET last_message_at = now(), status = 'open'
+     WHERE id = $1`,
+    [conversationId]
+  );
+
+  res.status(201).json(ins.rows[0]);
+});
+
+// ✅ mark agent messages read by member
 router.post("/mark-read", memberAuth, async (req, res) => {
   const memberId = getMemberId(req);
   const conversationId = Number(req.body?.conversation_id);
