@@ -1,7 +1,7 @@
 // src/pages/DepositBank.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "../styles/MemberDepositBank.css";
+import "../styles/memberDepositBank.css";
 
 // ✅ add bottom nav (from old backend code)
 import MemberBottomNav from "../components/MemberBottomNav";
