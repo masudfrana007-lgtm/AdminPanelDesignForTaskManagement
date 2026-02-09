@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api"; // admin/owner/agent axios
-import AppLayout from "../components/AppLayout";
+import CsLayout from "../components/CsLayout";
 import "../styles/app.css";
 
 function fmt(iso) {
@@ -37,7 +37,7 @@ export default function SupportInbox() {
   }, []);
 
   return (
-    <AppLayout title="Support Inbox">
+    <CsLayout title="Support Inbox">
       <div className="card" style={{ padding: 16 }}>
         <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12 }}>
           <button className="btn" type="button" onClick={load}>Reload</button>
@@ -98,6 +98,6 @@ export default function SupportInbox() {
           </table>
         </div>
       </div>
-    </AppLayout>
+    </CsLayout>
   );
 }

@@ -1,11 +1,11 @@
 // src/pages/CsLogin.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import memberApi from "../services/memberApi"; // you can use any axios instance
+import api from "../services/api"; // ✅ use admin/owner/agent axios
 
 export default function CsLogin() {
   const nav = useNavigate();
-  const [form, setForm] = useState({ email: "cs@gmail.com", password: "" });
+  const [form, setForm] = useState({ email: "", password: "" });
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
 
@@ -21,14 +21,20 @@ export default function CsLogin() {
     if (!password.trim()) return setErr("Password is required");
 
     try {
-      const { data } = await memberApi.post("/cs/login", { email, password });
+      // ✅ backend returns { token, user }
+      const { data } = await api.post("/cs/login", { email, password });
 
-      if (data?.ok) {
-        setOk("Login success");
-        setTimeout(() => nav("/support"), 200); // ✅ go to admin support inbox
-      } else {
+      if (!data?.token) {
         setErr(data?.message || "Login failed");
+        return;
       }
+
+      // ✅ store same keys as normal admin auth (so your api interceptor works)
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user || null));
+
+      setOk("Login success");
+      setTimeout(() => nav("/support"), 200);
     } catch (e2) {
       setErr(e2?.response?.data?.message || "Login failed");
     }
@@ -47,6 +53,7 @@ export default function CsLogin() {
               value={form.email}
               onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
               placeholder="cs@gmail.com"
+              autoComplete="username"
             />
           </div>
 
@@ -57,6 +64,7 @@ export default function CsLogin() {
               value={form.password}
               onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
               placeholder="cs123456"
+              autoComplete="current-password"
             />
           </div>
 

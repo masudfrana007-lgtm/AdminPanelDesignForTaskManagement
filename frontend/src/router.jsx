@@ -498,18 +498,14 @@ export const router = createBrowserRouter([
 {
   path: "/support",
   element: (
-    <ProtectedRoute roles={["admin", "owner", "agent"]}>
       <SupportInbox />
-    </ProtectedRoute>
   ),
 },
 
 {
   path: "/support/:id",
   element: (
-    <ProtectedRoute roles={["admin", "owner", "agent"]}>
       <SupportChat />
-    </ProtectedRoute>
   ),
 },
 
