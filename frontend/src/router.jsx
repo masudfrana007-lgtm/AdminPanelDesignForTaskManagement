@@ -423,8 +423,6 @@ export const router = createBrowserRouter([
   ),
 },
 
-<<<<<<< HEAD
-=======
 // {
 //   path: "/member/teams",
 //   element: (
@@ -444,7 +442,6 @@ export const router = createBrowserRouter([
   ),
 },
 
->>>>>>> 1ba30e45ec52d38adc53c791d3522916f3da5b0c
 {
   path: "/beneficiary/add/crypto",
   element: (
@@ -485,11 +482,7 @@ export const router = createBrowserRouter([
 
 // Task Instructions Guide
 {
-<<<<<<< HEAD
-  path: "/task-instructions-guide", 
-=======
   path: "/task-instructions-guide",
->>>>>>> 1ba30e45ec52d38adc53c791d3522916f3da5b0c
   element: (
     <MemberProtectedRoute>
       <TaskInstructionsGuide />
@@ -499,11 +492,7 @@ export const router = createBrowserRouter([
 
 // Withdrawal Guide
 {
-<<<<<<< HEAD
-  path: "/withdrawal-guide", 
-=======
   path: "/withdrawal-guide",
->>>>>>> 1ba30e45ec52d38adc53c791d3522916f3da5b0c
   element: (
     <MemberProtectedRoute>
       <WithdrawalGuide />
@@ -513,11 +502,7 @@ export const router = createBrowserRouter([
 
 // Platform Guide
 {
-<<<<<<< HEAD
-  path: "/platform-guide", 
-=======
   path: "/platform-guide",
->>>>>>> 1ba30e45ec52d38adc53c791d3522916f3da5b0c
   element: (
     <MemberProtectedRoute>
       <PlatformGuide />
@@ -527,11 +512,7 @@ export const router = createBrowserRouter([
 
 // Security Account Safety
 {
-<<<<<<< HEAD
-  path: "/security-account-safety", 
-=======
   path: "/security-account-safety",
->>>>>>> 1ba30e45ec52d38adc53c791d3522916f3da5b0c
   element: (
     <MemberProtectedRoute>
       <SecurityAccountSafety />
@@ -541,19 +522,13 @@ export const router = createBrowserRouter([
 
 // Platform Rules Guide
 {
-<<<<<<< HEAD
-  path: "/platform-rules-guide", 
-=======
   path: "/platform-rules-guide",
->>>>>>> 1ba30e45ec52d38adc53c791d3522916f3da5b0c
   element: (
     <MemberProtectedRoute>
       <PlatformRulesGuide />
     </MemberProtectedRoute>
   ),
 },
-<<<<<<< HEAD
-=======
 
 {
   path: "/support",
@@ -568,6 +543,5 @@ export const router = createBrowserRouter([
       <SupportChat />
   ),
 },
->>>>>>> 1ba30e45ec52d38adc53c791d3522916f3da5b0c
 
 ]);
