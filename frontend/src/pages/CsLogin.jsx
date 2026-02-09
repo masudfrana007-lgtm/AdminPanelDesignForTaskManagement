@@ -1,80 +1,69 @@
 // src/pages/CsLogin.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../services/api"; // ✅ use admin/owner/agent axios
+import api from "../services/api";
+import { saveAuth } from "../auth";
+import "../styles/app.css";
 
 export default function CsLogin() {
   const nav = useNavigate();
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");  
   const [err, setErr] = useState("");
-  const [ok, setOk] = useState("");
 
-  const login = async (e) => {
+  const submit = async (e) => {
     e.preventDefault();
     setErr("");
-    setOk("");
-
-    const email = form.email.trim();
-    const password = form.password;
-
-    if (!email) return setErr("Email is required");
-    if (!password.trim()) return setErr("Password is required");
 
     try {
-      // ✅ backend returns { token, user }
-      const { data } = await api.post("/cs/login", { email, password });
+      // ✅ SAME backend as normal login
+      const { data } = await api.post("/auth/login", { email, password });
 
-      if (!data?.token) {
-        setErr(data?.message || "Login failed");
+      // optional safety check
+      if (!["admin", "owner", "agent"].includes(data?.user?.role)) {
+        setErr("Access denied");
         return;
       }
 
-      // ✅ store same keys as normal admin auth (so your api interceptor works)
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user || null));
+      saveAuth(data);
 
-      setOk("Login success");
-      setTimeout(() => nav("/support"), 200);
+      // ✅ different redirect for CS
+      nav("/support", { replace: true });
     } catch (e2) {
       setErr(e2?.response?.data?.message || "Login failed");
     }
   };
 
   return (
-    <div className="auth-page">
-      <div className="card auth-card">
-        <div className="auth-title">CS Login</div>
-        <div className="auth-sub">Access support inbox</div>
+    <div className="container" style={{ maxWidth: 480, marginTop: 70 }}>
+      <div className="card">
+        <h2>CS Login</h2>
+        <div className="small">Customer Support</div>
+        <div className="hr" />
 
-        <form onSubmit={login} style={{ display: "grid", gap: 12 }}>
-          <div style={{ textAlign: "left" }}>
+        <form onSubmit={submit} style={{ display: "grid", gap: 10 }}>
+          <div>
             <div className="small">Email</div>
-            <input
-              value={form.email}
-              onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-              placeholder="cs@gmail.com"
-              autoComplete="username"
-            />
+            <input value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
 
-          <div style={{ textAlign: "left" }}>
+          <div>
             <div className="small">Password</div>
             <input
               type="password"
-              value={form.password}
-              onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
-              placeholder="cs123456"
-              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
             />
           </div>
 
           {err && <div className="error">{err}</div>}
-          {ok && <div className="ok">{ok}</div>}
 
           <button className="btn" type="submit">
             Login
           </button>
         </form>
+
+        <div className="hr" />
       </div>
     </div>
   );

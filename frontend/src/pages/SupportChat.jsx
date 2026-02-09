@@ -21,11 +21,6 @@ function getToken() {
   return String(raw).replace(/^bearer\s+/i, "").replace(/^"|"$/g, "").trim();
 }
 
-function authHeaders() {
-  const t = getToken();
-  return t ? { Authorization: `Bearer ${t}` } : {};
-}
-
 export default function SupportChat() {
   const nav = useNavigate();
   const { id } = useParams();
@@ -34,8 +29,16 @@ export default function SupportChat() {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
 
   const chatRef = useRef(null);
+
+  // ✅ always pass Authorization explicitly (even though interceptor exists)
+  function authHeaders() {
+    const t = getToken();
+    return t ? { Authorization: `Bearer ${t}` } : {};
+  }
 
   const load = async () => {
     setErr("");
@@ -45,7 +48,12 @@ export default function SupportChat() {
       nav("/cs/login");
       return;
     }
+    if (!Number.isFinite(convoId)) {
+      setErr("Invalid conversation id");
+      return;
+    }
 
+    setLoading(true);
     try {
       const { data } = await api.get(`/support/conversations/${convoId}/messages`, {
         headers: authHeaders(),
@@ -53,14 +61,19 @@ export default function SupportChat() {
       setMessages(Array.isArray(data) ? data : []);
     } catch (e) {
       const status = e?.response?.status;
-      setErr(e?.response?.data?.message || "Failed to load messages");
+      setErr(e?.response?.data?.message || `Failed to load messages`);
       setMessages([]);
+
+      // ✅ show the real error in console too
+      console.log("LOAD ERROR:", status, e?.response?.data, e);
 
       if (status === 401) {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         nav("/cs/login");
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -70,10 +83,10 @@ export default function SupportChat() {
     (async () => {
       await load();
 
-      // mark read (also force header)
+      // mark read (best-effort)
       await api
         .post(`/support/conversations/${convoId}/mark-read`, {}, { headers: authHeaders() })
-        .catch(() => {});
+        .catch((e) => console.log("MARK-READ ERROR:", e?.response?.status, e?.response?.data, e));
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [convoId]);
@@ -85,7 +98,7 @@ export default function SupportChat() {
 
   const send = async () => {
     const msg = text.trim();
-    if (!msg) return;
+    if (!msg || sending) return;
 
     setErr("");
 
@@ -94,25 +107,42 @@ export default function SupportChat() {
       nav("/cs/login");
       return;
     }
+    if (!Number.isFinite(convoId)) {
+      setErr("Invalid conversation id");
+      return;
+    }
 
+    setSending(true);
     try {
+      console.log("SENDING REPLY:", convoId, msg);
+
       await api.post(
         `/support/conversations/${convoId}/reply`,
         { text: msg },
-        { headers: authHeaders() } // ✅ force auth on POST
+        { headers: authHeaders() }
       );
 
       setText("");
-      window.location.reload(); // keep your workflow
+      await load(); // ✅ refresh without reloading the page
     } catch (e) {
       const status = e?.response?.status;
-      setErr(e?.response?.data?.message || "Failed to send reply");
+  const data = e?.response?.data;
+  const msg =
+    (typeof data === "string" ? data : data?.message) ||
+    e?.message ||
+    "Failed to send reply";
+
+  console.log("SEND ERROR FULL:", { status, data, e });
+
+  setErr(`(${status || "?"}) ${msg}`);
 
       if (status === 401) {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         nav("/cs/login");
       }
+    } finally {
+      setSending(false);
     }
   };
 
@@ -123,9 +153,11 @@ export default function SupportChat() {
           <button className="btn" type="button" onClick={() => nav(-1)}>
             ← Back
           </button>
-          <button className="btn" type="button" onClick={load}>
-            Reload
+
+          <button className="btn" type="button" onClick={load} disabled={loading}>
+            {loading ? "Loading..." : "Reload"}
           </button>
+
           {err ? <div style={{ color: "#b91c1c" }}>{err}</div> : null}
         </div>
 
@@ -181,9 +213,11 @@ export default function SupportChat() {
             placeholder="Type a reply…"
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && send()}
+            disabled={sending}
           />
-          <button className="btn" type="button" disabled={!text.trim()} onClick={send}>
-            Send
+
+          <button className="btn" type="button" disabled={!text.trim() || sending} onClick={send}>
+            {sending ? "Sending..." : "Send"}
           </button>
         </div>
       </div>
