@@ -1,13 +1,30 @@
 // routes/memberSupport.js
 import express from "express";
 import { pool } from "../db.js";
-import { memberAuth } from "../middleware/memberAuth.js"; // ✅ your member auth middleware
+import { memberAuth } from "../middleware/memberAuth.js";
 
 const router = express.Router();
 
+// helper: support multiple middleware shapes safely
+function getMemberId(req) {
+  // common shapes:
+  // req.member = { member_id, ... }  (your JWT payload)
+  // req.member = { id, ... }
+  // req.memberId = ...
+  // req.user = { member_id / id } (if reused middleware)
+  return (
+    req.member?.member_id ||
+    req.member?.id ||
+    req.memberId ||
+    req.user?.member_id ||
+    req.user?.id ||
+    null
+  );
+}
+
 // ✅ create / get conversation for this member
 router.get("/conversation", memberAuth, async (req, res) => {
-  const memberId = req.member?.id; // if your middleware uses req.user, change to req.user.id
+  const memberId = getMemberId(req);
   if (!memberId) return res.status(401).json({ message: "Unauthorized" });
 
   const ex = await pool.query(
@@ -27,7 +44,7 @@ router.get("/conversation", memberAuth, async (req, res) => {
 
 // ✅ list messages (member can only read own conversation)
 router.get("/messages", memberAuth, async (req, res) => {
-  const memberId = req.member?.id;
+  const memberId = getMemberId(req);
   const conversationId = Number(req.query.conversation_id);
 
   if (!memberId) return res.status(401).json({ message: "Unauthorized" });
@@ -55,12 +72,13 @@ router.get("/messages", memberAuth, async (req, res) => {
 
 // ✅ send message (text only)
 router.post("/send", memberAuth, async (req, res) => {
-  const memberId = req.member?.id;
+  const memberId = getMemberId(req);
   const { conversation_id, text } = req.body || {};
   const conversationId = Number(conversation_id);
 
   if (!memberId) return res.status(401).json({ message: "Unauthorized" });
-  if (!Number.isFinite(conversationId)) return res.status(400).json({ message: "conversation_id required" });
+  if (!Number.isFinite(conversationId))
+    return res.status(400).json({ message: "conversation_id required" });
 
   const msg = String(text || "").trim();
   if (!msg) return res.status(400).json({ message: "Message is empty" });
@@ -93,11 +111,12 @@ router.post("/send", memberAuth, async (req, res) => {
 
 // ✅ mark agent messages read by member (optional)
 router.post("/mark-read", memberAuth, async (req, res) => {
-  const memberId = req.member?.id;
+  const memberId = getMemberId(req);
   const conversationId = Number(req.body?.conversation_id);
 
   if (!memberId) return res.status(401).json({ message: "Unauthorized" });
-  if (!Number.isFinite(conversationId)) return res.status(400).json({ message: "conversation_id required" });
+  if (!Number.isFinite(conversationId))
+    return res.status(400).json({ message: "conversation_id required" });
 
   const ok = await pool.query(
     "SELECT id FROM support_conversations WHERE id = $1 AND member_id = $2",

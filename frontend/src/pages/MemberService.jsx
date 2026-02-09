@@ -1,3 +1,6 @@
+// src/pages/MemberService.jsx
+// ✅ FIXED — uses memberApi interceptor like all other member pages (no manual headers)
+// ✅ design/layout unchanged
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/memberService.css";
@@ -29,8 +32,8 @@ export default function CustomerService() {
 
   // ✅ DB state
   const [conversationId, setConversationId] = useState(null);
-  const [messages, setMessages] = useState([]); // DB messages
-  const [agentTyping, setAgentTyping] = useState(false); // keep UI slot (but we won't use)
+  const [messages, setMessages] = useState([]); // DB messages (mapped to UI)
+  const [agentTyping, setAgentTyping] = useState(false); // keep UI slot
   const [err, setErr] = useState("");
 
   const faqs = useMemo(
@@ -60,38 +63,60 @@ export default function CustomerService() {
     (async () => {
       try {
         setErr("");
-        // 1) get/create conversation
-        const { data: convo } = await memberApi.get("/member/support/conversation");
-        setConversationId(convo?.id || null);
 
-        // 2) load messages
+        // If token missing, same behavior as other member pages (redirect)
+        const token = localStorage.getItem("member_token");
+        if (!token) {
+          setErr("Session expired. Please login again.");
+          nav("/member/login");
+          return;
+        }
+
+        // 1) get/create conversation (✅ NO manual headers; interceptor handles auth)
+        const { data: convo } = await memberApi.get("/member/support/conversation");
+
+        const cid = convo?.id || null;
+        setConversationId(cid);
+
+        if (!cid) {
+          setErr("Conversation not ready. Please reload.");
+          return;
+        }
+
+        // 2) load messages (✅ NO manual headers)
         const { data: msgs } = await memberApi.get("/member/support/messages", {
-          params: { conversation_id: convo.id },
+          params: { conversation_id: cid },
         });
 
         const arr = Array.isArray(msgs) ? msgs : [];
 
-        // map DB -> same UI shape you already use
+        // map DB -> same UI shape you already use (design unchanged)
         const mapped = arr.map((m) => ({
           id: String(m.id),
           from: m.sender_type === "agent" ? "agent" : "user",
           kind: m.kind || "text",
           text: m.text || "",
           time: toHHMM(m.created_at),
-          status: m.sender_type === "member" ? (m.read_by_agent ? "read" : "delivered") : undefined,
-          // name/size are not used now since no upload
+          status:
+            m.sender_type === "member"
+              ? m.read_by_agent
+                ? "read"
+                : "delivered"
+              : undefined,
         }));
 
         setMessages(mapped);
 
-        // optional: mark agent msgs read by member (no polling)
+        // optional: mark agent msgs read by member (✅ NO manual headers)
         await memberApi
-          .post("/member/support/mark-read", { conversation_id: convo.id })
+          .post("/member/support/mark-read", { conversation_id: cid })
           .catch(() => {});
       } catch (e) {
         setErr(e?.response?.data?.message || "Failed to load support chat");
+        if (e?.response?.status === 401) nav("/member/login");
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Auto scroll (same as yours)
@@ -100,18 +125,25 @@ export default function CustomerService() {
     chatRef.current.scrollTo({ top: chatRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, agentTyping]);
 
-  // ✅ clear chat = optional: just reload page (DB is source of truth)
-  // If you REALLY want "Clear", we can add an endpoint to delete messages.
+  // ✅ clear chat (same UI; just reload)
   const clearChat = () => {
     window.location.reload();
   };
 
   const reloadPage = () => window.location.reload();
 
-  // ✅ Send message to DB then reload
+  // ✅ Send message to DB then reload (✅ NO manual headers)
   const sendText = async () => {
     const text = message.trim();
     if (!text) return;
+
+    const token = localStorage.getItem("member_token");
+    if (!token) {
+      setErr("Session expired. Please login again.");
+      nav("/member/login");
+      return;
+    }
+
     if (!conversationId) {
       setErr("Conversation not ready. Please reload.");
       return;
@@ -121,15 +153,11 @@ export default function CustomerService() {
     setMessage("");
 
     try {
-      await memberApi.post("/member/support/send", {
-        conversation_id: conversationId,
-        text,
-      });
-
-      // ✅ no polling: refresh page to show DB messages
+      await memberApi.post("/member/support/send", { conversation_id: conversationId, text });
       reloadPage();
     } catch (e) {
       setErr(e?.response?.data?.message || "Failed to send message");
+      if (e?.response?.status === 401) nav("/member/login");
     }
   };
 
@@ -162,27 +190,21 @@ export default function CustomerService() {
           <span className="cs-statusDot" />
           <span className="cs-statusText">Online</span>
 
-          {/* ✅ keeps design; now opens modal */}
           <button className="cs-headBtn" type="button" onClick={() => setHelpOpen(true)}>
             Help Center
           </button>
 
-          {/* ✅ keeps design; reload-only system */}
           <button className="cs-headBtn" type="button" onClick={reloadPage}>
             Reload
           </button>
 
-          {/* keep your Clear button if you want */}
           <button className="cs-headBtn" type="button" onClick={clearChat}>
             Clear
           </button>
         </div>
       </header>
 
-      {/* optional error display (doesn’t change CSS layout) */}
-      {err ? (
-        <div style={{ padding: "10px 18px", color: "#b91c1c" }}>{err}</div>
-      ) : null}
+      {err ? <div style={{ padding: "10px 18px", color: "#b91c1c" }}>{err}</div> : null}
 
       {/* Switch */}
       <section className="cs-switchWrap">
@@ -212,7 +234,6 @@ export default function CustomerService() {
         <section className="cs-main">
           {channel === "direct" ? (
             <>
-              {/* ✅ Agent profile header (unchanged) */}
               <div className="cs-agentBar">
                 <div className="cs-agentAvatar">RS</div>
                 <div className="cs-agentMeta">
@@ -234,7 +255,6 @@ export default function CustomerService() {
                     <div className="cs-bubble cs-pop">
                       {m.kind === "text" && <div className="cs-text">{m.text}</div>}
 
-                      {/* keep UI blocks but we won't create these kinds (no upload) */}
                       {m.kind === "photo" && (
                         <div className="cs-file">
                           <div className="cs-fileIcon">🖼️</div>
@@ -258,7 +278,6 @@ export default function CustomerService() {
                       <div className="cs-metaRow">
                         <span className="cs-time">{m.time}</span>
 
-                        {/* ✅ status only for user */}
                         {m.from === "user" && (
                           <span className={"cs-read " + (m.status === "read" ? "is-read" : "")}>
                             {statusIcon(m.status)}
@@ -284,17 +303,10 @@ export default function CustomerService() {
                 )}
               </div>
 
-              {/* ✅ Sticky input + safe area (unchanged design) */}
               <footer className="cs-inputBar">
-                <button
-                  className="cs-iconBtn"
-                  type="button"
-                  title="Upload photo"
-                  onClick={addFileMessage}
-                >
+                <button className="cs-iconBtn" type="button" title="Upload photo" onClick={addFileMessage}>
                   📷
                 </button>
-
                 <input
                   ref={photoInputRef}
                   type="file"
@@ -303,15 +315,9 @@ export default function CustomerService() {
                   onChange={() => addFileMessage()}
                 />
 
-                <button
-                  className="cs-iconBtn"
-                  type="button"
-                  title="Upload document"
-                  onClick={addFileMessage}
-                >
+                <button className="cs-iconBtn" type="button" title="Upload document" onClick={addFileMessage}>
                   📎
                 </button>
-
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -329,19 +335,13 @@ export default function CustomerService() {
                   onKeyDown={(e) => e.key === "Enter" && sendText()}
                 />
 
-                <button
-                  className="cs-sendBtn"
-                  disabled={!message.trim()}
-                  onClick={sendText}
-                  type="button"
-                >
+                <button className="cs-sendBtn" disabled={!message.trim()} onClick={sendText} type="button">
                   Send
                 </button>
               </footer>
             </>
           ) : (
             <div className="cs-telegramCardWrap">
-              {/* ✅ Telegram card unchanged */}
               <div className="cs-tgCard">
                 <div className="cs-tgTop">
                   <div className="cs-tgLogo">✈️</div>
@@ -391,7 +391,6 @@ export default function CustomerService() {
         </section>
       </main>
 
-      {/* ✅ Help Center Modal unchanged */}
       {helpOpen && (
         <div className="cs-modalOverlay" role="dialog" aria-modal="true">
           <div className="cs-modal">
@@ -432,7 +431,6 @@ export default function CustomerService() {
         </div>
       )}
 
-      {/* keep bottom bar exactly */}
       <MemberBottomNav active="service" />
     </div>
   );
