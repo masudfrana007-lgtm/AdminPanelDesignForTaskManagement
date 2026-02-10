@@ -19,6 +19,7 @@ import withdrawalsRoutes from "./routes/withdrawals.js";
 import supportRoutes from "./routes/support.js";
 import memberSupportRoutes from "./routes/memberSupport.js";
 import csLoginRoutes from "./routes/csLogin.js";
+import memberAvatarRouter from "./routes/memberAvatar.js";
 
 const app = express();
 app.use(cors({
@@ -56,6 +57,7 @@ app.use("/withdrawals", withdrawalsRoutes);
 app.use("/support", supportRoutes);
 app.use("/member/support", memberSupportRoutes);
 app.use("/cs", csLoginRoutes);
+app.use("/member", memberAvatarRouter);
 
 const port = process.env.PORT || 5000;
 app.listen(port, "0.0.0.0", () => {

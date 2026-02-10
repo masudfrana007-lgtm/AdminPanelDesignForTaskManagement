@@ -21,6 +21,7 @@ router.get("/me", memberAuth, async (req, res) => {
         m.country,            
         m.created_at,
         m.last_login,         
+        m.avatar_url,
         m.approval_status,      
         m.ranking,
         m.withdraw_privilege,
@@ -38,6 +39,39 @@ router.get("/me", memberAuth, async (req, res) => {
 
     res.json(r.rows[0] || null);
   } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// PATCH /member/me  (member edits own email only)
+router.patch("/me", memberAuth, async (req, res) => {
+  try {
+    const memberId = req.member.member_id;
+
+    const email = String(req.body.email ?? "").trim();
+    if (!email) return res.status(400).json({ message: "Email is required" });
+
+    const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (!ok) return res.status(400).json({ message: "Invalid email format" });
+
+    const r = await pool.query(
+      `
+      UPDATE members
+      SET email = $1
+      WHERE id = $2
+      RETURNING id, short_id, nickname, email
+      `,
+      [email, memberId]
+    );
+
+    res.json(r.rows[0] || null);
+  } catch (e) {
+    const msg = String(e);
+    // your DB constraint is UNIQUE (lower(email)) -> name: members_email_key
+    if (msg.includes("members_email_key")) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
     console.error(e);
     res.status(500).json({ message: "Server error" });
   }

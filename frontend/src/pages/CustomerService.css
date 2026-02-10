@@ -542,11 +542,6 @@ html, body{
    input height matches + and Send
 ================================ */
 
-/* 1) Stop the whole page from scrolling */
-html, body{
-  height: 100%;
-  overflow: hidden; /* ✅ page locked */
-}
 
 /* 2) Make csPage a full-height flex layout */
 .csPage{
@@ -623,3 +618,49 @@ html, body{
   display: block;      /* IMPORTANT */
 }
 
+/* ===============================
+   Customer Service page only
+   lock page scroll, chat scrolls
+================================ */
+
+/* lock only the CS page */
+.csPage{
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* body area between header and bottom nav */
+.csBodyOne{
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+}
+
+/* chat shell fills available space */
+.chatShell, .tgShell{
+  flex: 1;
+  min-height: 0;
+}
+
+/* ONLY message list scrolls */
+.chatList{
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ✅ keep chatShell centered + custom width */
+.chatShell{
+  flex: 0 0 auto;              /* stop stretching width */
+  width: min(900px, 100%);     /* change 900px as you want */
+  margin: 0 auto;              /* centered */
+}
+
+/* ✅ if csBodyOne is a flex row, force center + allow width to work */
+.csBodyOne{
+  justify-content: center;
+}

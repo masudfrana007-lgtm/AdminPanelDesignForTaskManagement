@@ -8,14 +8,13 @@ import memberApi from "../services/memberApi";
 function norm(v) {
   return String(v ?? "").trim();
 }
-function safeGender(v) {
-  const g = String(v || "").toLowerCase();
-  if (["male", "female", "other"].includes(g)) return g;
-  return "";
-}
 function isEmail(v) {
   const s = norm(v);
   return !!s && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+}
+function initials(name) {
+  const s = norm(name) || "U";
+  return s.slice(0, 1).toUpperCase();
 }
 
 /* ---------- component ---------- */
@@ -29,16 +28,14 @@ export default function ProfileEdit() {
   const [ok, setOk] = useState("");
 
   const [user, setUser] = useState(null); // original
-  const [form, setForm] = useState({
-    nickname: "",
-    email: "",
-    phone: "",
-    country: "",
-    gender: "",
-  });
+  const [email, setEmail] = useState("");
 
   const [avatarPreview, setAvatarPreview] = useState("");
   const [avatarFile, setAvatarFile] = useState(null);
+
+  // if backend returns any of these, we’ll show it when no new preview is picked
+  const existingAvatar =
+    user?.avatar_url || user?.photo_url || user?.profile_photo_url || user?.profile_picture_url || "";
 
   const loadMe = async () => {
     setLoading(true);
@@ -47,17 +44,11 @@ export default function ProfileEdit() {
     try {
       const { data } = await memberApi.get("/member/me");
       setUser(data || null);
-
-      setForm({
-        nickname: norm(data?.nickname),
-        email: norm(data?.email),
-        phone: norm(data?.phone),
-        country: norm(data?.country),
-        gender: safeGender(data?.gender),
-      });
+      setEmail(norm(data?.email));
     } catch (e) {
       setErr(e?.response?.data?.message || "Failed to load profile");
       setUser(null);
+      setEmail("");
     } finally {
       setLoading(false);
     }
@@ -67,43 +58,29 @@ export default function ProfileEdit() {
     loadMe();
   }, []);
 
+  // clean up blob url to avoid memory leak
+  useEffect(() => {
+    return () => {
+      if (avatarPreview?.startsWith("blob:")) URL.revokeObjectURL(avatarPreview);
+    };
+  }, [avatarPreview]);
+
   const dirty = useMemo(() => {
     if (!user) return false;
-    const a = {
-      nickname: norm(user.nickname),
-      email: norm(user.email),
-      phone: norm(user.phone),
-      country: norm(user.country),
-      gender: safeGender(user.gender),
-    };
-    const b = {
-      nickname: norm(form.nickname),
-      email: norm(form.email),
-      phone: norm(form.phone),
-      country: norm(form.country),
-      gender: safeGender(form.gender),
-    };
-    return (
-      a.nickname !== b.nickname ||
-      a.email !== b.email ||
-      a.phone !== b.phone ||
-      a.country !== b.country ||
-      a.gender !== b.gender ||
-      !!avatarFile
-    );
-  }, [user, form, avatarFile]);
-
-  const setField = (k) => (e) => {
-    setOk("");
-    setErr("");
-    setForm((p) => ({ ...p, [k]: e.target.value }));
-  };
+    const a = norm(user.email);
+    const b = norm(email);
+    return a !== b || !!avatarFile;
+  }, [user, email, avatarFile]);
 
   const pickAvatar = () => fileRef.current?.click();
 
   const onAvatarChange = (e) => {
     const f = e.target.files?.[0] || null;
     if (!f) return;
+
+    // revoke old preview if any
+    if (avatarPreview?.startsWith("blob:")) URL.revokeObjectURL(avatarPreview);
+
     setAvatarFile(f);
     setAvatarPreview(URL.createObjectURL(f));
     setOk("");
@@ -111,14 +88,9 @@ export default function ProfileEdit() {
   };
 
   const validate = () => {
-    const nickname = norm(form.nickname);
-    const email = norm(form.email);
-    const phone = norm(form.phone);
-
-    if (!nickname) return "Nickname is required";
-    if (!email) return "Email is required";
-    if (!isEmail(email)) return "Invalid email format";
-    if (!phone) return "Phone is required";
+    const e = norm(email);
+    if (!e) return "Email is required";
+    if (!isEmail(e)) return "Invalid email format";
     return "";
   };
 
@@ -134,21 +106,18 @@ export default function ProfileEdit() {
     setOk("");
 
     try {
-      // 1) Update text fields
-      await memberApi.patch("/member/me", {
-        nickname: norm(form.nickname),
-        email: norm(form.email),
-        phone: norm(form.phone),
-        country: norm(form.country) || null,
-        gender: safeGender(form.gender) || null,
-      });
+      // 1) Update email only
+      await memberApi.patch("/member/me", { email: norm(email) });
 
       // 2) Optional: upload avatar file
       if (avatarFile) {
         const fd = new FormData();
         fd.append("avatar", avatarFile);
-        await memberApi.post("/member/avatar", fd); // no manual headers
+        await memberApi.post("/member/avatar", fd); // ✅ no manual headers
         setAvatarFile(null);
+
+        if (avatarPreview?.startsWith("blob:")) URL.revokeObjectURL(avatarPreview);
+        setAvatarPreview("");
       }
 
       setOk("Profile updated");
@@ -160,6 +129,8 @@ export default function ProfileEdit() {
     }
   };
 
+  const shownAvatar = avatarPreview || existingAvatar;
+
   return (
     <div className="pe-page">
       <div className="pe-overlay" />
@@ -170,7 +141,7 @@ export default function ProfileEdit() {
         </button>
         <div>
           <h1>Edit Profile</h1>
-          <p>Update your personal information</p>
+          <p>Update your email and photo</p>
         </div>
       </header>
 
@@ -201,10 +172,10 @@ export default function ProfileEdit() {
 
               <div className="pe-avatarRow">
                 <div className="pe-avatar" onClick={pickAvatar} title="Change photo">
-                  {avatarPreview ? (
-                    <img src={avatarPreview} alt="" />
+                  {shownAvatar ? (
+                    <img src={shownAvatar} alt="" />
                   ) : (
-                    <span>{String(form.nickname || "U").slice(0, 1).toUpperCase()}</span>
+                    <span>{initials(user?.nickname)}</span>
                   )}
                 </div>
 
@@ -212,6 +183,7 @@ export default function ProfileEdit() {
                   <button className="pe-btn" onClick={pickAvatar}>
                     Choose photo
                   </button>
+
                   <input
                     ref={fileRef}
                     type="file"
@@ -219,10 +191,12 @@ export default function ProfileEdit() {
                     accept="image/*"
                     onChange={onAvatarChange}
                   />
+
                   {avatarFile && (
                     <button
                       className="pe-btn ghost"
                       onClick={() => {
+                        if (avatarPreview?.startsWith("blob:")) URL.revokeObjectURL(avatarPreview);
                         setAvatarFile(null);
                         setAvatarPreview("");
                       }}
@@ -232,41 +206,17 @@ export default function ProfileEdit() {
                   )}
                 </div>
               </div>
+
               <p className="pe-muted">Photo will be uploaded when you press Save.</p>
             </section>
 
-            {/* Editable fields */}
+            {/* Email only */}
             <section className="pe-card">
-              <h3>Account Information</h3>
-
-              <label className="pe-field">
-                <span>Nickname</span>
-                <input value={form.nickname} onChange={setField("nickname")} />
-              </label>
+              <h3>Account</h3>
 
               <label className="pe-field">
                 <span>Email</span>
-                <input value={form.email} onChange={setField("email")} />
-              </label>
-
-              <label className="pe-field">
-                <span>Phone</span>
-                <input value={form.phone} onChange={setField("phone")} />
-              </label>
-
-              <label className="pe-field">
-                <span>Country</span>
-                <input value={form.country} onChange={setField("country")} placeholder="e.g. BD" />
-              </label>
-
-              <label className="pe-field">
-                <span>Gender</span>
-                <select value={form.gender} onChange={setField("gender")}>
-                  <option value="">-</option>
-                  <option value="male">male</option>
-                  <option value="female">female</option>
-                  <option value="other">other</option>
-                </select>
+                <input value={email} onChange={(e) => { setOk(""); setErr(""); setEmail(e.target.value); }} />
               </label>
 
               <div className="pe-actions">
@@ -277,18 +227,6 @@ export default function ProfileEdit() {
                   {saving ? "Saving…" : "Save"}
                 </button>
               </div>
-            </section>
-
-            {/* Non-editable info (optional display) */}
-            <section className="pe-card pe-readonly">
-              <h3>Read-only</h3>
-              <div className="pe-row"><span>UID</span><span>{user?.short_id ?? "-"}</span></div>
-              <div className="pe-row"><span>Ranking</span><span>{user?.ranking ?? "-"}</span></div>
-              <div className="pe-row"><span>Status</span><span>{user?.approval_status ?? "-"}</span></div>
-              <div className="pe-row"><span>Sponsor</span><span>{user?.sponsor_short_id ?? "-"}</span></div>
-              <div className="pe-row"><span>Balance</span><span>{user?.balance ?? "0.00"}</span></div>
-              <div className="pe-row"><span>Locked</span><span>{user?.locked_balance ?? "0.00"}</span></div>
-              <p className="pe-muted">These cannot be changed by the client.</p>
             </section>
           </>
         )}
