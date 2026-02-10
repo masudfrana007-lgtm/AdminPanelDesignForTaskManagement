@@ -337,16 +337,6 @@ html, body, #root{
   to { transform: translateY(0); opacity: 1; }
 }
 
-/* file bubbles */
-.cs-file{
-  display:flex;
-  gap:10px;
-  align-items:center;
-}
-.cs-fileIcon{ font-size: 20px; }
-.cs-fileName{ font-weight: 900; font-size: 13px; }
-.cs-fileMeta{ margin-top: 2px; font-size: 12px; opacity: .85; }
-
 /* Sticky input + safe-area for mobile */
 .cs-inputBar{
   position: sticky;
@@ -634,4 +624,112 @@ html, body, #root{
   html, body, #root {
     background: #0b1220 !important;
   }
+}
+
+/* Photo thumbnail inside chat bubble */
+.cs-file{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;   /* ✅ IMPORTANT */
+  gap: 6px;
+}
+
+.cs-photoBtn {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+  display: inline-block;
+  max-width: 260px;
+}
+
+.cs-photoThumb {
+  width: 260px;          /* makes it clearly visible */
+  max-width: 100%;
+  height: auto;          /* keep full image visible */
+  display: block;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+/* Optional filename styling */
+.cs-fileName {
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+/* Lightbox */
+.cs-imgOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+.cs-imgModal {
+  position: relative;
+  max-width: 96vw;
+  max-height: 90vh;
+}
+
+.cs-imgFull {
+  max-width: 96vw;
+  max-height: 90vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;   /* show full image */
+  border-radius: 14px;
+  display: block;
+}
+
+.cs-imgClose {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(255,255,255,0.92);
+  cursor: pointer;
+  font-size: 18px;
+}
+
+/* --- FIX PHOTO BUBBLE --- */
+.cs-file{
+  display:flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.cs-photoBtn{
+  width: min(260px, 78vw);
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+  display: inline-block;
+}
+
+.cs-photoThumb{
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,.12);
+}
+
+.cs-msg.user .cs-photoThumb{
+  border-color: rgba(255,255,255,.25);
+}
+
+/* placeholder fix */
+.cs-input::placeholder{
+  color: rgba(0,0,0,.45);
 }

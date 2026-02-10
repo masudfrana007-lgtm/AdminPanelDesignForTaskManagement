@@ -65,6 +65,10 @@ export default function CustomerService() {
   const visRef = useRef(!document.hidden);
   const focusRef = useRef(document.hasFocus());
 
+  const [imgOpen, setImgOpen] = useState(false);
+  const [imgSrc, setImgSrc] = useState("");
+  const [imgAlt, setImgAlt] = useState("");
+
   const faqs = useMemo(
     () => [
       {
@@ -86,6 +90,18 @@ export default function CustomerService() {
     ],
     []
   );
+
+  const openImage = (src, alt = "photo") => {
+    setImgSrc(src);
+    setImgAlt(alt);
+    setImgOpen(true);
+  };
+
+  const closeImage = () => {
+    setImgOpen(false);
+    setImgSrc("");
+    setImgAlt("");
+  };
 
   const mapMsgs = useCallback((arr) => {
     const a = Array.isArray(arr) ? arr : [];
@@ -454,25 +470,26 @@ export default function CustomerService() {
 
                       {m.kind === "photo" && (
                         <div className="cs-file">
-                          <img
-                            src={joinUrl(FILE_BASE, m.fileUrl)}
-                            alt={m.fileName || "photo"}
-                            style={{
-                              width: "100%",
-                              maxWidth: 260,
-                              borderRadius: 12,
-                              display: "block",
-                              border: "1px solid rgba(0,0,0,.08)",
-                            }}
-                            loading="lazy"
-                          />
+                          <button
+                            type="button"
+                            className="cs-photoBtn"
+                            onClick={() => openImage(joinUrl(FILE_BASE, m.fileUrl), m.fileName || "photo")}
+                            aria-label="Open photo"
+                          >
+                            <img
+                              className="cs-photoThumb"
+                              src={joinUrl(FILE_BASE, m.fileUrl)}
+                              alt={m.fileName || "photo"}
+                              loading="lazy"
+                            />
+                          </button>
+
                           {m.fileName ? (
-                            <div style={{ marginTop: 6, fontSize: 12, opacity: 0.75 }}>
-                              {m.fileName}
-                            </div>
+                            <div className="cs-fileName">{m.fileName}</div>
                           ) : null}
                         </div>
                       )}
+
 
                       <div className="cs-metaRow">
                         <span className="cs-time">{m.time}</span>
@@ -641,6 +658,18 @@ export default function CustomerService() {
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {imgOpen && (
+        <div className="cs-imgOverlay" role="dialog" aria-modal="true" onClick={closeImage}>
+          <div className="cs-imgModal" onClick={(e) => e.stopPropagation()}>
+            <button className="cs-imgClose" type="button" onClick={closeImage} aria-label="Close">
+              ✕
+            </button>
+
+            <img className="cs-imgFull" src={imgSrc} alt={imgAlt || "photo"} />
           </div>
         </div>
       )}
