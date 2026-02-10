@@ -1,6 +1,7 @@
 // src/pages/SupportChat.jsx
-// ✅ Added efficient adaptive polling (no backend change)
-// ✅ No design/layout change
+// ✅ Images visible + clickable lightbox (no layout redesign)
+// ✅ Keeps your adaptive polling and mark-read logic
+
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api";
@@ -29,6 +30,17 @@ function isNearBottom(el, px = 140) {
   return el.scrollHeight - el.scrollTop - el.clientHeight < px;
 }
 
+// ✅ MATCH TASKS: files are served by backend host
+const FILE_BASE = "http://159.198.40.145:5010";
+function joinUrl(base, p) {
+  const path = String(p || "").trim();
+  if (!path) return "";
+  if (/^https?:\/\//i.test(path)) return path;
+  const b = String(base || "").replace(/\/+$/, "");
+  const u = path.startsWith("/") ? path : `/${path}`;
+  return `${b}${u}`;
+}
+
 export default function SupportChat() {
   const nav = useNavigate();
   const { id } = useParams();
@@ -41,6 +53,11 @@ export default function SupportChat() {
   const [sending, setSending] = useState(false);
 
   const chatRef = useRef(null);
+
+  // ✅ lightbox state
+  const [imgOpen, setImgOpen] = useState(false);
+  const [imgSrc, setImgSrc] = useState("");
+  const [imgAlt, setImgAlt] = useState("");
 
   // ✅ polling internals
   const pollTimerRef = useRef(null);
@@ -56,11 +73,23 @@ export default function SupportChat() {
     return t ? { Authorization: `Bearer ${t}` } : {};
   }
 
+  const openImage = (src, alt = "photo") => {
+    setImgSrc(src);
+    setImgAlt(alt);
+    setImgOpen(true);
+  };
+  const closeImage = () => {
+    setImgOpen(false);
+    setImgSrc("");
+    setImgAlt("");
+  };
+
+  // ✅ include file_url/file_name in signature too (so UI updates when photo arrives)
   const signatureOf = useCallback((arr) => {
     const a = Array.isArray(arr) ? arr : [];
     if (!a.length) return "0";
     const last = a[a.length - 1];
-    return `${a.length}|${last?.id ?? ""}|${last?.created_at ?? ""}|${last?.sender_type ?? ""}|${last?.text ?? ""}`;
+    return `${a.length}|${last?.id ?? ""}|${last?.created_at ?? ""}|${last?.sender_type ?? ""}|${last?.kind ?? ""}|${last?.text ?? ""}|${last?.file_url ?? ""}`;
   }, []);
 
   const load = useCallback(
@@ -219,8 +248,6 @@ export default function SupportChat() {
 
     setSending(true);
     try {
-      console.log("SENDING REPLY:", convoId, msg);
-
       await api.post(
         `/support/conversations/${convoId}/reply`,
         { text: msg },
@@ -279,6 +306,8 @@ export default function SupportChat() {
         >
           {messages.map((m) => {
             const mine = m.sender_type === "agent";
+            const isPhoto = m.kind === "photo" && m.file_url;
+
             return (
               <div
                 key={m.id}
@@ -297,9 +326,54 @@ export default function SupportChat() {
                     background: mine ? "rgba(37,99,235,.10)" : "rgba(15,23,42,.06)",
                   }}
                 >
-                  <div style={{ whiteSpace: "pre-wrap" }}>
-                    {m.kind === "text" ? (m.text || "") : "[Unsupported kind]"}
-                  </div>
+                  {/* TEXT */}
+                  {m.kind === "text" ? (
+                    <div style={{ whiteSpace: "pre-wrap" }}>{m.text || ""}</div>
+                  ) : null}
+
+                  {/* PHOTO */}
+                  {isPhoto ? (
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => openImage(joinUrl(FILE_BASE, m.file_url), m.file_name || "photo")}
+                        style={{
+                          padding: 0,
+                          border: 0,
+                          background: "transparent",
+                          cursor: "zoom-in",
+                          display: "block",
+                        }}
+                        aria-label="Open photo"
+                      >
+                        <img
+                          src={joinUrl(FILE_BASE, m.file_url)}
+                          alt={m.file_name || "photo"}
+                          style={{
+                            width: 260,
+                            maxWidth: "100%",
+                            height: "auto",
+                            display: "block",
+                            borderRadius: 10,
+                            border: "1px solid rgba(0,0,0,.12)",
+                          }}
+                          loading="lazy"
+                        />
+                      </button>
+
+                      {m.file_name ? (
+                        <div style={{ marginTop: 6, fontSize: 12, opacity: 0.7 }}>
+                          {m.file_name}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  {/* fallback */}
+                  {m.kind !== "text" && !isPhoto ? (
+                    <div style={{ whiteSpace: "pre-wrap" }}>[Unsupported kind: {m.kind}]</div>
+                  ) : null}
+
                   <div style={{ marginTop: 6, fontSize: 12, opacity: 0.7, textAlign: "right" }}>
                     {toHHMM(m.created_at)}
                   </div>
@@ -326,6 +400,68 @@ export default function SupportChat() {
           </button>
         </div>
       </div>
+
+      {/* ✅ Lightbox */}
+      {imgOpen ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={closeImage}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.72)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            padding: 16,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: "relative",
+              maxWidth: "96vw",
+              maxHeight: "90vh",
+            }}
+          >
+            <button
+              type="button"
+              onClick={closeImage}
+              aria-label="Close"
+              style={{
+                position: "absolute",
+                top: -10,
+                right: -10,
+                width: 36,
+                height: 36,
+                borderRadius: 999,
+                border: 0,
+                background: "rgba(255,255,255,0.92)",
+                cursor: "pointer",
+                fontSize: 18,
+              }}
+            >
+              ✕
+            </button>
+
+            <img
+              src={imgSrc}
+              alt={imgAlt || "photo"}
+              style={{
+                maxWidth: "96vw",
+                maxHeight: "90vh",
+                width: "auto",
+                height: "auto",
+                objectFit: "contain",
+                borderRadius: 14,
+                display: "block",
+              }}
+            />
+          </div>
+        </div>
+      ) : null}
     </CsLayout>
   );
 }
