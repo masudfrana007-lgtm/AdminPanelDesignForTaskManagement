@@ -1,15 +1,43 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+// src/pages/CustomerService.jsx (NEW UI + OLD backend)
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./CustomerService.css";
 import MemberBottomNav from "../components/MemberBottomNav";
+import memberApi from "../services/memberApi";
 
-function timeHHMM(d = new Date()) {
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+/* ---------------- helpers ---------------- */
+function pad2(x) {
+  return String(x).padStart(2, "0");
+}
+function toHHMM(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "--:--";
+  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+}
+function safeId(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+function isNearBottom(el, px = 140) {
+  if (!el) return true;
+  return el.scrollHeight - el.scrollTop - el.clientHeight < px;
 }
 
+// ✅ backend file base (same as old working)
+const FILE_BASE = "http://159.198.40.145:5010";
+function joinUrl(base, p) {
+  const path = String(p || "").trim();
+  if (!path) return "";
+  if (/^https?:\/\//i.test(path)) return path;
+  const b = String(base || "").replace(/\/+$/, "");
+  const u = path.startsWith("/") ? path : `/${path}`;
+  return `${b}${u}`;
+}
+
+/* ---------------- UI constants ---------------- */
 const DEMO_AGENT = {
   name: "Customer Service",
-  status: "Online • Reply time: 2–5 min • Available 24/7",
-  avatar: "/icons/CS.jpg", // ✅ from public/icons/CS.jpg
+  avatar: "/icons/CS.jpg",
 };
 
 const DEMO_TG = {
@@ -20,54 +48,220 @@ const DEMO_TG = {
 };
 
 export default function CustomerService() {
-  const [mode, setMode] = useState("direct"); // default direct
+  const nav = useNavigate();
+
+  /* ---------------- NEW UI state ---------------- */
+  const [mode, setMode] = useState("direct"); // direct | telegram
   const [text, setText] = useState("");
-  const [filePreview, setFilePreview] = useState(null); // { url, name }
+  const [filePreview, setFilePreview] = useState(null); // { file, url, name }
+
+  /* ---------------- OLD backend state (kept) ---------------- */
+  const [conversationId, setConversationId] = useState(null);
+  const [messages, setMessages] = useState([]); // mapped messages for UI
   const [agentTyping, setAgentTyping] = useState(false);
+  const [err, setErr] = useState("");
 
-  const [messages, setMessages] = useState(() => [
-    {
-      id: "m1",
-      from: "agent",
-      type: "text",
-      text: "Hi! 👋 How can I help you today?",
-      at: timeHHMM(new Date(Date.now() - 1000 * 60 * 8)),
-      status: "seen",
-    },
-    {
-      id: "m2",
-      from: "agent",
-      type: "text",
-      text: "You can upload a screenshot for faster support.",
-      at: timeHHMM(new Date(Date.now() - 1000 * 60 * 7)),
-      status: "seen",
-    },
-  ]);
+  // upload state
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
+  // refs
   const listRef = useRef(null);
   const inputRef = useRef(null);
+  const photoInputRef = useRef(null);
 
-  const canSend = useMemo(() => {
-    return text.trim().length > 0 || !!filePreview;
-  }, [text, filePreview]);
+  // polling refs (old)
+  const pollTimerRef = useRef(null);
+  const inFlightRef = useRef(false);
+  const aliveRef = useRef(true);
+  const lastSigRef = useRef("");
+  const stickToBottomRef = useRef(true);
+  const visRef = useRef(!document.hidden);
+  const focusRef = useRef(document.hasFocus());
+
+  // lightbox (old)
+  const [imgOpen, setImgOpen] = useState(false);
+  const [imgSrc, setImgSrc] = useState("");
+  const [imgAlt, setImgAlt] = useState("");
+
+  const openImage = (src, alt = "photo") => {
+    setImgSrc(src);
+    setImgAlt(alt);
+    setImgOpen(true);
+  };
+  const closeImage = () => {
+    setImgOpen(false);
+    setImgSrc("");
+    setImgAlt("");
+  };
+
+  /* ---------------- backend mapping (old -> new UI fields) ---------------- */
+  const mapMsgs = useCallback((arr) => {
+    const a = Array.isArray(arr) ? arr : [];
+    return a.map((m) => ({
+      id: String(m.id),
+      from: m.sender_type === "agent" ? "agent" : "me", // ✅ UI expects me/agent
+      type: m.kind === "photo" ? "image" : "text",
+      text: m.text || "",
+      url: m.file_url || "",
+      name: m.file_name || "",
+      at: toHHMM(m.created_at),
+      status:
+        m.sender_type === "member"
+          ? m.read_by_agent
+            ? "seen"
+            : "delivered"
+          : undefined,
+      _raw: m,
+    }));
+  }, []);
+
+  const signatureOf = useCallback((arr) => {
+    const a = Array.isArray(arr) ? arr : [];
+    if (!a.length) return "0";
+    const last = a[a.length - 1];
+    return `${a.length}|${last?.id ?? ""}|${last?.created_at ?? ""}|${
+      last?.sender_type ?? ""
+    }|${last?.kind ?? ""}|${last?.text ?? ""}|${last?.file_url ?? ""}`;
+  }, []);
+
+  const loadAll = useCallback(
+    async ({ silent = false } = {}) => {
+      if (inFlightRef.current) return;
+      inFlightRef.current = true;
+
+      try {
+        if (!silent) setErr("");
+
+        const token = localStorage.getItem("member_token");
+        if (!token) {
+          if (!silent) setErr("Session expired. Please login again.");
+          nav("/member/login");
+          return;
+        }
+
+        let cid = conversationId;
+        if (!cid) {
+          const { data: convo } = await memberApi.get("/member/support/conversation");
+          cid = safeId(convo?.id);
+          if (!cid) {
+            if (!silent) setErr("Conversation not ready. Please reload.");
+            return;
+          }
+          if (!aliveRef.current) return;
+          setConversationId(cid);
+        }
+
+        const { data: msgs } = await memberApi.get("/member/support/messages", {
+          params: { conversation_id: cid },
+        });
+
+        const sig = signatureOf(msgs);
+        if (!aliveRef.current) return;
+
+        if (sig !== lastSigRef.current) {
+          lastSigRef.current = sig;
+          setMessages(mapMsgs(msgs));
+
+          // mark read (old)
+          memberApi.post("/member/support/mark-read", { conversation_id: cid }).catch(() => {});
+        }
+      } catch (e) {
+        if (!aliveRef.current) return;
+        const status = e?.response?.status;
+        if (!silent) setErr(e?.response?.data?.message || "Failed to load support chat");
+        if (status === 401) nav("/member/login");
+      } finally {
+        inFlightRef.current = false;
+      }
+    },
+    [conversationId, mapMsgs, nav, signatureOf]
+  );
+
+  /* ---------------- scrolling + polling (old) ---------------- */
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    const onScroll = () => (stickToBottomRef.current = isNearBottom(el));
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
-    el.scrollTop = el.scrollHeight;
+    if (stickToBottomRef.current) el.scrollTop = el.scrollHeight;
   }, [messages.length, agentTyping]);
 
   useEffect(() => {
-    if (mode === "direct") {
-      setTimeout(() => inputRef.current?.focus(), 120);
-    }
-  }, [mode]);
+    aliveRef.current = true;
 
+    const pickInterval = () => {
+      if (mode !== "direct") return 12000;
+      if (visRef.current && focusRef.current) return 2000;
+      if (visRef.current && !focusRef.current) return 5000;
+      return 15000;
+    };
+
+    const tick = async () => {
+      if (!aliveRef.current) return;
+      await loadAll({ silent: true });
+      pollTimerRef.current = setTimeout(tick, pickInterval());
+    };
+
+    const onVis = () => {
+      visRef.current = !document.hidden;
+      clearTimeout(pollTimerRef.current);
+      pollTimerRef.current = setTimeout(tick, 0);
+    };
+    const onFocus = () => {
+      focusRef.current = true;
+      clearTimeout(pollTimerRef.current);
+      pollTimerRef.current = setTimeout(tick, 0);
+    };
+    const onBlur = () => {
+      focusRef.current = false;
+      clearTimeout(pollTimerRef.current);
+      pollTimerRef.current = setTimeout(tick, 0);
+    };
+
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("blur", onBlur);
+
+    loadAll({ silent: false }).finally(() => {
+      if (!aliveRef.current) return;
+      clearTimeout(pollTimerRef.current);
+      pollTimerRef.current = setTimeout(tick, 0);
+    });
+
+    return () => {
+      aliveRef.current = false;
+      clearTimeout(pollTimerRef.current);
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("blur", onBlur);
+    };
+  }, [mode, loadAll]);
+
+  /* ---------------- NEW UI file preview -> backend photo upload ---------------- */
   function onPickFile(e) {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!/^image\//i.test(file.type || "")) {
+      setErr("Please select an image file.");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      setErr("Max photo size is 3MB.");
+      e.target.value = "";
+      return;
+    }
+
+    setErr("");
     const url = URL.createObjectURL(file);
-    setFilePreview({ url, name: file.name });
+    setFilePreview({ file, url, name: file.name });
     e.target.value = "";
   }
 
@@ -76,86 +270,86 @@ export default function CustomerService() {
     setFilePreview(null);
   }
 
-  function bumpReceiptToSeen(sentIds) {
-    // sent -> delivered -> seen
-    setTimeout(() => {
-      setMessages((prev) =>
-        prev.map((m) => {
-          if (m.from !== "me") return m;
-          if (!sentIds.includes(m.id)) return m;
-          return { ...m, status: "delivered" };
-        })
-      );
-    }, 550);
+  /* ---------------- send text + upload photo (old endpoints) ---------------- */
+  const sendTextToBackend = async (payload) => {
+    const t = String(payload || "").trim();
+    if (!t) return;
 
-    setTimeout(() => {
-      setMessages((prev) =>
-        prev.map((m) => {
-          if (m.from !== "me") return m;
-          if (!sentIds.includes(m.id)) return m;
-          return { ...m, status: "seen" };
-        })
-      );
-    }, 1600);
-  }
-
-  function agentAutoReply() {
-    setAgentTyping(true);
-    setTimeout(() => {
-      setAgentTyping(false);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: "a-" + crypto.randomUUID(),
-          from: "agent",
-          type: "text",
-          text: "Thanks! I’m checking this now. Please wait a moment.",
-          at: timeHHMM(),
-          status: "seen",
-        },
-      ]);
-    }, 1300);
-  }
-
-  function send() {
-    if (!canSend) return;
-
-    const createdIds = [];
-    const newMsgs = [];
-
-    if (filePreview) {
-      const id = "img-" + crypto.randomUUID();
-      createdIds.push(id);
-      newMsgs.push({
-        id,
-        from: "me",
-        type: "image",
-        url: filePreview.url,
-        name: filePreview.name,
-        at: timeHHMM(),
-        status: "sent",
-      });
+    const token = localStorage.getItem("member_token");
+    if (!token) {
+      setErr("Session expired. Please login again.");
+      nav("/member/login");
+      return;
+    }
+    if (!conversationId) {
+      setErr("Conversation not ready. Please reload.");
+      return;
     }
 
-    if (text.trim()) {
-      const id = "txt-" + crypto.randomUUID();
-      createdIds.push(id);
-      newMsgs.push({
-        id,
-        from: "me",
-        type: "text",
-        text: text.trim(),
-        at: timeHHMM(),
-        status: "sent",
-      });
+    await memberApi.post("/member/support/send", {
+      conversation_id: conversationId,
+      text: t,
+    });
+
+    lastSigRef.current = "";
+    await loadAll({ silent: true });
+  };
+
+  const uploadPhotoToBackend = async (file) => {
+    if (!file) return;
+
+    const token = localStorage.getItem("member_token");
+    if (!token) {
+      setErr("Session expired. Please login again.");
+      nav("/member/login");
+      return;
+    }
+    if (!conversationId) {
+      setErr("Conversation not ready. Please reload.");
+      return;
     }
 
-    setMessages((prev) => [...prev, ...newMsgs]);
-    setText("");
-    setFilePreview(null);
+    const fd = new FormData();
+    fd.append("conversation_id", String(conversationId));
+    fd.append("photo", file);
 
-    bumpReceiptToSeen(createdIds);
-    agentAutoReply();
+    await memberApi.post("/member/support/send-photo", fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    lastSigRef.current = "";
+    await loadAll({ silent: true });
+  };
+
+  const canSend = useMemo(() => {
+    return text.trim().length > 0 || !!filePreview;
+  }, [text, filePreview]);
+
+  async function send() {
+    if (!canSend || uploadingPhoto) return;
+
+    try {
+      setErr("");
+      const t = text.trim();
+      setText("");
+
+      // photo first
+      if (filePreview?.file) {
+        setUploadingPhoto(true);
+        await uploadPhotoToBackend(filePreview.file);
+        removePreview();
+      }
+
+      // then text
+      if (t) {
+        await sendTextToBackend(t);
+      }
+    } catch (e) {
+      setErr(e?.response?.data?.message || "Failed to send");
+      if (e?.response?.status === 401) nav("/member/login");
+    } finally {
+      setUploadingPhoto(false);
+    }
   }
 
   function onKeyDown(e) {
@@ -165,24 +359,27 @@ export default function CustomerService() {
     }
   }
 
+  /* focus on direct mode */
+  useEffect(() => {
+    if (mode === "direct") setTimeout(() => inputRef.current?.focus(), 120);
+  }, [mode]);
+
   function Receipt({ status }) {
     if (!status) return null;
-    if (status === "sent") return <span className="rcpt">✓</span>;
     if (status === "delivered") return <span className="rcpt">✓✓</span>;
     if (status === "seen") return <span className="rcpt seen">✓✓</span>;
-    return null;
+    return <span className="rcpt">✓</span>;
   }
 
   return (
     <div className="csPage">
-      {/* Header: title + tabs beside it (mobile also stays upper) */}
+      {/* TOP HEADER */}
       <div className="csTopBar">
         <div className="csTopLeft">
           <img className="csTopAvatar" src={DEMO_AGENT.avatar} alt="Support" />
           <div className="csTopMeta">
             <div className="csTitle">{DEMO_AGENT.name}</div>
 
-            {/* ✅ Online dot + green Online + new status text */}
             <div className="csSub">
               <span className="onlineDot" />
               <span className="onlineText">Online</span>
@@ -200,6 +397,7 @@ export default function CustomerService() {
             onClick={() => setMode("direct")}
             role="tab"
             aria-selected={mode === "direct"}
+            type="button"
           >
             Direct
           </button>
@@ -208,11 +406,18 @@ export default function CustomerService() {
             onClick={() => setMode("telegram")}
             role="tab"
             aria-selected={mode === "telegram"}
+            type="button"
           >
             Telegram
           </button>
         </div>
       </div>
+
+      {err ? (
+        <div style={{ padding: "10px 12px", color: "#fecaca", fontWeight: 800 }}>
+          {err}
+        </div>
+      ) : null}
 
       <div className="csBodyOne">
         {mode === "direct" ? (
@@ -231,7 +436,14 @@ export default function CustomerService() {
                   <div className={"bubble " + (m.type === "image" ? "isImage" : "")}>
                     {m.type === "image" ? (
                       <div className="imgWrap">
-                        <img src={m.url} alt={m.name || "upload"} />
+                        <img
+                          src={joinUrl(FILE_BASE, m.url)}
+                          alt={m.name || "upload"}
+                          onClick={() =>
+                            openImage(joinUrl(FILE_BASE, m.url), m.name || "photo")
+                          }
+                          style={{ cursor: "zoom-in" }}
+                        />
                       </div>
                     ) : (
                       <div className="bubbleText">{m.text}</div>
@@ -245,7 +457,7 @@ export default function CustomerService() {
                 </div>
               ))}
 
-              {/* Typing indicator */}
+              {/* Typing indicator (keep state; wire later if you want) */}
               {agentTyping ? (
                 <div className="chatRow isAgent">
                   <div className="typingBubble" aria-label="Typing">
@@ -269,7 +481,9 @@ export default function CustomerService() {
                     />
                     <div className="previewInfo">
                       <div className="previewName">{filePreview.name}</div>
-                      <div className="previewHint">Ready to send</div>
+                      <div className="previewHint">
+                        {uploadingPhoto ? "Uploading…" : "Ready to send"}
+                      </div>
                     </div>
                   </div>
                   <button className="previewRemove" onClick={removePreview} type="button">
@@ -281,12 +495,14 @@ export default function CustomerService() {
               <div className="composerRow">
                 <label className="iconBtn" title="Upload photo">
                   <input
+                    ref={photoInputRef}
                     className="fileInput"
                     type="file"
                     accept="image/*"
                     onChange={onPickFile}
+                    disabled={uploadingPhoto}
                   />
-                  <span className="icon">＋</span>
+                  <span className="icon">{uploadingPhoto ? "⏳" : "＋"}</span>
                 </label>
 
                 <div className="composerBox">
@@ -297,14 +513,15 @@ export default function CustomerService() {
                     onKeyDown={onKeyDown}
                     rows={1}
                     placeholder="Type your message…"
+                    disabled={uploadingPhoto}
                   />
                 </div>
 
                 <button
-                  className={"sendBtn " + (canSend ? "isReady" : "")}
+                  className={"sendBtn " + (canSend && !uploadingPhoto ? "isReady" : "")}
                   onClick={send}
                   type="button"
-                  disabled={!canSend}
+                  disabled={!canSend || uploadingPhoto}
                 >
                   Send
                 </button>
@@ -345,7 +562,19 @@ export default function CustomerService() {
         )}
       </div>
 
-      <MemberBottomNav active="service" />      
+      {/* Lightbox */}
+      {imgOpen ? (
+        <div className="cs-imgOverlay" role="dialog" aria-modal="true" onClick={closeImage}>
+          <div className="cs-imgModal" onClick={(e) => e.stopPropagation()}>
+            <button className="cs-imgClose" type="button" onClick={closeImage} aria-label="Close">
+              ✕
+            </button>
+            <img className="cs-imgFull" src={imgSrc} alt={imgAlt || "photo"} />
+          </div>
+        </div>
+      ) : null}
+
+      <MemberBottomNav active="service" />
     </div>
   );
 }

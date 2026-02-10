@@ -535,3 +535,91 @@ html, body{
   .bubbleText{ font-size: 14px; }
   .composerBox textarea{ font-size: 14px; }
 }
+
+/* ===============================
+   FIX: page doesn't scroll
+   only chatList scrolls
+   input height matches + and Send
+================================ */
+
+/* 1) Stop the whole page from scrolling */
+html, body{
+  height: 100%;
+  overflow: hidden; /* ✅ page locked */
+}
+
+/* 2) Make csPage a full-height flex layout */
+.csPage{
+  height: 100vh;            /* ✅ lock to viewport */
+  overflow: hidden;         /* ✅ no page scroll */
+  display: flex;            /* ✅ */
+  flex-direction: column;   /* ✅ */
+}
+
+/* 3) Body area takes remaining space between header and bottom bar */
+.csBodyOne{
+  flex: 1;                  /* ✅ fill leftover space */
+  min-height: 0;            /* ✅ REQUIRED so inner scroll works */
+  overflow: hidden;         /* ✅ prevent body scroll */
+  display: flex;            /* ✅ */
+}
+
+/* 4) Chat shell fills available space (no fixed height) */
+.chatShell, .tgShell{
+  flex: 1;                  /* ✅ fills between header and bottom nav */
+  min-height: 0;            /* ✅ REQUIRED */
+  height: auto !important;  /* ✅ override your vh math */
+}
+
+/* 5) ONLY messages scroll */
+.chatList{
+  flex: 1;
+  min-height: 0;            /* ✅ REQUIRED */
+  overflow-y: auto;         /* ✅ only scroll here */
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 6) Input height exactly like buttons */
+.composerRow{
+  align-items: center;      /* ✅ instead of end */
+}
+
+.composerBox{
+  height: 44px;             /* ✅ same as buttons */
+  padding: 0 10px;          /* ✅ remove vertical padding */
+  display: flex;
+  align-items: center;
+}
+
+.composerBox textarea{
+  height: 44px;
+  padding: 0;
+  line-height: 44px;        /* ✅ vertical center */
+  max-height: 44px;         /* ✅ prevent growth */
+  overflow: hidden;
+}
+
+/* allow width to work (cancel flex-grow) */
+.chatShell{
+  flex: 0 0 auto;           /* ✅ stop stretching full width */
+  width: min(900px, 100%);  /* ✅ change 900px to what you want */
+  margin: 0 auto;           /* ✅ keep centered */
+}
+
+/* 🔒 strictly confine textarea inside composerBox */
+.composerBox textarea{
+  box-sizing: border-box;
+  height: 100%;
+  max-height: 100%;
+  min-height: 100%;
+
+  padding: 0;
+  margin: 0;
+
+  line-height: 44px;   /* vertical centering */
+  overflow: hidden;
+
+  display: block;      /* IMPORTANT */
+}
+
