@@ -83,6 +83,10 @@ import SupportChat from "./pages/SupportChat";
 
 import CsLogin from "./pages/CsLogin";
 
+import ProfileEdit from "./pages/ProfileEdit";
+
+import CustomerService from "./pages/CustomerService";
+
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
   
@@ -214,6 +218,15 @@ export const router = createBrowserRouter([
     element: (
       <MemberProtectedRoute>
         <MemberService />
+      </MemberProtectedRoute>
+    ),
+  },
+
+  {
+    path: "/member/customerService",
+    element: (
+      <MemberProtectedRoute>
+        <CustomerService />
       </MemberProtectedRoute>
     ),
   },
@@ -516,6 +529,15 @@ export const router = createBrowserRouter([
   path: "/support/:id",
   element: (
       <SupportChat />
+  ),
+},
+
+{
+  path: "/member-profile-edit",
+  element: (
+    <MemberProtectedRoute>
+      <ProfileEdit />
+    </MemberProtectedRoute>
   ),
 },
 

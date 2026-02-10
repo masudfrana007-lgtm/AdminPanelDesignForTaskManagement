@@ -153,6 +153,10 @@ export default function Profile() {
           </div>
         )}
 
+        <button className="pf-btn" onClick={() => (window.location.href = "/member-profile-edit")}>
+          Edit Profile
+        </button>
+
         {/* LOADING */}
         {loading ? (
           <div className="pf-card pf-top">
