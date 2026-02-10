@@ -45,7 +45,6 @@ const storage = multer.diskStorage({
     const ext = path.extname(file.originalname || "").toLowerCase();
     const safeExt = ext && ext.length <= 10 ? ext : ".jpg";
 
-    // ✅ deterministic enough, avoids collisions
     const name = `${Date.now()}-${Math.random().toString(16).slice(2)}${safeExt}`;
     cb(null, name);
   },
@@ -83,7 +82,7 @@ router.get("/conversation", memberAuth, async (req, res) => {
   res.json(created.rows[0]);
 });
 
-// ✅ list messages
+// ✅ list messages (✅ includes file_url + file_name + file_size)
 router.get("/messages", memberAuth, async (req, res) => {
   const memberId = getMemberId(req);
   const conversationId = Number(req.query.conversation_id);
@@ -101,7 +100,8 @@ router.get("/messages", memberAuth, async (req, res) => {
 
   const r = await pool.query(
     `SELECT id, conversation_id, sender_type, kind, text,
-            file_name, read_by_agent, read_by_member, created_at
+            file_url, file_name, file_size,
+            read_by_agent, read_by_member, created_at
      FROM support_messages
      WHERE conversation_id = $1
      ORDER BY created_at ASC, id ASC`,
@@ -151,43 +151,56 @@ router.post("/send", memberAuth, async (req, res) => {
 });
 
 // ✅ send photo (multipart/form-data)
-router.post("/send-photo", memberAuth, upload.single("photo"), async (req, res) => {
-  const memberId = getMemberId(req);
-  const conversationId = Number(req.body?.conversation_id);
+// ✅ stores public URL in file_url (matches DB schema)
+router.post(
+  "/send-photo",
+  memberAuth,
+  upload.single("photo"),
+  async (req, res) => {
+    const memberId = getMemberId(req);
+    const conversationId = Number(req.body?.conversation_id);
 
-  if (!memberId) return res.status(401).json({ message: "Unauthorized" });
-  if (!Number.isFinite(conversationId))
-    return res.status(400).json({ message: "conversation_id required" });
-  if (!req.file) return res.status(400).json({ message: "Photo is required" });
+    if (!memberId) return res.status(401).json({ message: "Unauthorized" });
+    if (!Number.isFinite(conversationId))
+      return res.status(400).json({ message: "conversation_id required" });
+    if (!req.file) return res.status(400).json({ message: "Photo is required" });
 
-  const ok = await pool.query(
-    "SELECT id FROM support_conversations WHERE id = $1 AND member_id = $2",
-    [conversationId, memberId]
-  );
-  if (!ok.rows[0]) return res.status(403).json({ message: "Forbidden" });
+    const ok = await pool.query(
+      "SELECT id FROM support_conversations WHERE id = $1 AND member_id = $2",
+      [conversationId, memberId]
+    );
+    if (!ok.rows[0]) return res.status(403).json({ message: "Forbidden" });
 
-  // ✅ build public URL path that frontend can load
-  const urlPath = `/uploads/chats/member/${memberId}/${conversationId}/${req.file.filename}`;
+    // ✅ public URL path
+    const urlPath = `/uploads/chats/member/${memberId}/${conversationId}/${req.file.filename}`;
 
-  const ins = await pool.query(
-    `INSERT INTO support_messages (
-      conversation_id, sender_type, sender_member_id,
-      kind, text, file_name, read_by_agent, read_by_member
-    )
-    VALUES ($1,'member',$2,'photo',$3,$4,false,true)
-    RETURNING *`,
-    [conversationId, memberId, urlPath, req.file.originalname || ""]
-  );
+    const ins = await pool.query(
+      `INSERT INTO support_messages (
+        conversation_id, sender_type, sender_member_id,
+        kind, text, file_url, file_name, file_size,
+        read_by_agent, read_by_member
+      )
+      VALUES ($1,'member',$2,'photo',NULL,$3,$4,$5,false,true)
+      RETURNING *`,
+      [
+        conversationId,
+        memberId,
+        urlPath,
+        req.file.originalname || "",
+        req.file.size || null,
+      ]
+    );
 
-  await pool.query(
-    `UPDATE support_conversations
-     SET last_message_at = now(), status = 'open'
-     WHERE id = $1`,
-    [conversationId]
-  );
+    await pool.query(
+      `UPDATE support_conversations
+       SET last_message_at = now(), status = 'open'
+       WHERE id = $1`,
+      [conversationId]
+    );
 
-  res.status(201).json(ins.rows[0]);
-});
+    res.status(201).json(ins.rows[0]);
+  }
+);
 
 // ✅ mark agent messages read by member
 router.post("/mark-read", memberAuth, async (req, res) => {

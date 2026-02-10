@@ -1,5 +1,4 @@
 // src/pages/MemberService.jsx
-// ✅ Efficient polling + photo upload + no manual headers (memberApi interceptor)
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/memberService.css";
@@ -23,9 +22,18 @@ function isNearBottom(el, px = 140) {
   return el.scrollHeight - el.scrollTop - el.clientHeight < px;
 }
 
-// ✅ used for rendering uploaded photo URLs
-// if your backend is same origin, you can set this to "".
-const FILE_BASE = import.meta.env.VITE_API_URL?.replace(/\/api\/?$/i, "") || "";
+// ✅ MATCH TASKS: always load images from backend directly
+const FILE_BASE = "http://159.198.40.145:5010";
+
+// ✅ safe join for image URL
+function joinUrl(base, p) {
+  const path = String(p || "").trim();
+  if (!path) return "";
+  if (/^https?:\/\//i.test(path)) return path; // already absolute
+  const b = String(base || "").replace(/\/+$/, "");
+  const u = path.startsWith("/") ? path : `/${path}`;
+  return `${b}${u}`;
+}
 
 export default function CustomerService() {
   const nav = useNavigate();
@@ -59,10 +67,22 @@ export default function CustomerService() {
 
   const faqs = useMemo(
     () => [
-      { q: "How long does a deposit take?", a: "Deposits are credited after required network confirmations. Timing depends on the network and congestion." },
-      { q: "What should I send for faster support?", a: "Please provide TXID, amount, network, and a screenshot if possible." },
-      { q: "Can I change the deposit network?", a: "No. Funds must be sent on the same network shown on the deposit page." },
-      { q: "Why is my withdrawal pending?", a: "Withdrawals can be delayed by verification checks or network conditions. Share your withdrawal ID for review." },
+      {
+        q: "How long does a deposit take?",
+        a: "Deposits are credited after required network confirmations. Timing depends on the network and congestion.",
+      },
+      {
+        q: "What should I send for faster support?",
+        a: "Please provide TXID, amount, network, and a screenshot if possible.",
+      },
+      {
+        q: "Can I change the deposit network?",
+        a: "No. Funds must be sent on the same network shown on the deposit page.",
+      },
+      {
+        q: "Why is my withdrawal pending?",
+        a: "Withdrawals can be delayed by verification checks or network conditions. Share your withdrawal ID for review.",
+      },
     ],
     []
   );
@@ -74,6 +94,7 @@ export default function CustomerService() {
       from: m.sender_type === "agent" ? "agent" : "user",
       kind: m.kind || "text",
       text: m.text || "",
+      fileUrl: m.file_url || "",
       fileName: m.file_name || "",
       time: toHHMM(m.created_at),
       status:
@@ -89,7 +110,9 @@ export default function CustomerService() {
     const a = Array.isArray(arr) ? arr : [];
     if (!a.length) return "0";
     const last = a[a.length - 1];
-    return `${a.length}|${last?.id ?? ""}|${last?.created_at ?? ""}|${last?.sender_type ?? ""}|${last?.kind ?? ""}|${last?.text ?? ""}`;
+    return `${a.length}|${last?.id ?? ""}|${last?.created_at ?? ""}|${
+      last?.sender_type ?? ""
+    }|${last?.kind ?? ""}|${last?.text ?? ""}|${last?.file_url ?? ""}`;
   }, []);
 
   const loadAll = useCallback(
@@ -109,7 +132,9 @@ export default function CustomerService() {
 
         let cid = conversationId;
         if (!cid) {
-          const { data: convo } = await memberApi.get("/member/support/conversation");
+          const { data: convo } = await memberApi.get(
+            "/member/support/conversation"
+          );
           cid = safeId(convo?.id);
           if (!cid) {
             if (!silent) setErr("Conversation not ready. Please reload.");
@@ -130,13 +155,15 @@ export default function CustomerService() {
           lastSigRef.current = sig;
           setMessages(mapMsgs(msgs));
 
-          // mark agent msgs read by member (only when changed)
-          memberApi.post("/member/support/mark-read", { conversation_id: cid }).catch(() => {});
+          memberApi
+            .post("/member/support/mark-read", { conversation_id: cid })
+            .catch(() => {});
         }
       } catch (e) {
         if (!aliveRef.current) return;
         const status = e?.response?.status;
-        if (!silent) setErr(e?.response?.data?.message || "Failed to load support chat");
+        if (!silent)
+          setErr(e?.response?.data?.message || "Failed to load support chat");
         if (status === 401) nav("/member/login");
       } finally {
         inFlightRef.current = false;
@@ -145,7 +172,6 @@ export default function CustomerService() {
     [conversationId, mapMsgs, nav, signatureOf]
   );
 
-  // scroll listener
   useEffect(() => {
     const el = chatRef.current;
     if (!el) return;
@@ -154,14 +180,13 @@ export default function CustomerService() {
     return () => el.removeEventListener("scroll", onScroll);
   }, []);
 
-  // autoscroll only if near bottom
   useEffect(() => {
     const el = chatRef.current;
     if (!el) return;
-    if (stickToBottomRef.current) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    if (stickToBottomRef.current)
+      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [messages, agentTyping]);
 
-  // adaptive polling
   useEffect(() => {
     aliveRef.current = true;
 
@@ -220,7 +245,6 @@ export default function CustomerService() {
 
   const clearChat = () => window.location.reload();
 
-  // send text
   const sendText = async () => {
     const text = message.trim();
     if (!text) return;
@@ -240,12 +264,22 @@ export default function CustomerService() {
     setMessage("");
 
     try {
-      await memberApi.post("/member/support/send", { conversation_id: conversationId, text });
+      await memberApi.post("/member/support/send", {
+        conversation_id: conversationId,
+        text,
+      });
 
-      // optimistic append
       setMessages((prev) => [
         ...prev,
-        { id: `local-${Date.now()}`, from: "user", kind: "text", text, time: toHHMM(new Date().toISOString()), status: "delivered" },
+        {
+          id: `local-${Date.now()}`,
+          from: "user",
+          kind: "text",
+          text,
+          fileUrl: "",
+          time: toHHMM(new Date().toISOString()),
+          status: "delivered",
+        },
       ]);
 
       lastSigRef.current = "";
@@ -256,7 +290,7 @@ export default function CustomerService() {
     }
   };
 
-  // ✅ photo upload
+  // ✅ photo upload (match Tasks)
   const uploadPhoto = async (file) => {
     if (!file) return;
 
@@ -271,7 +305,6 @@ export default function CustomerService() {
       return;
     }
 
-    // basic client validation
     if (!/^image\//i.test(file.type || "")) {
       setErr("Please select an image file.");
       return;
@@ -289,18 +322,21 @@ export default function CustomerService() {
       fd.append("conversation_id", String(conversationId));
       fd.append("photo", file);
 
-      // ✅ no manual headers needed; axios will set multipart boundary
-      const { data } = await memberApi.post("/member/support/send-photo", fd);
+      // ✅ IMPORTANT: same as Tasks
+      const { data } = await memberApi.post("/member/support/send-photo", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
-      // optimistic append from server response
-      const url = data?.text || "";
+      const url = data?.file_url || "";
+
       setMessages((prev) => [
         ...prev,
         {
           id: String(data?.id || `photo-${Date.now()}`),
           from: "user",
           kind: "photo",
-          text: url,
+          text: "",
+          fileUrl: url,
           time: toHHMM(data?.created_at || new Date().toISOString()),
           status: "delivered",
           fileName: data?.file_name || file.name,
@@ -337,7 +373,9 @@ export default function CustomerService() {
   return (
     <div className="cs-page">
       <header className="cs-header">
-        <button className="cs-back" onClick={() => nav(-1)} type="button">←</button>
+        <button className="cs-back" onClick={() => nav(-1)} type="button">
+          ←
+        </button>
 
         <div className="cs-headerText">
           <h1>Customer Service</h1>
@@ -348,13 +386,21 @@ export default function CustomerService() {
           <span className="cs-statusDot" />
           <span className="cs-statusText">Online</span>
 
-          <button className="cs-headBtn" type="button" onClick={() => setHelpOpen(true)}>Help Center</button>
-          <button className="cs-headBtn" type="button" onClick={reloadPage}>Reload</button>
-          <button className="cs-headBtn" type="button" onClick={clearChat}>Clear</button>
+          <button className="cs-headBtn" type="button" onClick={() => setHelpOpen(true)}>
+            Help Center
+          </button>
+          <button className="cs-headBtn" type="button" onClick={reloadPage}>
+            Reload
+          </button>
+          <button className="cs-headBtn" type="button" onClick={clearChat}>
+            Clear
+          </button>
         </div>
       </header>
 
-      {err ? <div style={{ padding: "10px 18px", color: "#b91c1c" }}>{err}</div> : null}
+      {err ? (
+        <div style={{ padding: "10px 18px", color: "#b91c1c" }}>{err}</div>
+      ) : null}
 
       <section className="cs-switchWrap">
         <div className="cs-switch">
@@ -387,7 +433,9 @@ export default function CustomerService() {
                 <div className="cs-agentMeta">
                   <div className="cs-agentNameRow">
                     <span className="cs-agentName">Royal Support</span>
-                    <span className="cs-verified" title="Verified">✓ Verified</span>
+                    <span className="cs-verified" title="Verified">
+                      ✓ Verified
+                    </span>
                   </div>
                   <div className="cs-agentSub">
                     Reply time: <b>3–10 min</b> • Available 24/7
@@ -397,14 +445,17 @@ export default function CustomerService() {
 
               <div className="cs-chat" ref={chatRef}>
                 {messages.map((m) => (
-                  <div key={m.id} className={"cs-msg " + (m.from === "user" ? "user" : "agent")}>
+                  <div
+                    key={m.id}
+                    className={"cs-msg " + (m.from === "user" ? "user" : "agent")}
+                  >
                     <div className="cs-bubble cs-pop">
                       {m.kind === "text" && <div className="cs-text">{m.text}</div>}
 
                       {m.kind === "photo" && (
                         <div className="cs-file">
                           <img
-                            src={`${FILE_BASE}${m.text}`}
+                            src={joinUrl(FILE_BASE, m.fileUrl)}
                             alt={m.fileName || "photo"}
                             style={{
                               width: "100%",
@@ -469,7 +520,12 @@ export default function CustomerService() {
                   onChange={(e) => uploadPhoto(e.target.files?.[0])}
                 />
 
-                <button className="cs-iconBtn" type="button" title="Upload document" onClick={addFileMessage}>
+                <button
+                  className="cs-iconBtn"
+                  type="button"
+                  title="Upload document"
+                  onClick={addFileMessage}
+                >
                   📎
                 </button>
                 <input
@@ -514,9 +570,18 @@ export default function CustomerService() {
                 </div>
 
                 <div className="cs-tgRows">
-                  <div className="cs-tgRow"><span>Typical reply time</span><b>3–10 minutes</b></div>
-                  <div className="cs-tgRow"><span>Availability</span><b>24/7 (VIP priority)</b></div>
-                  <div className="cs-tgRow"><span>Security</span><b>Never share password/OTP</b></div>
+                  <div className="cs-tgRow">
+                    <span>Typical reply time</span>
+                    <b>3–10 minutes</b>
+                  </div>
+                  <div className="cs-tgRow">
+                    <span>Availability</span>
+                    <b>24/7 (VIP priority)</b>
+                  </div>
+                  <div className="cs-tgRow">
+                    <span>Security</span>
+                    <b>Never share password/OTP</b>
+                  </div>
                 </div>
 
                 <div className="cs-tgTips">
@@ -549,7 +614,9 @@ export default function CustomerService() {
                 <div className="cs-modalTitle">Help Center</div>
                 <div className="cs-modalSub">FAQ, tips, and security guidance</div>
               </div>
-              <button className="cs-modalClose" type="button" onClick={() => setHelpOpen(false)}>✕</button>
+              <button className="cs-modalClose" type="button" onClick={() => setHelpOpen(false)}>
+                ✕
+              </button>
             </div>
 
             <div className="cs-modalBody">
