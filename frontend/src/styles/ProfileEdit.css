@@ -167,3 +167,8 @@
 }
 
 .peNavSpacer{ height: 76px; }
+
+h1, h2, h3 {
+    margin: 0 0 12px 0;
+    color: white;
+}

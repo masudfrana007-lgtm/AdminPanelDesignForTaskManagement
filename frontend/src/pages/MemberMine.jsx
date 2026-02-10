@@ -20,6 +20,17 @@ import settingsIcon from "../assets/icons/settings.png";
 import depositRec1Icon from "../assets/icons/DepositR.png";
 import depositRec2Icon from "../assets/icons/DepositRR.png";
 
+/* ---------------- CONFIG ---------------- */
+const API_HOST = "http://159.198.40.145:5010";
+
+function toAbsUrl(p) {
+  const s = String(p || "").trim();
+  if (!s) return "";
+  if (s.startsWith("http://") || s.startsWith("https://")) return s;
+  if (s.startsWith("/")) return API_HOST + s;
+  return API_HOST + "/" + s;
+}
+
 function money(n) {
   const num = Number(n || 0);
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(num);
@@ -46,6 +57,14 @@ function ListItem({ icon, label, onClick }) {
   );
 }
 
+function rankLabel(r) {
+  const x = String(r || "").trim().toUpperCase();
+  if (x === "V1") return "VIP 1";
+  if (x === "V2") return "VIP 2";
+  if (x === "V3") return "VIP 3";
+  return "Trial";
+}
+
 export default function MemberMine() {
   const nav = useNavigate();
   const [showTeamPopup, setShowTeamPopup] = useState(false);
@@ -68,7 +87,7 @@ export default function MemberMine() {
   }, []);
 
   // ✅ map API -> UI fields (keep UI identical)
-  const vip = me?.ranking ?? "-";
+  const vip = rankLabel(me?.ranking);
   const balance = Number(me?.balance || 0);
 
   // "Reference code" shown in UI:
@@ -77,6 +96,17 @@ export default function MemberMine() {
 
   // stable avatar seed
   const avatarSeed = referenceCode === "-" ? "guest" : referenceCode;
+
+  const rawAvatar =
+    me?.avatar_url ||
+    me?.photo_url ||
+    me?.profile_photo_url ||
+    me?.profile_picture_url ||
+    me?.profile_photo ||
+    "";
+
+  const avatarUrl = toAbsUrl(rawAvatar);
+  const hasAvatar = !!avatarUrl;
 
   return (
     <div className="minePage">
@@ -88,9 +118,12 @@ export default function MemberMine() {
               <div className="mine-hero-top">
                 <div className="mine-avatar">
                   <img
-                    src={`https://i.pravatar.cc/150?u=${encodeURIComponent(avatarSeed)}`}
+                    src={hasAvatar ? avatarUrl : "/user.png"}
                     alt="User Avatar"
                     className="mine-avatar-img"
+                    onError={(e) => {
+                      e.currentTarget.src = "/user.png";
+                    }}
                   />
                 </div>
                 <div className="mine-meta">

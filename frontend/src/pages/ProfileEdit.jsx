@@ -1,8 +1,21 @@
+// src/pages/ProfileEdit.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/ProfileEdit.css";
 import MemberBottomNav from "../components/MemberBottomNav";
 import memberApi from "../services/memberApi";
+
+/* ---------- CONFIG ---------- */
+const API_HOST = "http://159.198.40.145:5010";
+
+// convert DB path like "/uploads/avatars/xx.jpg" into full URL
+function toAbsUrl(p) {
+  const s = String(p || "").trim();
+  if (!s) return "";
+  if (s.startsWith("http://") || s.startsWith("https://")) return s;
+  if (s.startsWith("/")) return API_HOST + s;
+  return API_HOST + "/" + s;
+}
 
 /* ---------- helpers ---------- */
 function norm(v) {
@@ -23,7 +36,11 @@ export default function ProfileEdit() {
   const fileRef = useRef(null);
 
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+
+  // separate saving states
+  const [savingEmail, setSavingEmail] = useState(false);
+  const [savingPhoto, setSavingPhoto] = useState(false);
+
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
 
@@ -32,10 +49,6 @@ export default function ProfileEdit() {
 
   const [avatarPreview, setAvatarPreview] = useState("");
   const [avatarFile, setAvatarFile] = useState(null);
-
-  // if backend returns any of these, we’ll show it when no new preview is picked
-  const existingAvatar =
-    user?.avatar_url || user?.photo_url || user?.profile_photo_url || user?.profile_picture_url || "";
 
   const loadMe = async () => {
     setLoading(true);
@@ -56,6 +69,7 @@ export default function ProfileEdit() {
 
   useEffect(() => {
     loadMe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // clean up blob url to avoid memory leak
@@ -65,12 +79,28 @@ export default function ProfileEdit() {
     };
   }, [avatarPreview]);
 
-  const dirty = useMemo(() => {
+  // ✅ server avatar must be absolute URL (5010)
+  const existingAvatar = useMemo(() => {
+    const u = user || {};
+    const raw =
+      u.avatar_url ||
+      u.photo_url ||
+      u.profile_photo_url ||
+      u.profile_picture_url ||
+      u.profile_photo ||
+      "";
+    return toAbsUrl(raw);
+  }, [user]);
+
+  const shownAvatar = avatarPreview || existingAvatar;
+
+  // separate dirty flags
+  const emailDirty = useMemo(() => {
     if (!user) return false;
-    const a = norm(user.email);
-    const b = norm(email);
-    return a !== b || !!avatarFile;
-  }, [user, email, avatarFile]);
+    return norm(user.email) !== norm(email);
+  }, [user, email]);
+
+  const photoDirty = useMemo(() => !!avatarFile, [avatarFile]);
 
   const pickAvatar = () => fileRef.current?.click();
 
@@ -87,49 +117,89 @@ export default function ProfileEdit() {
     setErr("");
   };
 
-  const validate = () => {
+  const validateEmail = () => {
     const e = norm(email);
     if (!e) return "Email is required";
     if (!isEmail(e)) return "Invalid email format";
     return "";
   };
 
-  const save = async () => {
-    const v = validate();
+  // ---------------------------
+  // SAVE EMAIL (with confirm)
+  // ---------------------------
+  const saveEmail = async () => {
+    const v = validateEmail();
     if (v) {
       setErr(v);
       return;
     }
 
-    setSaving(true);
+    if (!emailDirty) {
+      setOk("No changes to email");
+      return;
+    }
+
+    const confirmed = window.confirm(`Confirm update email to:\n\n${norm(email)}`);
+    if (!confirmed) return;
+
+    setSavingEmail(true);
     setErr("");
     setOk("");
 
     try {
-      // 1) Update email only
       await memberApi.patch("/member/me", { email: norm(email) });
-
-      // 2) Optional: upload avatar file
-      if (avatarFile) {
-        const fd = new FormData();
-        fd.append("avatar", avatarFile);
-        await memberApi.post("/member/avatar", fd); // ✅ no manual headers
-        setAvatarFile(null);
-
-        if (avatarPreview?.startsWith("blob:")) URL.revokeObjectURL(avatarPreview);
-        setAvatarPreview("");
-      }
-
-      setOk("Profile updated");
+      setOk("Email updated");
       await loadMe();
     } catch (e) {
-      setErr(e?.response?.data?.message || "Failed to update profile");
+      setErr(e?.response?.data?.message || "Failed to update email");
     } finally {
-      setSaving(false);
+      setSavingEmail(false);
     }
   };
 
-  const shownAvatar = avatarPreview || existingAvatar;
+  // ---------------------------
+  // SAVE PHOTO (with confirm)
+  // ---------------------------
+  const savePhoto = async () => {
+    if (!avatarFile) {
+      setErr("Please choose a photo first");
+      return;
+    }
+
+    const confirmed = window.confirm("Confirm update profile photo?");
+    if (!confirmed) return;
+
+    setSavingPhoto(true);
+    setErr("");
+    setOk("");
+
+    try {
+      const fd = new FormData();
+      fd.append("avatar", avatarFile);
+
+      // ✅ IMPORTANT:
+      // - do NOT manually set Content-Type
+      // - axios will set multipart boundary automatically
+      const { data } = await memberApi.post("/member/avatar", fd);
+
+      // cleanup preview/file
+      setAvatarFile(null);
+      if (avatarPreview?.startsWith("blob:")) URL.revokeObjectURL(avatarPreview);
+      setAvatarPreview("");
+
+      // ✅ instantly update UI without waiting (but still reload to be safe)
+      if (data?.avatar_url) {
+        setUser((p) => ({ ...(p || {}), avatar_url: data.avatar_url }));
+      }
+
+      setOk("Photo updated");
+      await loadMe();
+    } catch (e) {
+      setErr(e?.response?.data?.message || "Failed to update photo");
+    } finally {
+      setSavingPhoto(false);
+    }
+  };
 
   return (
     <div className="pe-page">
@@ -173,14 +243,19 @@ export default function ProfileEdit() {
               <div className="pe-avatarRow">
                 <div className="pe-avatar" onClick={pickAvatar} title="Change photo">
                   {shownAvatar ? (
-                    <img src={shownAvatar} alt="" />
+                    // key forces refresh if same URL but new file (cache-bust)
+                    <img src={shownAvatar} alt="" key={shownAvatar} />
                   ) : (
                     <span>{initials(user?.nickname)}</span>
                   )}
                 </div>
 
                 <div className="pe-avatarActions">
-                  <button className="pe-btn" onClick={pickAvatar}>
+                  <button
+                    className="pe-btn"
+                    onClick={pickAvatar}
+                    disabled={savingPhoto || savingEmail}
+                  >
                     Choose photo
                   </button>
 
@@ -195,10 +270,14 @@ export default function ProfileEdit() {
                   {avatarFile && (
                     <button
                       className="pe-btn ghost"
+                      disabled={savingPhoto || savingEmail}
                       onClick={() => {
-                        if (avatarPreview?.startsWith("blob:")) URL.revokeObjectURL(avatarPreview);
+                        if (avatarPreview?.startsWith("blob:"))
+                          URL.revokeObjectURL(avatarPreview);
                         setAvatarFile(null);
                         setAvatarPreview("");
+                        setOk("");
+                        setErr("");
                       }}
                     >
                       Remove
@@ -207,7 +286,17 @@ export default function ProfileEdit() {
                 </div>
               </div>
 
-              <p className="pe-muted">Photo will be uploaded when you press Save.</p>
+              <p className="pe-muted">Choose a photo, then press Save Photo.</p>
+
+              <div className="pe-actions">
+                <button
+                  className="pe-btn primary"
+                  onClick={savePhoto}
+                  disabled={!photoDirty || savingPhoto || savingEmail}
+                >
+                  {savingPhoto ? "Saving…" : "Save Photo"}
+                </button>
+              </div>
             </section>
 
             {/* Email only */}
@@ -216,15 +305,31 @@ export default function ProfileEdit() {
 
               <label className="pe-field">
                 <span>Email</span>
-                <input value={email} onChange={(e) => { setOk(""); setErr(""); setEmail(e.target.value); }} />
+                <input
+                  value={email}
+                  onChange={(e) => {
+                    setOk("");
+                    setErr("");
+                    setEmail(e.target.value);
+                  }}
+                />
               </label>
 
               <div className="pe-actions">
-                <button className="pe-btn ghost" onClick={loadMe} disabled={saving}>
+                <button
+                  className="pe-btn ghost"
+                  onClick={loadMe}
+                  disabled={savingEmail || savingPhoto}
+                >
                   Reset
                 </button>
-                <button className="pe-btn primary" onClick={save} disabled={!dirty || saving}>
-                  {saving ? "Saving…" : "Save"}
+
+                <button
+                  className="pe-btn primary"
+                  onClick={saveEmail}
+                  disabled={!emailDirty || savingEmail || savingPhoto}
+                >
+                  {savingEmail ? "Saving…" : "Save Email"}
                 </button>
               </div>
             </section>
