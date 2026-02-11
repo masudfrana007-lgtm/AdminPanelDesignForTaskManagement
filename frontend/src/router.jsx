@@ -9,6 +9,8 @@ import Members from "./pages/Members"; // ← ADD THIS
 import CreateMember from "./pages/CreateMember";
 import AssignSets from "./pages/AssignSets";
 import AssignSetCreate from "./pages/AssignSetCreate"; // ✅ add
+import VipWalletAddresses from "./pages/VipWalletAddresses";
+
 import MemberLogin from "./pages/MemberLogin";
 import MemberDashboard from "./pages/MemberDashboard";
 import MemberProtectedRoute from "./components/MemberProtectedRoute";
@@ -538,6 +540,15 @@ export const router = createBrowserRouter([
     <MemberProtectedRoute>
       <ProfileEdit />
     </MemberProtectedRoute>
+  ),
+},
+
+{
+  path: "/vip-wallets",
+  element: (
+    <ProtectedRoute roles={["owner", "admin"]}>
+      <VipWalletAddresses />
+    </ProtectedRoute>
   ),
 },
 

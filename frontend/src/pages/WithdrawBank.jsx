@@ -388,56 +388,65 @@ export default function WithdrawBankV3() {
 
           {errors.form ? <div className="wb3-banner">{errors.form}</div> : null}
 
-          {/* ✅ Beneficiary selector */}
-          <div className="wb3-grid">
-            <div className="wb3-field" style={{ gridColumn: "1 / -1" }}>
-              <label>Bank Beneficiary</label>
+{/* ✅ Beneficiary selector */}
+<div className="wb3-grid">
+  <div className="wb3-field" style={{ gridColumn: "1 / -1" }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+      <label style={{ margin: 0 }}>Bank Beneficiary</label>
 
-              {beneficiaries.length ? (
-                <>
-                  <select
-                    value={selectedBenId}
-                    onChange={(e) => {
-                      const id = e.target.value;
-                      setSelectedBenId(id);
+      {/* ✅ always visible add button */}
+      <button
+        type="button"
+        className="wb3-primaryBtn"
+        style={{ padding: "8px 12px", fontSize: 13 }}
+        onClick={() => nav("/beneficiary-management?tab=bank")}
+      >
+        + Add Beneficiary
+      </button>
+    </div>
 
-                      const b = beneficiaries.find((x) => String(x.id) === String(id)) || null;
-                      fillFromBeneficiary(b);
-                      setErrors((p) => ({ ...p, beneficiary: "" }));
-                    }}
-                  >
-                    <option value="">Select beneficiary</option>
-                    {beneficiaries.map((b) => (
-                      <option key={b.id} value={String(b.id)}>
-                        {b.label || `Beneficiary ${b.id}`} {b.is_default ? "• Default" : ""}
-                      </option>
-                    ))}
-                  </select>
+    {beneficiaries.length ? (
+      <>
+        <select
+          value={selectedBenId}
+          onChange={(e) => {
+            const id = e.target.value;
+            setSelectedBenId(id);
 
-                  {errors.beneficiary ? <div className="wb3-error">{errors.beneficiary}</div> : <div className="wb3-help">Select a saved bank beneficiary. Details are locked for safety.</div>}
+            const b = beneficiaries.find((x) => String(x.id) === String(id)) || null;
+            fillFromBeneficiary(b);
+            setErrors((p) => ({ ...p, beneficiary: "" }));
+          }}
+        >
+          <option value="">Select beneficiary</option>
+          {beneficiaries.map((b) => (
+            <option key={b.id} value={String(b.id)}>
+              {b.label || `Beneficiary ${b.id}`} {b.is_default ? "• Default" : ""}
+            </option>
+          ))}
+        </select>
 
-                  {/* small preview */}
-                  {selectedBen ? (
-                    <div className="wb3-help" style={{ marginTop: 6 }}>
-                      <b>Selected:</b> {selectedBen.label} • {pickStr(selectedBen.bank_country)} • {pickStr(selectedBen.bank_name)}
-                    </div>
-                  ) : null}
-                </>
-              ) : (
-                <>
-                  <div className="wb3-help">No bank beneficiaries found. Please add one first.</div>
-                  <button
-                    type="button"
-                    className="wb3-primaryBtn"
-                    style={{ marginTop: 10 }}
-                    onClick={() => nav("/beneficiaries?tab=bank")}
-                  >
-                    + Add Bank Beneficiary
-                  </button>
-                </>
-              )}
-            </div>
+        {errors.beneficiary ? (
+          <div className="wb3-error">{errors.beneficiary}</div>
+        ) : (
+          <div className="wb3-help">Select a saved bank beneficiary. Details are locked for safety.</div>
+        )}
+
+        {/* small preview */}
+        {selectedBen ? (
+          <div className="wb3-help" style={{ marginTop: 6 }}>
+            <b>Selected:</b> {selectedBen.label} • {pickStr(selectedBen.bank_country)} • {pickStr(selectedBen.bank_name)}
           </div>
+        ) : null}
+      </>
+    ) : (
+      <>
+        <div className="wb3-help">No bank beneficiaries found. Please add one first.</div>
+      </>
+    )}
+  </div>
+</div>
+
 
           <div className="wb3-grid">
             <div className="wb3-field">

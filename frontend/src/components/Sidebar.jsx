@@ -8,6 +8,7 @@ import {
   FaTasks,
   FaBoxOpen,
   FaClipboardList, // ✅ add
+  FaWallet,  
 } from "react-icons/fa";
 
 export default function Sidebar({ collapsed, onItemClick }) {
@@ -102,6 +103,23 @@ export default function Sidebar({ collapsed, onItemClick }) {
           </NavLink>
         </>
       )}
+
+      {(role === "owner" || role === "admin") && (
+  <>
+    <div className="sidebar-section">Finance</div>
+
+    <NavLink
+      to="/vip-wallets"
+      className={linkClass}
+      title="VIP Wallet Addresses"
+      onClick={onItemClick}
+    >
+      <FaWallet />
+      {label("VIP Wallet Addresses")}
+    </NavLink>
+  </>
+)}
+
     </div>
   );
 }

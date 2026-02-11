@@ -21,6 +21,7 @@ import memberSupportRoutes from "./routes/memberSupport.js";
 import csLoginRoutes from "./routes/csLogin.js";
 import memberAvatarRouter from "./routes/memberAvatar.js";
 import memberBeneficiariesRoutes from "./routes/memberBeneficiaries.js";
+import vipDepositAddresses from "./routes/vipDepositAddresses.js";
 
 const app = express();
 app.use(cors({
@@ -60,6 +61,7 @@ app.use("/member/support", memberSupportRoutes);
 app.use("/cs", csLoginRoutes);
 app.use("/member", memberAvatarRouter);
 app.use("/member/beneficiaries", memberBeneficiariesRoutes);
+app.use("/vip-deposit-addresses", vipDepositAddresses);
 
 const port = process.env.PORT || 5000;
 app.listen(port, "0.0.0.0", () => {
