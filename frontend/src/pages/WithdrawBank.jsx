@@ -76,6 +76,11 @@ function fmtDate(d) {
   return dt.toISOString().slice(0, 16).replace("T", " ");
 }
 
+// --- helpers ---
+function pickStr(v, fallback = "") {
+  return (v ?? "").toString().trim() || fallback;
+}
+
 export default function WithdrawBankV3() {
   const nav = useNavigate();
 
@@ -83,8 +88,13 @@ export default function WithdrawBankV3() {
   const MIN_WITHDRAW = 10;
 
   const countries = useMemo(() => getAllCountries(), []);
-  const [country, setCountry] = useState("KH");
 
+  // ✅ beneficiary list from backend
+  const [beneficiaries, setBeneficiaries] = useState([]);
+  const [selectedBenId, setSelectedBenId] = useState("");
+
+  // form state (filled by beneficiary)
+  const [country, setCountry] = useState("KH");
   const banks = useMemo(() => BANKS_BY_COUNTRY[country] || [], [country]);
   const [bank, setBank] = useState("");
 
@@ -108,9 +118,39 @@ export default function WithdrawBankV3() {
   const fee = useMemo(() => Number(amount || 0) * feeRate, [amount]);
   const receive = useMemo(() => Math.max(0, Number(amount || 0) - fee), [amount, fee]);
 
+  const selectedBen = useMemo(() => {
+    return beneficiaries.find((b) => String(b.id) === String(selectedBenId)) || null;
+  }, [beneficiaries, selectedBenId]);
+
+  const fillFromBeneficiary = (b) => {
+    if (!b) return;
+
+    const nextCountry = pickStr(b.bank_country, "KH");
+    setCountry(nextCountry);
+
+    setBank(pickStr(b.bank_name, ""));
+    setAccountName(pickStr(b.account_holder_name, ""));
+    setAccountNumber(pickStr(b.account_number, ""));
+    setRoutingNumber(pickStr(b.routing_number, ""));
+    setBranchNumber(pickStr(b.branch_name, ""));
+
+    // clear field errors when switching
+    setErrors((p) => ({
+      ...p,
+      country: "",
+      bank: "",
+      accountName: "",
+      accountNumber: "",
+      form: "",
+    }));
+  };
+
   const validateWithdrawal = () => {
     const next = {};
 
+    if (!selectedBenId) next.beneficiary = "Please select a bank beneficiary.";
+
+    // still validate filled data (safety)
     if (!country) next.country = "Please select a country.";
     if (!bank) next.bank = "Please select a bank.";
     if (!accountName.trim()) next.accountName = "Please enter account holder name.";
@@ -126,7 +166,7 @@ export default function WithdrawBankV3() {
 
   const isReadyToSubmit = () => Object.keys(validateWithdrawal()).length === 0;
 
-  const loadMeAndWithdrawals = async () => {
+  const loadMeAndWithdrawalsAndBeneficiaries = async () => {
     // profile/balance
     const meRes = await memberApi.get("/member/me");
     setMe(meRes.data || null);
@@ -135,7 +175,6 @@ export default function WithdrawBankV3() {
     const wRes = await memberApi.get("/member/withdrawals");
     const rows = Array.isArray(wRes.data) ? wRes.data : [];
 
-    // ✅ ONLY BANK withdrawals
     const onlyBank = rows.filter((x) => String(x?.method || "").toLowerCase() === "bank");
 
     const mapped = onlyBank.map((x) => {
@@ -150,16 +189,37 @@ export default function WithdrawBankV3() {
     });
 
     setHistory(mapped);
+
+    // ✅ beneficiaries
+    const bRes = await memberApi.get("/member/beneficiaries?type=bank");
+    const bRows = Array.isArray(bRes.data) ? bRes.data : [];
+    setBeneficiaries(bRows);
+
+    // auto-pick default, else first
+    const def = bRows.find((x) => !!x.is_default) || bRows[0] || null;
+    if (def) {
+      setSelectedBenId(String(def.id));
+      fillFromBeneficiary(def);
+    } else {
+      setSelectedBenId("");
+      // clear filled details
+      setCountry("KH");
+      setBank("");
+      setAccountName("");
+      setAccountNumber("");
+      setRoutingNumber("");
+      setBranchNumber("");
+    }
   };
 
   useEffect(() => {
     (async () => {
       try {
-        await loadMeAndWithdrawals();
+        await loadMeAndWithdrawalsAndBeneficiaries();
       } catch (e) {
         setErrors((p) => ({
           ...p,
-          form: e?.response?.data?.message || "Failed to load wallet/withdrawals",
+          form: e?.response?.data?.message || "Failed to load wallet/withdrawals/beneficiaries",
         }));
       }
     })();
@@ -180,12 +240,17 @@ export default function WithdrawBankV3() {
       const { data } = await memberApi.post("/member/withdrawals", {
         amount: amt,
         method: "bank",
+
+        // ✅ use selected beneficiary-filled values
         bank_country: country,
         bank_name: bank,
         account_holder_name: accountName.trim(),
         account_number: accountNumber.trim(),
         routing_number: routingNumber.trim() || null,
         branch_name: branchNumber.trim() || null,
+
+        // optional: keep trace in DB if your backend accepts extra fields (safe to remove if strict)
+        beneficiary_id: selectedBenId,
       });
 
       const newItem = {
@@ -239,6 +304,9 @@ export default function WithdrawBankV3() {
 
   const statusKey = (s) => String(s || "").toLowerCase();
 
+  // ✅ only amount is editable
+  const detailsDisabled = true;
+
   return (
     <div className="vipWhite wb3">
       {/* Top bar */}
@@ -277,9 +345,7 @@ export default function WithdrawBankV3() {
             </div>
           </div>
 
-          <div className="wb3-netNote">
-            Processing is handled via trusted networks. Provider list is display-only (demo).
-          </div>
+          <div className="wb3-netNote">Processing is handled via trusted networks. Provider list is display-only (demo).</div>
         </div>
       </section>
 
@@ -322,11 +388,63 @@ export default function WithdrawBankV3() {
 
           {errors.form ? <div className="wb3-banner">{errors.form}</div> : null}
 
+          {/* ✅ Beneficiary selector */}
+          <div className="wb3-grid">
+            <div className="wb3-field" style={{ gridColumn: "1 / -1" }}>
+              <label>Bank Beneficiary</label>
+
+              {beneficiaries.length ? (
+                <>
+                  <select
+                    value={selectedBenId}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      setSelectedBenId(id);
+
+                      const b = beneficiaries.find((x) => String(x.id) === String(id)) || null;
+                      fillFromBeneficiary(b);
+                      setErrors((p) => ({ ...p, beneficiary: "" }));
+                    }}
+                  >
+                    <option value="">Select beneficiary</option>
+                    {beneficiaries.map((b) => (
+                      <option key={b.id} value={String(b.id)}>
+                        {b.label || `Beneficiary ${b.id}`} {b.is_default ? "• Default" : ""}
+                      </option>
+                    ))}
+                  </select>
+
+                  {errors.beneficiary ? <div className="wb3-error">{errors.beneficiary}</div> : <div className="wb3-help">Select a saved bank beneficiary. Details are locked for safety.</div>}
+
+                  {/* small preview */}
+                  {selectedBen ? (
+                    <div className="wb3-help" style={{ marginTop: 6 }}>
+                      <b>Selected:</b> {selectedBen.label} • {pickStr(selectedBen.bank_country)} • {pickStr(selectedBen.bank_name)}
+                    </div>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  <div className="wb3-help">No bank beneficiaries found. Please add one first.</div>
+                  <button
+                    type="button"
+                    className="wb3-primaryBtn"
+                    style={{ marginTop: 10 }}
+                    onClick={() => nav("/beneficiaries?tab=bank")}
+                  >
+                    + Add Bank Beneficiary
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
           <div className="wb3-grid">
             <div className="wb3-field">
               <label>Country</label>
               <select
                 value={country}
+                disabled={detailsDisabled}
                 onChange={(e) => {
                   setCountry(e.target.value);
                   setErrors((p) => ({ ...p, country: "" }));
@@ -338,13 +456,14 @@ export default function WithdrawBankV3() {
                   </option>
                 ))}
               </select>
-              {errors.country ? <div className="wb3-error">{errors.country}</div> : <div className="wb3-help">Select your bank country/region.</div>}
+              {errors.country ? <div className="wb3-error">{errors.country}</div> : <div className="wb3-help">Filled from beneficiary.</div>}
             </div>
 
             <div className="wb3-field">
               <label>Bank</label>
               <select
                 value={bank}
+                disabled={detailsDisabled}
                 onChange={(e) => {
                   setBank(e.target.value);
                   setErrors((p) => ({ ...p, bank: "" }));
@@ -363,13 +482,14 @@ export default function WithdrawBankV3() {
                   </option>
                 )}
               </select>
-              {errors.bank ? <div className="wb3-error">{errors.bank}</div> : <div className="wb3-help">Banks load by selected country (demo list).</div>}
+              {errors.bank ? <div className="wb3-error">{errors.bank}</div> : <div className="wb3-help">Filled from beneficiary.</div>}
             </div>
 
             <div className="wb3-field">
               <label>Account Holder Name</label>
               <input
                 value={accountName}
+                disabled={detailsDisabled}
                 onChange={(e) => {
                   setAccountName(e.target.value);
                   setErrors((p) => ({ ...p, accountName: "" }));
@@ -383,6 +503,7 @@ export default function WithdrawBankV3() {
               <label>Account Number</label>
               <input
                 value={accountNumber}
+                disabled={detailsDisabled}
                 onChange={(e) => {
                   setAccountNumber(e.target.value);
                   setErrors((p) => ({ ...p, accountNumber: "" }));
@@ -395,12 +516,12 @@ export default function WithdrawBankV3() {
 
             <div className="wb3-field">
               <label>Routing Number (optional)</label>
-              <input value={routingNumber} onChange={(e) => setRoutingNumber(e.target.value)} inputMode="numeric" />
+              <input value={routingNumber} disabled={detailsDisabled} onChange={(e) => setRoutingNumber(e.target.value)} inputMode="numeric" />
             </div>
 
             <div className="wb3-field">
               <label>Branch Number (optional)</label>
-              <input value={branchNumber} onChange={(e) => setBranchNumber(e.target.value)} inputMode="numeric" />
+              <input value={branchNumber} disabled={detailsDisabled} onChange={(e) => setBranchNumber(e.target.value)} inputMode="numeric" />
             </div>
 
             <div className="wb3-field">

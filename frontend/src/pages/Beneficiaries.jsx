@@ -1,16 +1,38 @@
 // src/pages/Beneficiaries.jsx
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import memberApi from "../services/memberApi";
 import "./Beneficiaries.css";
 import MemberBottomNav from "../components/MemberBottomNav";
 
-/** ✅ Network whitelist (UI) */
-const CRYPTO_NETWORKS = ["BTC", "ETH", "USDT-TRC20", "USDT-ERC20"];
-const DEFAULT_ASSET = "USDT"; // ✅ keep simple (can expand later)
+/**
+ * ✅ Must match WithdrawCrypto networks:
+ * USDT: TRC20 / ERC20 / BEP20
+ * BTC : BTC
+ * ETH : ERC20
+ * BNB : BEP20
+ * TRX : TRC20
+ */
+const COINS = [
+  { code: "USDT", networks: ["TRC20", "ERC20", "BEP20"] },
+  { code: "BTC", networks: ["BTC"] },
+  { code: "ETH", networks: ["ERC20"] },
+  { code: "BNB", networks: ["BEP20"] },
+  { code: "TRX", networks: ["TRC20"] },
+];
+
+const DEFAULT_ASSET = "USDT";
+
+function networksForAsset(asset) {
+  const a = String(asset || "").toUpperCase();
+  const c = COINS.find((x) => x.code === a);
+  return c ? c.networks : [];
+}
 
 function uid(prefix) {
-  return `${prefix}-${Math.floor(1000 + Math.random() * 9000)}-${Date.now().toString().slice(-4)}`;
+  return `${prefix}-${Math.floor(1000 + Math.random() * 9000)}-${Date.now()
+    .toString()
+    .slice(-4)}`;
 }
 
 function formatDate(ts) {
@@ -25,18 +47,50 @@ function clean(s) {
   return (s ?? "").toString().trim();
 }
 
-/** ---------------- VALIDATION (unchanged UI behavior) ---------------- */
+/** Load ALL countries automatically (same behavior as WithdrawBankV3) */
+function getAllCountries() {
+  try {
+    const regions = Intl.supportedValuesOf("region");
+    const dn = new Intl.DisplayNames(["en"], { type: "region" });
+    return regions
+      .map((code) => ({ code, name: dn.of(code) || code }))
+      .filter((x) => x.name && x.name.toLowerCase() !== "unknown region")
+      .sort((a, b) => a.name.localeCompare(b.name));
+  } catch {
+    return [
+      { code: "KH", name: "Cambodia" },
+      { code: "TH", name: "Thailand" },
+      { code: "VN", name: "Vietnam" },
+      { code: "MY", name: "Malaysia" },
+      { code: "US", name: "United States" },
+      { code: "GB", name: "United Kingdom" },
+    ];
+  }
+}
+
+/** Demo banks by country (same list as WithdrawBankV3) */
+const BANKS_BY_COUNTRY = {
+  KH: ["ABA Bank", "ACLEDA Bank", "Wing"],
+  TH: ["Kasikornbank", "SCB", "Krungthai Bank"],
+  VN: ["Vietcombank", "Techcombank"],
+  MY: ["Maybank", "CIMB"],
+};
+
+/** ---------------- VALIDATION ---------------- */
 function validateCrypto(form) {
   const label = clean(form.label);
-  const network = clean(form.network);
+  const asset = clean(form.asset).toUpperCase();
+  const network = clean(form.network).toUpperCase();
   const address = clean(form.address);
 
   if (!label) return "Please enter a Beneficiary Name.";
-  if (!network) return "Please select a Network.";
+  if (!asset) return "Please select an Asset.";
 
-  if (!CRYPTO_NETWORKS.includes(network)) {
-    return "Invalid network. Please choose from BTC / ETH / USDT TRC20 / USDT ERC20.";
-  }
+  const allowed = networksForAsset(asset);
+  if (!allowed.length) return "Invalid asset selected.";
+
+  if (!network) return "Please select a Network.";
+  if (!allowed.includes(network)) return `Invalid network for ${asset}.`;
 
   if (!address) return "Please enter a Wallet Address.";
   if (address.length < 10) return "Wallet Address looks too short.";
@@ -45,60 +99,62 @@ function validateCrypto(form) {
 
 function validateBank(form) {
   const label = clean(form.label);
+  const country = clean(form.country); // expects country code like KH
   const bankName = clean(form.bankName);
   const accountName = clean(form.accountName);
   const accountNumber = clean(form.accountNumber);
-  const country = clean(form.country);
 
   if (!label) return "Please enter a Beneficiary Name.";
-  if (!bankName) return "Please enter Bank Name.";
-  if (!accountName) return "Please enter Account Holder Name.";
-  if (!accountNumber) return "Please enter Account Number.";
-  if (!country) return "Please enter Country.";
+  if (!country) return "Please select a country.";
+  if (!bankName) return "Please select a bank.";
+  if (!accountName) return "Please enter account holder name.";
+  if (!accountNumber) return "Please enter account number.";
   if (accountNumber.length < 6) return "Account Number looks too short.";
   return "";
 }
 
 /** ---------------- MAPPERS: DB <-> UI ---------------- */
-
-// DB row -> UI item (keeps your existing UI keys)
 function dbToUi(row) {
   const type = String(row?.type || "").toLowerCase();
 
   if (type === "crypto") {
+    const asset = (row.asset || DEFAULT_ASSET).toUpperCase();
+    const allowed = networksForAsset(asset);
+    const net = (row.network || "").toUpperCase();
+
     return {
-      // keep UI keys exactly like your design uses
-      id: String(row.id),                // IMPORTANT: numeric id as string works fine in UI
+      id: String(row.id),
       type: "crypto",
       label: row.label || "",
-      network: row.network || "USDT-TRC20",
+      asset,
+      network:
+        allowed.includes(net)
+          ? net
+          : allowed[0] || networksForAsset(DEFAULT_ASSET)[0] || "TRC20",
       address: row.wallet_address || "",
       note: row.note || "",
       isDefault: !!row.is_default,
       createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
-      // extra (not shown but useful later)
-      asset: row.asset || DEFAULT_ASSET,
     };
   }
 
+  // ✅ bank_country should be code (KH/TH/...)
   return {
     id: String(row.id),
     type: "bank",
     label: row.label || "",
+    country: row.bank_country || "KH",
     bankName: row.bank_name || "",
     accountName: row.account_holder_name || "",
     accountNumber: row.account_number || "",
-    country: row.bank_country || "",
-    swift: row.swift || "",
-    branch: row.branch_name || "",
     routing: row.routing_number || "",
+    branch: row.branch_name || "",
     note: row.note || "",
     isDefault: !!row.is_default,
     createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
   };
 }
 
-// UI form -> API payload (DB shape)
 function uiToApiPayload(tab, form) {
   if (tab === "crypto") {
     return {
@@ -106,40 +162,51 @@ function uiToApiPayload(tab, form) {
       label: clean(form.label),
       is_default: !!form.isDefault,
 
-      // backend requires these
-      asset: DEFAULT_ASSET, // ✅ keep design; no asset selector in UI
-      network: clean(form.network),
+      // ✅ matches WithdrawCrypto
+      asset: clean(form.asset).toUpperCase(),
+      network: clean(form.network).toUpperCase(),
       wallet_address: clean(form.address),
 
       note: clean(form.note) || null,
     };
   }
 
+  // ✅ matches WithdrawBankV3
   return {
     type: "bank",
     label: clean(form.label),
     is_default: !!form.isDefault,
 
-    bank_country: clean(form.country),
+    bank_country: clean(form.country), // code like KH
     bank_name: clean(form.bankName),
     account_holder_name: clean(form.accountName),
     account_number: clean(form.accountNumber),
 
     routing_number: clean(form.routing) || null,
     branch_name: clean(form.branch) || null,
-    swift: clean(form.swift) || null,
 
+    // keep optional columns compatible with backend schema
+    swift: null,
     note: clean(form.note) || null,
   };
 }
 
 export default function Beneficiaries() {
   const nav = useNavigate();
+  const location = useLocation();
 
-  const [tab, setTab] = useState("crypto"); // crypto | bank
+  const countries = useMemo(() => getAllCountries(), []);
+
+  // ✅ initial tab from URL: /beneficiaries?tab=crypto|bank
+  const initialTab = useMemo(() => {
+    const sp = new URLSearchParams(location.search);
+    const t = String(sp.get("tab") || "").toLowerCase();
+    return t === "bank" ? "bank" : "crypto";
+  }, [location.search]);
+
+  const [tab, setTab] = useState(initialTab); // crypto | bank
   const [q, setQ] = useState("");
 
-  // ✅ now comes from backend
   const [data, setData] = useState({ crypto: [], bank: [] });
 
   // Modal
@@ -149,32 +216,51 @@ export default function Beneficiaries() {
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const emptyCrypto = {
-    type: "crypto",
-    label: "",
-    network: "USDT-TRC20",
-    address: "",
-    note: "",
-    isDefault: false,
-  };
+  const emptyCrypto = useMemo(
+    () => ({
+      type: "crypto",
+      label: "",
+      asset: DEFAULT_ASSET,
+      network: networksForAsset(DEFAULT_ASSET)[0] || "TRC20",
+      address: "",
+      note: "",
+      isDefault: false,
+    }),
+    []
+  );
 
-  const emptyBank = {
-    type: "bank",
-    label: "",
-    bankName: "",
-    accountName: "",
-    accountNumber: "",
-    country: "",
-    swift: "",
-    branch: "",
-    routing: "",
-    note: "",
-    isDefault: false,
-  };
+  const emptyBank = useMemo(
+    () => ({
+      type: "bank",
+      label: "",
+      country: "KH",
+      bankName: "",
+      accountName: "",
+      accountNumber: "",
+      routing: "",
+      branch: "",
+      note: "",
+      isDefault: false,
+    }),
+    []
+  );
 
-  const [form, setForm] = useState(emptyCrypto);
+  const [form, setForm] = useState(initialTab === "bank" ? emptyBank : emptyCrypto);
 
-  /** ✅ Load from backend (instead of localStorage) */
+  // keep tab in sync if URL changes
+  useEffect(() => {
+    setTab(initialTab);
+    setForm(initialTab === "bank" ? emptyBank : emptyCrypto);
+    setQ("");
+    setErr("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialTab]);
+
+  const banksForFormCountry = useMemo(() => {
+    const code = String(form.country || "KH");
+    return BANKS_BY_COUNTRY[code] || [];
+  }, [form.country]);
+
   const loadAll = async () => {
     setLoading(true);
     setErr("");
@@ -212,13 +298,15 @@ export default function Beneficiaries() {
     return list.filter((b) => {
       const hay = [
         b.label,
+        b.asset,
         b.network,
         b.address,
         b.bankName,
         b.accountName,
         b.accountNumber,
         b.country,
-        b.swift,
+        b.routing,
+        b.branch,
       ]
         .filter(Boolean)
         .join(" ")
@@ -240,11 +328,25 @@ export default function Beneficiaries() {
     setMode("edit");
     setEditingId(item.id);
 
-    // ✅ If old saved network is not in whitelist, auto-fix to default
-    if (item.type === "crypto" && item.network && !CRYPTO_NETWORKS.includes(item.network)) {
-      setForm({ ...item, network: "USDT-TRC20" });
+    if (item.type === "crypto") {
+      const asset = (item.asset || DEFAULT_ASSET).toUpperCase();
+      const allowed = networksForAsset(asset);
+      const net = (item.network || "").toUpperCase();
+      setForm({
+        ...item,
+        asset,
+        network:
+          allowed.includes(net)
+            ? net
+            : allowed[0] || networksForAsset(DEFAULT_ASSET)[0] || "TRC20",
+      });
     } else {
-      setForm({ ...item });
+      // bank
+      setForm({
+        ...item,
+        country: item.country || "KH",
+        bankName: item.bankName || "",
+      });
     }
 
     setModalOpen(true);
@@ -255,7 +357,6 @@ export default function Beneficiaries() {
     setErr("");
   };
 
-  /** ✅ Set default = backend update + reload (keep design) */
   const setDefault = async (id) => {
     try {
       setErr("");
@@ -266,8 +367,8 @@ export default function Beneficiaries() {
         await memberApi.patch(`/member/beneficiaries/${id}`, {
           label: item.label,
           is_default: true,
-          asset: item.asset || DEFAULT_ASSET,
-          network: item.network,
+          asset: (item.asset || DEFAULT_ASSET).toUpperCase(),
+          network: (item.network || "").toUpperCase(),
           wallet_address: item.address,
           note: item.note || null,
         });
@@ -281,7 +382,7 @@ export default function Beneficiaries() {
           account_number: item.accountNumber,
           routing_number: item.routing || null,
           branch_name: item.branch || null,
-          swift: item.swift || null,
+          swift: null,
           note: item.note || null,
         });
       }
@@ -292,7 +393,6 @@ export default function Beneficiaries() {
     }
   };
 
-  /** ✅ Delete = backend delete + reload (keep design) */
   const removeItem = async (id) => {
     const ok = window.confirm("Remove this beneficiary?");
     if (!ok) return;
@@ -306,7 +406,6 @@ export default function Beneficiaries() {
     }
   };
 
-  /** ✅ Save (create/edit) -> backend */
   const onSave = async () => {
     const message = tab === "crypto" ? validateCrypto(form) : validateBank(form);
     if (message) {
@@ -317,19 +416,14 @@ export default function Beneficiaries() {
     setErr("");
 
     try {
-      if (mode === "create") {
-        const payload = uiToApiPayload(tab, form);
-        await memberApi.post("/member/beneficiaries", payload);
-        await loadAll();
-        closeModal();
-        return;
-      }
-
-      // edit
       const payload = uiToApiPayload(tab, form);
 
-      // PATCH requires (for crypto/bank) all required fields present -> payload already has them
-      await memberApi.patch(`/member/beneficiaries/${editingId}`, payload);
+      if (mode === "create") {
+        await memberApi.post("/member/beneficiaries", payload);
+      } else {
+        await memberApi.patch(`/member/beneficiaries/${editingId}`, payload);
+      }
+
       await loadAll();
       closeModal();
     } catch (e) {
@@ -337,7 +431,6 @@ export default function Beneficiaries() {
     }
   };
 
-  /** Optional: keep your Demo button but make it create demo rows in DB (same UI button) */
   const resetDemo = async () => {
     const ok = window.confirm("Reset beneficiaries to demo data?");
     if (!ok) return;
@@ -345,21 +438,18 @@ export default function Beneficiaries() {
     try {
       setErr("");
 
-      // clear both types
       const all = [...(data.crypto || []), ...(data.bank || [])];
       for (const x of all) {
-        // best-effort
         // eslint-disable-next-line no-await-in-loop
         await memberApi.delete(`/member/beneficiaries/${x.id}`);
       }
 
-      // insert demo crypto + bank (you can change text)
       await memberApi.post("/member/beneficiaries", {
         type: "crypto",
         label: "My USDT Wallet",
         is_default: true,
-        asset: DEFAULT_ASSET,
-        network: "USDT-TRC20",
+        asset: "USDT",
+        network: "TRC20",
         wallet_address: "TQwZ9GxkWw3e9bqGQqZk9k9k9k9k9k9k9k",
         note: "Primary wallet",
       });
@@ -368,13 +458,13 @@ export default function Beneficiaries() {
         type: "bank",
         label: "Personal Bank",
         is_default: true,
-        bank_country: "Cambodia",
+        bank_country: "KH",
         bank_name: "ABA Bank",
         account_holder_name: "User Name",
         account_number: "1234567890",
-        swift: "ABAAKHPP",
-        branch_name: "Phnom Penh",
-        routing_number: "",
+        routing_number: null,
+        branch_name: null,
+        swift: null,
         note: "Salary account",
       });
 
@@ -384,7 +474,6 @@ export default function Beneficiaries() {
     }
   };
 
-  /** Clear button: delete all rows for this member */
   const clearAll = async () => {
     const ok = window.confirm("Clear ALL beneficiaries?");
     if (!ok) return;
@@ -459,7 +548,11 @@ export default function Beneficiaries() {
               className="bf-search"
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder={tab === "crypto" ? "Search name / network / address…" : "Search name / bank / account / country…"}
+              placeholder={
+                tab === "crypto"
+                  ? "Search name / asset / network / address…"
+                  : "Search name / country / bank / account…"
+              }
             />
           </div>
 
@@ -486,7 +579,11 @@ export default function Beneficiaries() {
                 <div className="bf-cardTop">
                   <div className="bf-cardLeft">
                     <div className="bf-avatar" aria-hidden="true">
-                      <img className="bf-iconImg" src={b.type === "crypto" ? "/icons/btc.png" : "/icons/bank.png"} alt="" />
+                      <img
+                        className="bf-iconImg"
+                        src={b.type === "crypto" ? "/icons/btc.png" : "/icons/bank.png"}
+                        alt=""
+                      />
                     </div>
 
                     <div>
@@ -518,6 +615,10 @@ export default function Beneficiaries() {
                 {tab === "crypto" ? (
                   <div className="bf-details">
                     <div className="bf-row">
+                      <span className="bf-k">Asset</span>
+                      <span className="bf-v">{b.asset || DEFAULT_ASSET}</span>
+                    </div>
+                    <div className="bf-row">
                       <span className="bf-k">Network</span>
                       <span className="bf-v">{b.network}</span>
                     </div>
@@ -535,6 +636,10 @@ export default function Beneficiaries() {
                 ) : (
                   <div className="bf-details">
                     <div className="bf-row">
+                      <span className="bf-k">Country</span>
+                      <span className="bf-v">{b.country}</span>
+                    </div>
+                    <div className="bf-row">
                       <span className="bf-k">Bank</span>
                       <span className="bf-v">{b.bankName}</span>
                     </div>
@@ -546,24 +651,20 @@ export default function Beneficiaries() {
                       <span className="bf-k">Account Number</span>
                       <span className="bf-v mono">{b.accountNumber}</span>
                     </div>
-                    <div className="bf-row">
-                      <span className="bf-k">Country</span>
-                      <span className="bf-v">{b.country}</span>
-                    </div>
 
-                    {(b.swift || b.branch || b.routing) && (
+                    {(b.routing || b.branch) && (
                       <div className="bf-grid3">
                         <div className="bf-miniBox">
-                          <div className="bf-k">SWIFT</div>
-                          <div className="bf-v mono">{b.swift || "—"}</div>
+                          <div className="bf-k">Routing</div>
+                          <div className="bf-v mono">{b.routing || "—"}</div>
                         </div>
                         <div className="bf-miniBox">
                           <div className="bf-k">Branch</div>
                           <div className="bf-v">{b.branch || "—"}</div>
                         </div>
                         <div className="bf-miniBox">
-                          <div className="bf-k">Routing</div>
-                          <div className="bf-v mono">{b.routing || "—"}</div>
+                          <div className="bf-k">—</div>
+                          <div className="bf-v">—</div>
                         </div>
                       </div>
                     )}
@@ -624,33 +725,55 @@ export default function Beneficiaries() {
                 <>
                   <div className="bf-grid2">
                     <div className="bf-field">
-                      <label>Network (Whitelist)</label>
+                      <label>Asset</label>
                       <select
-                        value={form.network || "USDT-TRC20"}
-                        onChange={(e) => setForm((p) => ({ ...p, network: e.target.value }))}
+                        value={(form.asset || DEFAULT_ASSET).toUpperCase()}
+                        onChange={(e) => {
+                          const nextAsset = e.target.value.toUpperCase();
+                          const nets = networksForAsset(nextAsset);
+                          setForm((p) => ({
+                            ...p,
+                            asset: nextAsset,
+                            network: nets[0] || "",
+                          }));
+                        }}
                       >
-                        {CRYPTO_NETWORKS.map((n) => (
-                          <option key={n} value={n}>
-                            {n.replace("-", " ")}
+                        {COINS.map((c) => (
+                          <option key={c.code} value={c.code}>
+                            {c.code}
                           </option>
                         ))}
                       </select>
-                      <div className="bf-hint">Only safe networks are allowed to reduce mistakes.</div>
                     </div>
 
                     <div className="bf-field">
-                      <label>Set as Default</label>
-                      <div className="bf-switchRow">
-                        <input
-                          id="bfDefault"
-                          type="checkbox"
-                          checked={!!form.isDefault}
-                          onChange={(e) => setForm((p) => ({ ...p, isDefault: e.target.checked }))}
-                        />
-                        <label htmlFor="bfDefault" className="bf-switchLabel">
-                          Make default
-                        </label>
-                      </div>
+                      <label>Network</label>
+                      <select
+                        value={(form.network || "").toUpperCase()}
+                        onChange={(e) => setForm((p) => ({ ...p, network: e.target.value.toUpperCase() }))}
+                      >
+                        {networksForAsset(form.asset || DEFAULT_ASSET).map((n) => (
+                          <option key={n} value={n}>
+                            {n}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="bf-hint">Network list matches Withdraw Crypto.</div>
+                    </div>
+                  </div>
+
+                  <div className="bf-field">
+                    <label>Set as Default</label>
+                    <div className="bf-switchRow">
+                      <input
+                        id="bfDefault"
+                        type="checkbox"
+                        checked={!!form.isDefault}
+                        onChange={(e) => setForm((p) => ({ ...p, isDefault: e.target.checked }))}
+                      />
+                      <label htmlFor="bfDefault" className="bf-switchLabel">
+                        Make default
+                      </label>
                     </div>
                   </div>
 
@@ -659,7 +782,7 @@ export default function Beneficiaries() {
                     <textarea
                       value={form.address || ""}
                       onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))}
-                      placeholder="Paste wallet address…"
+                      placeholder={`Enter ${form.asset || DEFAULT_ASSET} address`}
                       rows={3}
                     />
                     <div className="bf-hint">Tip: copy/paste to avoid typing mistakes.</div>
@@ -667,23 +790,44 @@ export default function Beneficiaries() {
                 </>
               ) : (
                 <>
+                  {/* ✅ Bank form matches WithdrawBankV3 */}
                   <div className="bf-grid2">
                     <div className="bf-field">
-                      <label>Bank Name</label>
-                      <input
-                        value={form.bankName || ""}
-                        onChange={(e) => setForm((p) => ({ ...p, bankName: e.target.value }))}
-                        placeholder="e.g. ABA Bank"
-                      />
+                      <label>Country</label>
+                      <select
+                        value={form.country || "KH"}
+                        onChange={(e) => {
+                          const nextCountry = e.target.value;
+                          const nextBanks = BANKS_BY_COUNTRY[nextCountry] || [];
+                          setForm((p) => ({
+                            ...p,
+                            country: nextCountry,
+                            bankName: nextBanks.includes(p.bankName) ? p.bankName : "",
+                          }));
+                        }}
+                      >
+                        {countries.map((c) => (
+                          <option key={c.code} value={c.code}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
                     <div className="bf-field">
-                      <label>Country</label>
-                      <input
-                        value={form.country || ""}
-                        onChange={(e) => setForm((p) => ({ ...p, country: e.target.value }))}
-                        placeholder="e.g. Cambodia"
-                      />
+                      <label>Bank</label>
+                      <select
+                        value={form.bankName || ""}
+                        onChange={(e) => setForm((p) => ({ ...p, bankName: e.target.value }))}
+                      >
+                        <option value="">Select bank</option>
+                        {(BANKS_BY_COUNTRY[form.country || "KH"] || []).map((b) => (
+                          <option key={b} value={b}>
+                            {b}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="bf-hint">Bank list loads by selected country (demo list).</div>
                     </div>
                   </div>
 
@@ -694,6 +838,7 @@ export default function Beneficiaries() {
                         value={form.accountName || ""}
                         onChange={(e) => setForm((p) => ({ ...p, accountName: e.target.value }))}
                         placeholder="Full name"
+                        autoComplete="name"
                       />
                     </div>
 
@@ -704,37 +849,43 @@ export default function Beneficiaries() {
                         onChange={(e) => setForm((p) => ({ ...p, accountNumber: e.target.value }))}
                         placeholder="Account number"
                         inputMode="numeric"
+                        autoComplete="off"
                       />
                     </div>
                   </div>
 
                   <div className="bf-grid3">
                     <div className="bf-field">
-                      <label>SWIFT (optional)</label>
-                      <input value={form.swift || ""} onChange={(e) => setForm((p) => ({ ...p, swift: e.target.value }))} placeholder="SWIFT" />
-                    </div>
-                    <div className="bf-field">
-                      <label>Branch (optional)</label>
-                      <input value={form.branch || ""} onChange={(e) => setForm((p) => ({ ...p, branch: e.target.value }))} placeholder="Branch" />
-                    </div>
-                    <div className="bf-field">
-                      <label>Routing (optional)</label>
-                      <input value={form.routing || ""} onChange={(e) => setForm((p) => ({ ...p, routing: e.target.value }))} placeholder="Routing" />
-                    </div>
-                  </div>
-
-                  <div className="bf-field">
-                    <label>Set as Default</label>
-                    <div className="bf-switchRow">
+                      <label>Routing Number (optional)</label>
                       <input
-                        id="bfDefault2"
-                        type="checkbox"
-                        checked={!!form.isDefault}
-                        onChange={(e) => setForm((p) => ({ ...p, isDefault: e.target.checked }))}
+                        value={form.routing || ""}
+                        onChange={(e) => setForm((p) => ({ ...p, routing: e.target.value }))}
+                        inputMode="numeric"
                       />
-                      <label htmlFor="bfDefault2" className="bf-switchLabel">
-                        Make default
-                      </label>
+                    </div>
+
+                    <div className="bf-field">
+                      <label>Branch Number (optional)</label>
+                      <input
+                        value={form.branch || ""}
+                        onChange={(e) => setForm((p) => ({ ...p, branch: e.target.value }))}
+                        inputMode="numeric"
+                      />
+                    </div>
+
+                    <div className="bf-field">
+                      <label>Set as Default</label>
+                      <div className="bf-switchRow" style={{ marginTop: 6 }}>
+                        <input
+                          id="bfDefault2"
+                          type="checkbox"
+                          checked={!!form.isDefault}
+                          onChange={(e) => setForm((p) => ({ ...p, isDefault: e.target.checked }))}
+                        />
+                        <label htmlFor="bfDefault2" className="bf-switchLabel">
+                          Make default
+                        </label>
+                      </div>
                     </div>
                   </div>
                 </>

@@ -1,3 +1,4 @@
+// src/pages/WithdrawCrypto.jsx (or WithdrawByCrypto.jsx)
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import memberApi from "../services/memberApi";
@@ -21,6 +22,18 @@ function money(n) {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 8 }).format(n);
 }
 
+// map backend row -> UI beneficiary
+function mapBeneficiaryRow(row) {
+  return {
+    id: String(row.id),
+    label: row.label || `Wallet ${row.id}`,
+    asset: String(row.asset || "USDT").toUpperCase(),
+    network: String(row.network || "").toUpperCase(),
+    address: row.wallet_address || "",
+    isDefault: !!row.is_default,
+  };
+}
+
 export default function WithdrawCrypto() {
   const nav = useNavigate();
 
@@ -30,25 +43,28 @@ export default function WithdrawCrypto() {
   const [me, setMe] = useState(null);
   const balance = Number(me?.balance || 0);
 
+  // ✅ beneficiaries
+  const [beneficiaries, setBeneficiaries] = useState([]);
+  const [selectedId, setSelectedId] = useState(""); // beneficiary id
+  const [loadingBf, setLoadingBf] = useState(false);
+
+  // derived selected beneficiary
+  const selected = useMemo(() => {
+    return beneficiaries.find((b) => String(b.id) === String(selectedId)) || null;
+  }, [beneficiaries, selectedId]);
+
+  // ✅ withdrawal fields (now filled from beneficiary)
   const [coin, setCoin] = useState(coins[0]);
   const [network, setNetwork] = useState(coins[0].networks[0]);
   const [address, setAddress] = useState("");
+
   const [amount, setAmount] = useState("");
-
-  const [wallets, setWallets] = useState([]);
-  const [activeWallet, setActiveWallet] = useState(null);
-
-  const [showAdd, setShowAdd] = useState(false);
-  const [newWallet, setNewWallet] = useState({
-    label: "",
-    network: coins[0].networks[0],
-    address: "",
-  });
 
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // load balance
   useEffect(() => {
     (async () => {
       try {
@@ -60,27 +76,75 @@ export default function WithdrawCrypto() {
     })();
   }, []);
 
+  // load crypto beneficiaries
+  const loadBeneficiaries = async () => {
+    setLoadingBf(true);
+    try {
+      const r = await memberApi.get("/member/beneficiaries?type=crypto");
+      const rows = Array.isArray(r.data) ? r.data : [];
+      const mapped = rows.map(mapBeneficiaryRow);
+
+      // default first: is_default DESC is already ordered by backend, but keep safe
+      mapped.sort((a, b) => Number(b.isDefault) - Number(a.isDefault));
+
+      setBeneficiaries(mapped);
+
+      // auto select default or first
+      if (mapped.length) {
+        const def = mapped.find((x) => x.isDefault) || mapped[0];
+        setSelectedId(String(def.id));
+      } else {
+        setSelectedId("");
+      }
+    } catch (e) {
+      setErr(e?.response?.data?.message || "Failed to load beneficiaries");
+    } finally {
+      setLoadingBf(false);
+    }
+  };
+
+  useEffect(() => {
+    loadBeneficiaries();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // when beneficiary changes -> fill coin/network/address
+  useEffect(() => {
+    if (!selected) {
+      setAddress("");
+      setCoin(coins[0]);
+      setNetwork(coins[0].networks[0]);
+      return;
+    }
+
+    const asset = String(selected.asset || "USDT").toUpperCase();
+    const c = coins.find((x) => x.code === asset) || coins[0];
+
+    setCoin(c);
+
+    // ensure network is valid for selected asset
+    const net = String(selected.network || "").toUpperCase();
+    const validNet = c.networks.includes(net) ? net : c.networks[0];
+
+    setNetwork(validNet);
+    setAddress(selected.address || "");
+    setOk("");
+    setErr("");
+  }, [selected]);
+
   const amountNum = useMemo(() => {
     const n = Number(amount);
     return Number.isFinite(n) ? n : 0;
   }, [amount]);
 
-  const receive = useMemo(
-    () => Math.max(0, amountNum - FEE),
-    [amountNum]
-  );
+  const receive = useMemo(() => Math.max(0, amountNum - FEE), [amountNum]);
 
   const canSubmit =
+    !!selected &&
     address.trim() &&
     amountNum >= MIN_WITHDRAW &&
     amountNum <= balance &&
     !submitting;
-
-  const saveWallet = () => {
-    setWallets((prev) => [...prev, { ...newWallet, id: Date.now() }]);
-    setShowAdd(false);
-    setNewWallet({ label: "", network: coin.networks[0], address: "" });
-  };
 
   const submit = async () => {
     if (!canSubmit) return;
@@ -105,8 +169,6 @@ export default function WithdrawCrypto() {
       setMe(meRes.data);
 
       setAmount("");
-      setAddress("");
-      setActiveWallet(null);
     } catch (e) {
       setErr(e?.response?.data?.message || "Withdrawal failed");
     } finally {
@@ -114,11 +176,20 @@ export default function WithdrawCrypto() {
     }
   };
 
+  const goAddBeneficiary = () => {
+    // ✅ go to Beneficiaries page, crypto tab
+    nav("/beneficiary-management?tab=crypto");
+  };
+
+  const disableFilledInputs = true; // ✅ as you requested: disable all except amount
+
   return (
     <div className="wcPage">
       {/* Header */}
       <header className="wcTop">
-        <button className="wcBack" onClick={() => nav(-1)}>←</button>
+        <button className="wcBack" onClick={() => nav(-1)}>
+          ←
+        </button>
         <div className="wcTitle">Withdraw Crypto</div>
         <div style={{ width: 48 }} />
       </header>
@@ -133,7 +204,7 @@ export default function WithdrawCrypto() {
           </div>
         </section>
 
-        {/* Coins */}
+        {/* Coins (disabled by requirement) */}
         <section className="wcCoins">
           <div className="wcCoinsTitle">Select Asset</div>
           <div className="wcCoinRow">
@@ -141,12 +212,10 @@ export default function WithdrawCrypto() {
               <button
                 key={c.code}
                 className={`wcCoin ${coin.code === c.code ? "active" : ""}`}
-                onClick={() => {
-                  setCoin(c);
-                  setNetwork(c.networks[0]);
-                  setAddress("");
-                  setActiveWallet(null);
-                }}
+                disabled={disableFilledInputs}
+                onClick={() => {}}
+                style={disableFilledInputs ? { opacity: 0.6, cursor: "not-allowed" } : undefined}
+                type="button"
               >
                 <img className="wcCoinIcon" src={c.icon} alt={c.code} />
                 <div>
@@ -158,37 +227,43 @@ export default function WithdrawCrypto() {
           </div>
         </section>
 
-        {/* Wallets */}
+        {/* Wallets -> Beneficiary dropdown */}
         <section className="wcWallet">
           <div className="wcWalletHead">
             <div className="wcWalletTitle">Bind Wallet</div>
-            <button className="wcAddWallet" onClick={() => setShowAdd(true)}>
+            <button className="wcAddWallet" onClick={goAddBeneficiary} type="button">
               + Add New
             </button>
           </div>
 
-          <div className="wcWalletList">
-            {wallets.map((w) => (
-              <button
-                key={w.id}
-                className={`wcSavedWallet ${
-                  activeWallet?.id === w.id ? "active" : ""
-                }`}
-                onClick={() => {
-                  setActiveWallet(w);
-                  setAddress(w.address);
-                  setNetwork(w.network);
-                }}
+          <div className="wcCard" style={{ marginTop: 12 }}>
+            <div className="wcField">
+              <label>Beneficiary</label>
+              <select
+                value={selectedId}
+                onChange={(e) => setSelectedId(e.target.value)}
+                disabled={loadingBf}
               >
-                <div>
-                  <div className="wcWalletLabel">{w.label}</div>
-                  <div className="wcWalletAddr">
-                    {w.address.slice(0, 8)}…{w.address.slice(-6)}
-                  </div>
+                {!beneficiaries.length ? (
+                  <option value="">
+                    {loadingBf ? "Loading..." : "No beneficiaries found"}
+                  </option>
+                ) : (
+                  beneficiaries.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.label} • {b.asset} • {b.network}
+                      {b.isDefault ? " (Default)" : ""}
+                    </option>
+                  ))
+                )}
+              </select>
+
+              {!beneficiaries.length && !loadingBf ? (
+                <div className="wcCalc" style={{ marginTop: 8 }}>
+                  No saved wallets. Tap <b>+ Add New</b> to create a beneficiary.
                 </div>
-                <div className="wcWalletNet">{w.network}</div>
-              </button>
-            ))}
+              ) : null}
+            </div>
           </div>
         </section>
 
@@ -199,9 +274,11 @@ export default function WithdrawCrypto() {
 
           <div className="wcField">
             <label>Network</label>
-            <select value={network} onChange={(e) => setNetwork(e.target.value)}>
+            <select value={network} onChange={() => {}} disabled={disableFilledInputs}>
               {coin.networks.map((n) => (
-                <option key={n} value={n}>{n}</option>
+                <option key={n} value={n}>
+                  {n}
+                </option>
               ))}
             </select>
           </div>
@@ -223,59 +300,17 @@ export default function WithdrawCrypto() {
             <label>Wallet Address</label>
             <input
               value={address}
-              onChange={(e) => setAddress(e.target.value)}
+              onChange={() => {}}
+              disabled={disableFilledInputs}
               placeholder={`Enter ${coin.code} address`}
             />
           </div>
 
-          <button className="wcSubmit" disabled={!canSubmit} onClick={submit}>
+          <button className="wcSubmit" disabled={!canSubmit} onClick={submit} type="button">
             {submitting ? "Submitting..." : "Submit Withdrawal"}
           </button>
         </section>
       </div>
-
-      {/* Add Wallet Modal */}
-      {showAdd && (
-        <div className="wcModalOverlay" onClick={() => setShowAdd(false)}>
-          <div className="wcModal" onClick={(e) => e.stopPropagation()}>
-            <h3>Add Wallet</h3>
-
-            <input
-              placeholder="Label"
-              value={newWallet.label}
-              onChange={(e) =>
-                setNewWallet((p) => ({ ...p, label: e.target.value }))
-              }
-            />
-
-            <select
-              value={newWallet.network}
-              onChange={(e) =>
-                setNewWallet((p) => ({ ...p, network: e.target.value }))
-              }
-            >
-              {coin.networks.map((n) => (
-                <option key={n} value={n}>{n}</option>
-              ))}
-            </select>
-
-            <input
-              placeholder="Wallet address"
-              value={newWallet.address}
-              onChange={(e) =>
-                setNewWallet((p) => ({ ...p, address: e.target.value }))
-              }
-            />
-
-            <button
-              disabled={!newWallet.label || !newWallet.address}
-              onClick={saveWallet}
-            >
-              Save
-            </button>
-          </div>
-        </div>
-      )}
 
       <MemberBottomNav active="mine" />
     </div>
