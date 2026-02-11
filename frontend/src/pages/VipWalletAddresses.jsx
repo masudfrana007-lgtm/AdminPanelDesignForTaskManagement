@@ -13,8 +13,20 @@ const VIPS = [
 // ✅ ONLY one slot: USDT TRC20
 const SLOT = { asset: "USDT", network: "TRC20", label: "USDT (TRC20)" };
 
+// ✅ backend host (image preview must use backend, not frontend 5175)
+const API_HOST = import.meta.env.VITE_API_HOST || "http://159.198.40.145:5010";
+
+function toAbsUrl(p) {
+  const s = String(p || "").trim();
+  if (!s) return "";
+  if (s.startsWith("http://") || s.startsWith("https://")) return s;
+  return `${API_HOST}${s.startsWith("/") ? "" : "/"}${s}`;
+}
+
 function slotKey(vip_rank, asset, network) {
-  return `${vip_rank}__${String(asset || "").toUpperCase()}__${String(network || "").toUpperCase()}`;
+  return `${vip_rank}__${String(asset || "").toUpperCase()}__${String(
+    network || ""
+  ).toUpperCase()}`;
 }
 
 export default function VipWalletAddresses() {
@@ -82,7 +94,10 @@ export default function VipWalletAddresses() {
       fd.append("photo", file);
       fd.append("vip_rank", vip);
 
+      // ✅ correct endpoint
       const { data } = await api.post("/vip-deposit-addresses/photo", fd);
+
+      // backend returns: { vip_rank, photo_url: "/uploads/vip-wallets/..." }
       patchRow({ photo_url: data?.photo_url || "" });
       setOk("Photo uploaded");
     } catch (e) {
@@ -108,7 +123,7 @@ export default function VipWalletAddresses() {
         asset: "USDT",
         network: "TRC20",
         wallet_address: String(row.wallet_address || "").trim(),
-        photo_url: String(row.photo_url || "").trim(),
+        photo_url: String(row.photo_url || "").trim(), // keep relative in DB
         is_active: row.is_active !== false,
       });
 
@@ -146,7 +161,10 @@ export default function VipWalletAddresses() {
         {ok && <div className="alert ok">{ok}</div>}
 
         {/* VIP tabs */}
-        <div className="row" style={{ gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+        <div
+          className="row"
+          style={{ gap: 8, marginBottom: 12, flexWrap: "wrap" }}
+        >
           {VIPS.map((v) => (
             <button
               key={v.key}
@@ -164,7 +182,14 @@ export default function VipWalletAddresses() {
         </div>
 
         <div className="card">
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 12,
+              flexWrap: "wrap",
+            }}
+          >
             <div>
               <h3 style={{ margin: 0 }}>{SLOT.label}</h3>
               <div className="small" style={{ opacity: 0.8 }}>
@@ -172,7 +197,10 @@ export default function VipWalletAddresses() {
               </div>
             </div>
 
-            <label className="small" style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <label
+              className="small"
+              style={{ display: "flex", gap: 8, alignItems: "center" }}
+            >
               <input
                 type="checkbox"
                 checked={row.is_active !== false}
@@ -204,7 +232,7 @@ export default function VipWalletAddresses() {
                     className="input"
                     value={row.photo_url || ""}
                     onChange={(e) => patchRow({ photo_url: e.target.value })}
-                    placeholder="Or paste photo URL"
+                    placeholder="Or paste photo URL (relative or full)"
                     style={{ flex: 1, minWidth: 260 }}
                     disabled={busy}
                   />
@@ -232,9 +260,11 @@ export default function VipWalletAddresses() {
               <div className="small" style={{ marginBottom: 6, opacity: 0.8 }}>
                 Preview
               </div>
+
               {row.photo_url ? (
                 <img
-                  src={row.photo_url}
+                  // ✅ important fix: load from backend :5010
+                  src={toAbsUrl(row.photo_url)}
                   alt="QR"
                   style={{
                     width: "100%",
