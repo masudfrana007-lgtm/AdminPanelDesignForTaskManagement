@@ -1,54 +1,13 @@
+// src/pages/Beneficiaries.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import memberApi from "../services/memberApi";
 import "./Beneficiaries.css";
 import MemberBottomNav from "../components/MemberBottomNav";
 
-const LS_KEY = "mw_beneficiaries_v1";
-
-/** ✅ Network whitelist */
+/** ✅ Network whitelist (UI) */
 const CRYPTO_NETWORKS = ["BTC", "ETH", "USDT-TRC20", "USDT-ERC20"];
-
-const DEMO = {
-  crypto: [
-    {
-      id: "CR-1001",
-      type: "crypto",
-      label: "My USDT Wallet",
-      network: "USDT-TRC20",
-      address: "TQwZ9GxkWw3e9bqGQqZk9k9k9k9k9k9k9k",
-      note: "Primary wallet",
-      isDefault: true,
-      createdAt: Date.now() - 1000 * 60 * 60 * 48,
-    },
-    {
-      id: "CR-1002",
-      type: "crypto",
-      label: "Backup Wallet",
-      network: "USDT-ERC20",
-      address: "0x2b7fA9dE4bC1c8d0d9b1A2b3C4d5E6f7A8b9C0D1",
-      note: "",
-      isDefault: false,
-      createdAt: Date.now() - 1000 * 60 * 60 * 12,
-    },
-  ],
-  bank: [
-    {
-      id: "BK-2001",
-      type: "bank",
-      label: "Personal Bank",
-      bankName: "ABA Bank",
-      accountName: "User Name",
-      accountNumber: "1234567890",
-      country: "Cambodia",
-      swift: "ABAAKHPP",
-      branch: "Phnom Penh",
-      routing: "",
-      note: "Salary account",
-      isDefault: true,
-      createdAt: Date.now() - 1000 * 60 * 60 * 72,
-    },
-  ],
-};
+const DEFAULT_ASSET = "USDT"; // ✅ keep simple (can expand later)
 
 function uid(prefix) {
   return `${prefix}-${Math.floor(1000 + Math.random() * 9000)}-${Date.now().toString().slice(-4)}`;
@@ -66,6 +25,7 @@ function clean(s) {
   return (s ?? "").toString().trim();
 }
 
+/** ---------------- VALIDATION (unchanged UI behavior) ---------------- */
 function validateCrypto(form) {
   const label = clean(form.label);
   const network = clean(form.network);
@@ -74,7 +34,6 @@ function validateCrypto(form) {
   if (!label) return "Please enter a Beneficiary Name.";
   if (!network) return "Please select a Network.";
 
-  // ✅ whitelist check
   if (!CRYPTO_NETWORKS.includes(network)) {
     return "Invalid network. Please choose from BTC / ETH / USDT TRC20 / USDT ERC20.";
   }
@@ -100,23 +59,100 @@ function validateBank(form) {
   return "";
 }
 
+/** ---------------- MAPPERS: DB <-> UI ---------------- */
+
+// DB row -> UI item (keeps your existing UI keys)
+function dbToUi(row) {
+  const type = String(row?.type || "").toLowerCase();
+
+  if (type === "crypto") {
+    return {
+      // keep UI keys exactly like your design uses
+      id: String(row.id),                // IMPORTANT: numeric id as string works fine in UI
+      type: "crypto",
+      label: row.label || "",
+      network: row.network || "USDT-TRC20",
+      address: row.wallet_address || "",
+      note: row.note || "",
+      isDefault: !!row.is_default,
+      createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+      // extra (not shown but useful later)
+      asset: row.asset || DEFAULT_ASSET,
+    };
+  }
+
+  return {
+    id: String(row.id),
+    type: "bank",
+    label: row.label || "",
+    bankName: row.bank_name || "",
+    accountName: row.account_holder_name || "",
+    accountNumber: row.account_number || "",
+    country: row.bank_country || "",
+    swift: row.swift || "",
+    branch: row.branch_name || "",
+    routing: row.routing_number || "",
+    note: row.note || "",
+    isDefault: !!row.is_default,
+    createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+  };
+}
+
+// UI form -> API payload (DB shape)
+function uiToApiPayload(tab, form) {
+  if (tab === "crypto") {
+    return {
+      type: "crypto",
+      label: clean(form.label),
+      is_default: !!form.isDefault,
+
+      // backend requires these
+      asset: DEFAULT_ASSET, // ✅ keep design; no asset selector in UI
+      network: clean(form.network),
+      wallet_address: clean(form.address),
+
+      note: clean(form.note) || null,
+    };
+  }
+
+  return {
+    type: "bank",
+    label: clean(form.label),
+    is_default: !!form.isDefault,
+
+    bank_country: clean(form.country),
+    bank_name: clean(form.bankName),
+    account_holder_name: clean(form.accountName),
+    account_number: clean(form.accountNumber),
+
+    routing_number: clean(form.routing) || null,
+    branch_name: clean(form.branch) || null,
+    swift: clean(form.swift) || null,
+
+    note: clean(form.note) || null,
+  };
+}
+
 export default function Beneficiaries() {
   const nav = useNavigate();
 
   const [tab, setTab] = useState("crypto"); // crypto | bank
   const [q, setQ] = useState("");
-  const [data, setData] = useState(DEMO);
+
+  // ✅ now comes from backend
+  const [data, setData] = useState({ crypto: [], bank: [] });
 
   // Modal
   const [modalOpen, setModalOpen] = useState(false);
   const [mode, setMode] = useState("create"); // create | edit
   const [editingId, setEditingId] = useState(null);
   const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const emptyCrypto = {
     type: "crypto",
     label: "",
-    network: "USDT-TRC20", // ✅ default to whitelist value
+    network: "USDT-TRC20",
     address: "",
     note: "",
     isDefault: false,
@@ -138,26 +174,34 @@ export default function Beneficiaries() {
 
   const [form, setForm] = useState(emptyCrypto);
 
-  // Load from localStorage
-  useEffect(() => {
+  /** ✅ Load from backend (instead of localStorage) */
+  const loadAll = async () => {
+    setLoading(true);
+    setErr("");
     try {
-      const raw = localStorage.getItem(LS_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      if (parsed?.crypto && parsed?.bank) setData(parsed);
-    } catch {
-      // ignore
-    }
-  }, []);
+      const [cRes, bRes] = await Promise.all([
+        memberApi.get("/member/beneficiaries?type=crypto"),
+        memberApi.get("/member/beneficiaries?type=bank"),
+      ]);
 
-  // Save to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(LS_KEY, JSON.stringify(data));
-    } catch {
-      // ignore
+      const cryptoRows = Array.isArray(cRes.data) ? cRes.data : [];
+      const bankRows = Array.isArray(bRes.data) ? bRes.data : [];
+
+      setData({
+        crypto: cryptoRows.map(dbToUi),
+        bank: bankRows.map(dbToUi),
+      });
+    } catch (e) {
+      setErr(e?.response?.data?.message || "Failed to load beneficiaries");
+    } finally {
+      setLoading(false);
     }
-  }, [data]);
+  };
+
+  useEffect(() => {
+    loadAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const list = data[tab] ?? [];
 
@@ -187,8 +231,7 @@ export default function Beneficiaries() {
     setErr("");
     setMode("create");
     setEditingId(null);
-    const base = tab === "crypto" ? emptyCrypto : emptyBank;
-    setForm(base);
+    setForm(tab === "crypto" ? emptyCrypto : emptyBank);
     setModalOpen(true);
   };
 
@@ -212,35 +255,59 @@ export default function Beneficiaries() {
     setErr("");
   };
 
-  const setDefault = (id) => {
-    setData((prev) => {
-      const next = { ...prev };
-      next[tab] = (next[tab] ?? []).map((x) => ({ ...x, isDefault: x.id === id }));
-      return next;
-    });
+  /** ✅ Set default = backend update + reload (keep design) */
+  const setDefault = async (id) => {
+    try {
+      setErr("");
+      const item = (data[tab] || []).find((x) => String(x.id) === String(id));
+      if (!item) return;
+
+      if (tab === "crypto") {
+        await memberApi.patch(`/member/beneficiaries/${id}`, {
+          label: item.label,
+          is_default: true,
+          asset: item.asset || DEFAULT_ASSET,
+          network: item.network,
+          wallet_address: item.address,
+          note: item.note || null,
+        });
+      } else {
+        await memberApi.patch(`/member/beneficiaries/${id}`, {
+          label: item.label,
+          is_default: true,
+          bank_country: item.country,
+          bank_name: item.bankName,
+          account_holder_name: item.accountName,
+          account_number: item.accountNumber,
+          routing_number: item.routing || null,
+          branch_name: item.branch || null,
+          swift: item.swift || null,
+          note: item.note || null,
+        });
+      }
+
+      await loadAll();
+    } catch (e) {
+      setErr(e?.response?.data?.message || "Failed to set default");
+    }
   };
 
-  const removeItem = (id) => {
+  /** ✅ Delete = backend delete + reload (keep design) */
+  const removeItem = async (id) => {
     const ok = window.confirm("Remove this beneficiary?");
     if (!ok) return;
 
-    setData((prev) => {
-      const next = { ...prev };
-      const before = next[tab] ?? [];
-      const removed = before.find((x) => x.id === id);
-      const after = before.filter((x) => x.id !== id);
-
-      // if default removed, set first as default
-      if (removed?.isDefault && after.length) {
-        after[0] = { ...after[0], isDefault: true };
-      }
-
-      next[tab] = after;
-      return next;
-    });
+    try {
+      setErr("");
+      await memberApi.delete(`/member/beneficiaries/${id}`);
+      await loadAll();
+    } catch (e) {
+      setErr(e?.response?.data?.message || "Failed to delete beneficiary");
+    }
   };
 
-  const onSave = () => {
+  /** ✅ Save (create/edit) -> backend */
+  const onSave = async () => {
     const message = tab === "crypto" ? validateCrypto(form) : validateBank(form);
     if (message) {
       setErr(message);
@@ -249,68 +316,91 @@ export default function Beneficiaries() {
 
     setErr("");
 
-    if (mode === "create") {
-      const id = uid(tab === "crypto" ? "CR" : "BK");
-      const item = {
-        ...form,
-        id,
-        type: tab,
-        createdAt: Date.now(),
-      };
-
-      setData((prev) => {
-        const next = { ...prev };
-        const arr = [...(next[tab] ?? [])];
-
-        // default handling
-        if (item.isDefault || arr.length === 0) {
-          item.isDefault = true;
-          for (let i = 0; i < arr.length; i++) arr[i] = { ...arr[i], isDefault: false };
-        }
-
-        arr.unshift(item);
-        next[tab] = arr;
-        return next;
-      });
-
-      closeModal();
-      return;
-    }
-
-    // edit
-    setData((prev) => {
-      const next = { ...prev };
-      let arr = [...(next[tab] ?? [])];
-
-      arr = arr.map((x) => (x.id === editingId ? { ...x, ...form } : x));
-
-      const edited = arr.find((x) => x.id === editingId);
-
-      // if edited set as default
-      if (edited?.isDefault) {
-        arr = arr.map((x) => ({ ...x, isDefault: x.id === editingId }));
+    try {
+      if (mode === "create") {
+        const payload = uiToApiPayload(tab, form);
+        await memberApi.post("/member/beneficiaries", payload);
+        await loadAll();
+        closeModal();
+        return;
       }
 
-      next[tab] = arr;
-      return next;
-    });
+      // edit
+      const payload = uiToApiPayload(tab, form);
 
-    closeModal();
+      // PATCH requires (for crypto/bank) all required fields present -> payload already has them
+      await memberApi.patch(`/member/beneficiaries/${editingId}`, payload);
+      await loadAll();
+      closeModal();
+    } catch (e) {
+      setErr(e?.response?.data?.message || "Failed to save beneficiary");
+    }
   };
 
-  const resetDemo = () => {
+  /** Optional: keep your Demo button but make it create demo rows in DB (same UI button) */
+  const resetDemo = async () => {
     const ok = window.confirm("Reset beneficiaries to demo data?");
     if (!ok) return;
-    setData(DEMO);
+
+    try {
+      setErr("");
+
+      // clear both types
+      const all = [...(data.crypto || []), ...(data.bank || [])];
+      for (const x of all) {
+        // best-effort
+        // eslint-disable-next-line no-await-in-loop
+        await memberApi.delete(`/member/beneficiaries/${x.id}`);
+      }
+
+      // insert demo crypto + bank (you can change text)
+      await memberApi.post("/member/beneficiaries", {
+        type: "crypto",
+        label: "My USDT Wallet",
+        is_default: true,
+        asset: DEFAULT_ASSET,
+        network: "USDT-TRC20",
+        wallet_address: "TQwZ9GxkWw3e9bqGQqZk9k9k9k9k9k9k9k",
+        note: "Primary wallet",
+      });
+
+      await memberApi.post("/member/beneficiaries", {
+        type: "bank",
+        label: "Personal Bank",
+        is_default: true,
+        bank_country: "Cambodia",
+        bank_name: "ABA Bank",
+        account_holder_name: "User Name",
+        account_number: "1234567890",
+        swift: "ABAAKHPP",
+        branch_name: "Phnom Penh",
+        routing_number: "",
+        note: "Salary account",
+      });
+
+      await loadAll();
+    } catch (e) {
+      setErr(e?.response?.data?.message || "Failed to reset demo");
+    }
   };
 
-  const clearAll = () => {
+  /** Clear button: delete all rows for this member */
+  const clearAll = async () => {
     const ok = window.confirm("Clear ALL beneficiaries?");
     if (!ok) return;
-    setData({ crypto: [], bank: [] });
-  };
 
-  const iconSrc = tab === "crypto" ? "/icons/btc.png" : "/icons/bank.png";
+    try {
+      setErr("");
+      const all = [...(data.crypto || []), ...(data.bank || [])];
+      for (const x of all) {
+        // eslint-disable-next-line no-await-in-loop
+        await memberApi.delete(`/member/beneficiaries/${x.id}`);
+      }
+      await loadAll();
+    } catch (e) {
+      setErr(e?.response?.data?.message || "Failed to clear beneficiaries");
+    }
+  };
 
   return (
     <div className="bf-page">
@@ -343,6 +433,7 @@ export default function Beneficiaries() {
               setTab("crypto");
               setQ("");
               setErr("");
+              setForm(emptyCrypto);
             }}
           >
             Crypto Beneficiary
@@ -355,6 +446,7 @@ export default function Beneficiaries() {
               setTab("bank");
               setQ("");
               setErr("");
+              setForm(emptyBank);
             }}
           >
             Bank Beneficiary
@@ -376,6 +468,9 @@ export default function Beneficiaries() {
           </button>
         </div>
 
+        {err ? <div className="bf-error" style={{ marginBottom: 12 }}>{err}</div> : null}
+        {loading ? <div className="bf-emptySub" style={{ marginBottom: 12 }}>Loading…</div> : null}
+
         <div className="bf-list">
           {filtered.length === 0 ? (
             <div className="bf-empty">
@@ -387,10 +482,9 @@ export default function Beneficiaries() {
             </div>
           ) : (
             filtered.map((b) => (
-              <div key={b.id} className={"bf-card " + (b.isDefault ? "is-default" : "")}>
+              <div key={b.id || uid("row")} className={"bf-card " + (b.isDefault ? "is-default" : "")}>
                 <div className="bf-cardTop">
                   <div className="bf-cardLeft">
-                    {/* ✅ ICONS from /public/icons */}
                     <div className="bf-avatar" aria-hidden="true">
                       <img className="bf-iconImg" src={b.type === "crypto" ? "/icons/btc.png" : "/icons/bank.png"} alt="" />
                     </div>
