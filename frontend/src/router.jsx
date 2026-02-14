@@ -1,7 +1,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
+import DashboardMain from "./pages/DashboardMain";
 import Users from "./pages/Users";
 import Tasks from "./pages/Tasks";
 import Sets from "./pages/Sets";
@@ -100,7 +100,7 @@ export const router = createBrowserRouter([
     element: <CsLogin />,
   },
 
-  { path: "/", element: <ProtectedRoute><Dashboard /></ProtectedRoute> },
+  { path: "/", element: <ProtectedRoute><DashboardMain /></ProtectedRoute> },
 
   /* ✅ PUBLIC / TEST ROUTE */
   {
