@@ -57,6 +57,19 @@ export default function TaskDetail() {
 
   const [showComboWin, setShowComboWin] = useState(false);
 
+  // ✅ insufficient balance popup
+  const [showInsufficient, setShowInsufficient] = useState(false);
+
+  const goDeposit = () => {
+    setShowInsufficient(false);
+    nav("/member/deposit");
+  };
+
+  const goSupport = () => {
+    setShowInsufficient(false);
+    nav("/member/customerService");
+  };
+
   // ✅ UI navigation index (Prev/Next changes this only)
   const [viewIndex, setViewIndex] = useState(0);
 
@@ -188,8 +201,8 @@ export default function TaskDetail() {
     if (!task || isLoading || !isCurrentTask) return;
 
     if (balance < orderAmount) {
-      setErr(`Insufficient balance. Need ${money(orderAmount)} USDT, you have ${money(balance)} USDT.`);
-      nav("/member/deposit");
+      setErr("");
+      setShowInsufficient(true);
       return;
     }
 
@@ -586,6 +599,53 @@ export default function TaskDetail() {
           </div>
         </div>
       )}
+
+            {/* ✅ INSUFFICIENT BALANCE POPUP */}
+      {showInsufficient && (
+        <div className="td-modalOverlay" onClick={() => setShowInsufficient(false)}>
+          <div className="td-modalCard" onClick={(e) => e.stopPropagation()}>
+            <div className="td-modalTop">
+              <div className="td-modalTitle">Recharge Required</div>
+              <button className="td-modalClose" onClick={() => setShowInsufficient(false)} type="button">
+                ✕
+              </button>
+            </div>
+
+            <div className="td-modalText">
+              your current balance is lower than the package order, please recharge
+            </div>
+
+            <div className="td-modalGrid">
+              <div className="td-modalBox">
+                <div className="td-modalLabel">Current Balance</div>
+                <div className="td-modalBig">${money(balance)}</div>
+                <div className="td-modalSmall">Available in your wallet</div>
+              </div>
+
+              <div className="td-modalBox">
+                <div className="td-modalLabel">Required Amount</div>
+                <div className="td-modalBig">${money(orderAmount)}</div>
+                <div className="td-modalSmall">Needed to submit this order</div>
+              </div>
+            </div>
+
+            <div className="td-modalBtns">
+              <button className="td-modalDeposit" type="button" onClick={goDeposit}>
+                Deposit
+              </button>
+
+              <button className="td-modalSupport" type="button" onClick={goSupport}>
+                Contact Support
+              </button>
+            </div>
+
+            <button className="td-modalSecondary" type="button" onClick={() => setShowInsufficient(false)}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
 
       {/* ✅ SAME bottom bar (reusable) */}
       <MemberBottomNav active="mine" />            

@@ -395,3 +395,165 @@
     font-size: 13px;
   }
 }
+
+/* ===========================
+   MOBILE UX POLISH (History)
+   Add at the END of the file
+   =========================== */
+@media (max-width: 640px) {
+
+  /* overall spacing */
+  .historyContent {
+    padding: 16px 12px;
+  }
+
+  .historyTitle {
+    font-size: 20px;
+    line-height: 1.15;
+  }
+
+  .historySub {
+    font-size: 12px;
+    opacity: 0.8;
+  }
+
+  /* make cards tighter and more readable */
+  .historyCard {
+    padding: 14px;
+    border-radius: 16px;
+    margin-bottom: 12px;
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .historyName {
+    font-size: 16px;
+    margin-bottom: 10px;
+    text-align: left; /* more scannable on mobile */
+  }
+
+  .historyTop {
+    margin-bottom: 8px;
+  }
+
+  .historyBadge {
+    padding: 6px 10px;
+    font-size: 10px;
+  }
+
+  /* ✅ turn the 3-column grid into clean "rows" */
+  .historyGrid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    text-align: left;
+  }
+
+  /* each metric becomes a row */
+  .historyGrid > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.10);
+  }
+
+  .historyLabel {
+    margin-bottom: 0;
+    font-size: 11px;
+    letter-spacing: 0.2px;
+    opacity: 0.85;
+  }
+
+  .historyValue {
+    font-size: 14px;
+    font-weight: 900;
+  }
+
+  .historyValue.strong {
+    font-size: 15px;
+  }
+
+  /* ===== SUMMARY: stacked, cleaner ===== */
+  .historySummary {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .summaryCard {
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .summaryTitle {
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+
+  /* make summary grid 2 columns instead of 3 (less cramped) */
+  .summaryGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .summaryLabel {
+    font-size: 10px;
+  }
+
+  .summaryValue {
+    font-size: 14px;
+  }
+
+  /* ===== TABS: horizontal scroll (best mobile UX) ===== */
+  .historyTabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 10px;
+    padding: 10px 6px;
+    margin: 12px -6px 12px; /* edge-to-edge feel */
+    scrollbar-width: none;
+  }
+  .historyTabs::-webkit-scrollbar { display: none; }
+
+  .historyTab {
+    flex: 0 0 auto;
+    padding: 9px 14px;
+    font-size: 13px;
+    border-radius: 999px;
+  }
+
+  /* ===== Pagination: sticky bar above bottom nav ===== */
+  .historyPagination {
+    position: sticky;
+    bottom: 84px; /* stays above your bottom nav height */
+    z-index: 30;
+    margin-top: 14px;
+    padding: 12px;
+    border-radius: 16px;
+    gap: 10px;
+  }
+
+  .paginationBtn {
+    width: 48%;
+    padding: 10px 12px;
+    border-radius: 14px;
+  }
+
+  .paginationInfo {
+    width: 100%;
+    text-align: center;
+    font-size: 12.5px;
+    opacity: 0.9;
+    order: 3; /* put info under buttons */
+  }
+}
+
+/* extra small phones */
+@media (max-width: 380px) {
+  .paginationBtn {
+    width: 100%;
+  }
+}

@@ -61,7 +61,7 @@ export default function AmazonVip1() {
 
   // ✅ instant navigation (no modal, no delay)
   const startMatching = () => {
-    nav("/member/tasks-set");
+    nav("/member/tasks");
   };
 
   
