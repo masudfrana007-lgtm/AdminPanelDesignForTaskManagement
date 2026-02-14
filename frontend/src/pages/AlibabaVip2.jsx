@@ -62,7 +62,7 @@ export default function AlibabaVip2() {
 
   // ✅ instant redirect (no modal, no timeout, no confirm)
   const startMatching = () => {
-    nav("/member/tasks-set");
+    nav("/member/tasks");
   };
 
   return (

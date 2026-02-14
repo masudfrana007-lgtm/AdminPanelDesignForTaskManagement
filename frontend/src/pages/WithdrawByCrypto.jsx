@@ -191,6 +191,13 @@ export default function WithdrawCrypto() {
           ←
         </button>
         <div className="wcTitle">Withdraw Crypto</div>
+          <button
+            className="wcHistoryBtn"
+            type="button"
+            onClick={() => nav("/member/withdraw/records")}
+          >
+            History
+          </button>
         <div style={{ width: 48 }} />
       </header>
 

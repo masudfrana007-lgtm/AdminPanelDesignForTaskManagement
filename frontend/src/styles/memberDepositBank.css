@@ -683,3 +683,7 @@
     opacity: .22;
   }
 }
+
+@media (max-width: 720px){
+  .db3-desktopOnly{ display:block !important; }
+}

@@ -459,3 +459,69 @@ body{
   .bf-modalBtns{ flex-direction: column; }
   .bf-btnGhost, .bf-primary{ width: 100%; }
 }
+
+/* =========================
+   BF MODAL: SCROLL ON MOBILE
+   (CSS ONLY)
+   ========================= */
+
+/* Allow the overlay itself to scroll if needed */
+.bf-modalOverlay{
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  align-items: center;           /* center on desktop */
+  padding: 14px;
+}
+
+/* Make modal height limited + layout in column */
+.bf-modal{
+  max-height: 85vh;              /* ✅ keep inside screen */
+  display: flex;                 /* ✅ enable header/body/footer layout */
+  flex-direction: column;
+}
+
+/* Make the form area the scroll container */
+.bf-form{
+  overflow-y: auto;              /* ✅ scrolling happens here */
+  -webkit-overflow-scrolling: touch;
+  flex: 1 1 auto;                /* ✅ take remaining height */
+  min-height: 0;                 /* ✅ IMPORTANT for flex + overflow */
+}
+
+/* Keep footer always visible */
+.bf-modalBtns{
+  flex: 0 0 auto;
+  position: sticky;              /* ✅ stay visible when scrolling */
+  bottom: 0;
+  background: #fff;
+  z-index: 2;
+}
+
+/* Mobile tuning */
+@media (max-width: 680px){
+  .bf-modalOverlay{
+    align-items: flex-end;        /* your existing mobile behavior */
+    padding: 12px;
+  }
+
+  .bf-modal{
+    width: 100%;
+    max-height: 94vh;
+  }
+
+  .bf-form{
+    padding-bottom: 18px;         /* ✅ space so last input not hidden */
+  }
+}
+
+/* Lift modal buttons above bottom nav */
+.bf-modalBtns{
+  padding-bottom: calc(14px + env(safe-area-inset-bottom) + 14px);
+}
+
+/* If still too close on small screens, increase only on mobile */
+@media (max-width: 680px){
+  .bf-modalBtns{
+    padding-bottom: calc(14px + env(safe-area-inset-bottom) + 28px);
+  }
+}

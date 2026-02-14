@@ -262,8 +262,8 @@ export default function DepositBank() {
           <div className="topSub">Submit your deposit details for faster verification</div>
         </div>
 
-        <button className="homeBtn" onClick={() => nav("/")} aria-label="Home">
-          Home
+        <button className="homeBtn" onClick={() => nav("/member/deposit/records")} aria-label="Home">
+          History
         </button>
       </header>
 

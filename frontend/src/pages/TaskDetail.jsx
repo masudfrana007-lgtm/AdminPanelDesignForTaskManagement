@@ -377,7 +377,8 @@ export default function TaskDetail() {
                   <span className="td-pill warn">{isCurrentTask ? "Pending" : "Locked"}</span>
                 </div>
 
-                <div className="td-detailGrid">
+
+                    <div className="td-lr">
                   {/* LEFT */}
                   <div className="td-left">
                     <div className="td-imageBox">
@@ -442,9 +443,12 @@ export default function TaskDetail() {
                       )}
                     </div>
                   </div>
+                 </div>
+
 
                   {/* ✅ FULL WIDTH BELOW BOTH */}
-                  <div className="td-miniMeta" style={{ gridColumn: "1 / -1" }}>
+                  {/*<div className="td-miniMeta" style={{ gridColumn: "1 / -1" }}>*/}
+                 <div className="td-miniMeta">
 {/*                    <div className="td-miniRow">
                       <span>Created</span>
                       <b>{fmtGMT(task.assignedAt)}</b>
@@ -471,7 +475,6 @@ export default function TaskDetail() {
                     ) : null}
                   </div>
 
-                </div>
 
               </section>
 

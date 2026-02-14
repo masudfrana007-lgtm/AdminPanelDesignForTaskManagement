@@ -323,8 +323,8 @@ export default function WithdrawBankV3() {
           <div className="topSub">Withdraw securely to your personal bank account</div>
         </div>
 
-        <button className="homeBtn" onClick={() => nav("/")} aria-label="Home">
-          Home
+        <button className="homeBtn" onClick={() => nav("/member/withdraw/records")} aria-label="Home">
+          History
         </button>
       </header>
 
@@ -559,7 +559,7 @@ export default function WithdrawBankV3() {
             </div>
           </div>
 
-          <button className="wb3-primaryBtn wb3-desktopOnly" onClick={submit} type="button" disabled={isSubmitting || !isReadyToSubmit()}>
+          <button className="wb3-primaryBtn" onClick={submit} type="button" disabled={isSubmitting || !isReadyToSubmit()}>
             {isSubmitting ? "Submitting..." : "Confirm Withdrawal"}
           </button>
 

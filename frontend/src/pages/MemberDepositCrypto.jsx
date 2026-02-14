@@ -238,7 +238,7 @@ export default function MemberDepositCrypto() {
           ←
         </button>
         <div className="dcTitle">Deposit Crypto</div>
-        <button className="dcHistoryBtn" onClick={() => nav("/deposit/records")}>
+        <button className="dcHistoryBtn" onClick={() => nav("/member/deposit/records")}>
           History
         </button>
       </header>
