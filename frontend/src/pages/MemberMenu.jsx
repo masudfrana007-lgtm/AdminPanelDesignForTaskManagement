@@ -249,7 +249,7 @@ export default function MemberMenu() {
         <div className="vipHeaderRow">
           <div className="vipBrand">
             <div>
-              <div className="vipBrandTitle">TK Branding</div>
+              <div className="vipBrandTitle">Eorder.io</div>
               <div className="vipBrandSub">
                 Welcome, <b>{meLS?.nickname || "Member"}</b>
               </div>

@@ -112,7 +112,7 @@ export default function MemberDashboard() {
                   letterSpacing: "1px",
                 }}
               >
-                TK Branding
+                Eorder.io
               </h2>
             </div>
 

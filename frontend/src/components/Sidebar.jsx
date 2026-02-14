@@ -23,7 +23,7 @@ export default function Sidebar({ collapsed, onItemClick }) {
   return (
     <div className={`sidebar ${collapsed ? "collapsed" : ""}`}>
       <div className="sidebar-logo">
-        {collapsed ? "TK" : "TK Branding"}
+        {collapsed ? "E" : "Eorder.io"}
       </div>
 
       <div className="sidebar-section">Main</div>
