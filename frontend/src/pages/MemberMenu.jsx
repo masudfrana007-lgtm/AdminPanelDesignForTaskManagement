@@ -36,14 +36,14 @@ function isAboveMaxForTier(balance, tier) {
   const rule = VIP_RULES[tier];
   if (!rule) return false;
   const b = safeNum(balance);
-  return Number.isFinite(rule.max) && b > rule.max;
+  return false;
 }
 
 function meetsBalanceForTier(balance, tier) {
   const rule = VIP_RULES[tier];
   if (!rule) return false;
   const b = safeNum(balance);
-  return b >= rule.min && b <= rule.max;
+  return b >= rule.min;
 }
 
 // ✅ choose correct tier based on balance (100k -> VIP 3)

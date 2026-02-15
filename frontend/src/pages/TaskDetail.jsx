@@ -97,21 +97,34 @@ export default function TaskDetail() {
     load();
   }, []);
 
-  // ✅ must come from backend now
-  const tasks = Array.isArray(activeSet?.tasks) ? activeSet.tasks : [];
+// ✅ all tasks from backend (full list)
+const allTasks = Array.isArray(activeSet?.tasks) ? activeSet.tasks : [];
 
-  const currentIndex = Number(activeSet?.assignment?.current_task_index || 0);
-  const totalTasks = Number(activeSet?.total_tasks || tasks.length || 0);
+const currentIndex = Number(activeSet?.assignment?.current_task_index || 0);
 
-  // ✅ keep the viewed task synced to current task when backend changes
-  useEffect(() => {
-    if (!Number.isFinite(currentIndex)) return;
-    setViewIndex(currentIndex);
-  }, [currentIndex]);
+// ✅ keep REAL total from backend
+const totalTasks = Number(activeSet?.total_tasks || allTasks.length || 0);
 
-  // bounds
-  const canPrev = viewIndex > 0;
-  const canNext = viewIndex < tasks.length - 1;
+// ✅ HIDE pending/future tasks: show only completed + current
+const tasks = useMemo(() => {
+  const end = Math.min(currentIndex + 1, allTasks.length); // include current only
+  return allTasks.slice(0, end);
+}, [allTasks, currentIndex]);
+
+// ✅ keep viewIndex on current task, but safe
+useEffect(() => {
+  if (!Number.isFinite(currentIndex)) return;
+  setViewIndex(Math.min(currentIndex, Math.max(0, tasks.length - 1)));
+}, [currentIndex, tasks.length]);
+
+// ✅ if tasks shrink, clamp index
+useEffect(() => {
+  setViewIndex((i) => Math.min(i, Math.max(0, tasks.length - 1)));
+}, [tasks.length]);
+
+// bounds (now based on filtered tasks)
+const canPrev = viewIndex > 0;
+const canNext = viewIndex < tasks.length - 1;
 
   // ✅ only current task can be submitted
   const isCurrentTask = viewIndex === currentIndex;
@@ -175,7 +188,7 @@ export default function TaskDetail() {
     setShowComboWin(true);
 
     // 🎉 festival-style confetti for ~2.2s
-    const end = Date.now() + 2200;
+    const end = Date.now() + 5000;
 
     const frame = () => {
       confetti({
@@ -193,8 +206,8 @@ export default function TaskDetail() {
     frame();
 
     // auto close after a bit (optional)
-    const tmr = setTimeout(() => setShowComboWin(false), 2600);
-    return () => clearTimeout(tmr);
+    // ✅ do NOT auto close; user must click "Start Now" (or overlay)
+    return () => {};
   }, [task ? `${task.id}:${task.type}` : null, isCurrentTask]);
 
   const submit = () => {
@@ -338,7 +351,7 @@ export default function TaskDetail() {
                 <div className="td-empty">No completed orders yet.</div>
               ) : (
                 <div className="td-completedList">
-                  {tasks.slice(0, currentIndex).map((ct, idx) => {
+                  {allTasks.slice(0, currentIndex).map((ct, idx) => {
                     const qty = Number(ct.quantity || 1);
                     const unitPrice = Number(ct.rate || 0);
                     const amount = qty * unitPrice;
@@ -519,7 +532,7 @@ export default function TaskDetail() {
         <div
           className="td-overlay"
           style={{ background: "rgba(0,0,0,.70)", zIndex: 9999 }}
-          onClick={() => setShowComboWin(false)}
+          onClick={(e) => e.stopPropagation()}
         >
           <div
             className="td-successCard"
@@ -543,9 +556,18 @@ export default function TaskDetail() {
             </div>
 
             <div className="td-successBtns" style={{ justifyContent: "center" }}>
-              <button className="td-finishBtn is-next" type="button" onClick={() => setShowComboWin(false)}>
+
+              <button
+                className="td-finishBtn is-next"
+                type="button"
+                onClick={() => {
+                  setShowComboWin(false); // close modal (also stops confetti if you tied it to showComboWin)
+                  submit();               // ✅ same logic as "Submit Order"
+                }}
+              >
                 Start Now →
               </button>
+
             </div>
           </div>
         </div>
@@ -605,7 +627,10 @@ export default function TaskDetail() {
 
             {/* ✅ INSUFFICIENT BALANCE POPUP */}
       {showInsufficient && (
-        <div className="td-modalOverlay" onClick={() => setShowInsufficient(false)}>
+        <div
+          className="td-modalOverlay"
+          onClick={(e) => e.stopPropagation()} // ✅ prevent outside close
+        >          
           <div className="td-modalCard" onClick={(e) => e.stopPropagation()}>
             <div className="td-modalTop">
               <div className="td-modalTitle">Recharge Required</div>
