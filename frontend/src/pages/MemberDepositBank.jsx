@@ -1,7 +1,9 @@
-// src/pages/MemberDepositBank.jsx
-import { useEffect, useMemo, useRef, useState } from "react";
+// src/pages/DepositBank.jsx
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/memberDepositBank.css";
+
+// ✅ add bottom nav (from old backend code)
 import MemberBottomNav from "../components/MemberBottomNav";
 import memberApi from "../services/memberApi"; // ✅ member-side axios instance
 
@@ -9,6 +11,7 @@ function money(n) {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n);
 }
 
+/** Load ALL countries automatically */
 function getAllCountries() {
   try {
     const regions = Intl.supportedValuesOf("region");
@@ -19,49 +22,49 @@ function getAllCountries() {
       .sort((a, b) => a.name.localeCompare(b.name));
   } catch {
     return [
+      { code: "KH", name: "Cambodia" },
+      { code: "TH", name: "Thailand" },
+      { code: "VN", name: "Vietnam" },
+      { code: "MY", name: "Malaysia" },
       { code: "US", name: "United States" },
-      { code: "BD", name: "Bangladesh" },
-      { code: "TR", name: "Turkey" },
+      { code: "GB", name: "United Kingdom" },
     ];
   }
 }
 
+/** Demo banks by country (replace with backend later) */
 const BANKS_BY_COUNTRY = {
-  US: [
-    { id: "chase", name: "Chase", type: "Bank Transfer" },
-    { id: "boa", name: "Bank of America", type: "Bank Transfer" },
-    { id: "wells", name: "Wells Fargo", type: "Bank Transfer" },
-    { id: "citi", name: "Citibank", type: "Bank Transfer" },
-    { id: "cap1", name: "Capital One", type: "Bank Transfer" },
-    { id: "hsbc", name: "HSBC", type: "Bank Transfer" },
-  ],
-  BD: [
-    { id: "brac", name: "BRAC Bank", type: "Bank Transfer" },
-    { id: "dbbl", name: "DBBL", type: "Mobile Banking" },
-    { id: "bkash", name: "bKash", type: "Mobile Wallet" },
-  ],
+  KH: ["ABA Bank", "ACLEDA Bank", "Wing"],
+  TH: ["Kasikornbank", "SCB", "Krungthai Bank"],
+  VN: ["Vietcombank", "Techcombank"],
+  MY: ["Maybank", "CIMB"],
 };
 
-const DEMO_PAYEE_DETAILS = {
-  payeeName: "Royal Payments Co.,Ltd",
-  bankName: "Royal Partner Bank",
-  accountName: "Royal Payments",
-  accountNumber: "012-345-678-901",
-  swift: "ROYALKHPP",
-  note: "Use the Reference Code exactly. Deposits without reference may be delayed.",
-};
+function statusKey(s) {
+  return String(s || "").toLowerCase();
+}
 
-// --- status helpers (DB -> UI) ---
-function uiStatus(dbStatus) {
+// --- backend -> UI mapping ---
+function mapDbToUi(dbStatus) {
   const s = String(dbStatus || "").toLowerCase();
-  if (s === "approved") return "Completed";
-  if (s === "rejected") return "Failed";
-  return "Pending"; // pending / others
+  if (s === "approved") return "Credited";
+  if (s === "rejected") return "Rejected";
+  // pending / submitted / processing / unknown -> keep as Reviewing
+  return "Reviewing";
+}
+
+function timelineForUiStatus(uiStatus) {
+  // Steps in UI
+  // Submitted -> Reviewing -> Processing -> Credited
+  if (uiStatus === "Credited") return ["Submitted", "Reviewing", "Processing", "Credited"];
+  if (uiStatus === "Rejected") return ["Submitted", "Reviewing", "Rejected"];
+  return ["Submitted", "Reviewing"];
 }
 
 function fmtDate(iso) {
   if (!iso) return "-";
   const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return String(iso);
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
@@ -70,57 +73,78 @@ function fmtDate(iso) {
   return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
 }
 
-export default function MemberDepositBank() {
+/**
+ * Put these logo images in: public/partners/
+ * - visa.png, mastercard.png, unionpay.png, paypal.png, stripe.png
+ * - swift.png, hsbc.png, citi.png, standardchartered.png, barclays.png
+ */
+const PARTNER_LOGOS = [
+  { name: "Visa", src: "/partners/visa.png" },
+  { name: "Mastercard", src: "/partners/mastercard.png" },
+  { name: "UnionPay", src: "/partners/unionpay.png" },
+  { name: "PayPal", src: "/partners/paypal.png" },
+  { name: "Stripe", src: "/partners/stripe.png" },
+  { name: "SWIFT", src: "/partners/swift.png" },
+  { name: "HSBC", src: "/partners/hsbc.png" },
+  { name: "Citi", src: "/partners/citi.png" },
+  { name: "Standard Chartered", src: "/partners/standardchartered.png" },
+  { name: "Barclays", src: "/partners/barclays.png" },
+];
+
+export default function DepositBank() {
   const nav = useNavigate();
 
-  // ✅ real balance from /member/me
+  const MIN_DEPOSIT = 10;
+
+  // ✅ real balance from backend
   const [balance, setBalance] = useState(0);
 
   const countries = useMemo(() => getAllCountries(), []);
-  const [country, setCountry] = useState("US");
+  const [country, setCountry] = useState("KH");
 
   const banks = useMemo(() => BANKS_BY_COUNTRY[country] || [], [country]);
-  const [selectedBankId, setSelectedBankId] = useState("");
+  const [bank, setBank] = useState("");
 
-  useEffect(() => {
-    setSelectedBankId(banks[0]?.id || "");
-  }, [country, banks]);
+  // Payer details (who is sending)
+  const [payerName, setPayerName] = useState("");
+  const [payerAccount, setPayerAccount] = useState("");
 
-  const selectedBank = useMemo(
-    () => banks.find((b) => b.id === selectedBankId) || null,
-    [banks, selectedBankId]
-  );
+  // Receiving bank details (optional fields to help match)
+  const [reference, setReference] = useState("");
+  const [routingNumber, setRoutingNumber] = useState("");
+  const [branchNumber, setBranchNumber] = useState("");
 
   const [amount, setAmount] = useState("");
-  const [reference] = useState(() => `DP-${Math.floor(100000 + Math.random() * 900000)}`);
-  const [senderName, setSenderName] = useState("");
-  const [receipt, setReceipt] = useState(null);
 
-  const [historyTab, setHistoryTab] = useState("All");
+  // ✅ backend history
+  const [history, setHistory] = useState([]);
 
-  // ✅ deposits from backend
-  const [deposits, setDeposits] = useState([]);
+  // Inline validation + submit lock
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
-  const fileRef = useRef(null);
+  const validateDeposit = () => {
+    const next = {};
 
-  const copy = async (text) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      alert("Copied ✅");
-    } catch {
-      alert("Copy failed. Please copy manually.");
-    }
+    if (!country) next.country = "Please select a country.";
+    if (!bank) next.bank = "Please select a bank.";
+    if (!payerName.trim()) next.payerName = "Please enter payer (sender) name.";
+    if (!payerAccount.trim()) next.payerAccount = "Please enter payer account number.";
+
+    const amt = Number(amount || 0);
+    if (!amount || Number.isNaN(amt) || amt <= 0) next.amount = "Enter a valid amount.";
+    else if (amt < MIN_DEPOSIT) next.amount = `Minimum deposit is ${MIN_DEPOSIT} USD.`;
+
+    // Reference is recommended, not required
+    if (reference && reference.trim().length < 4) next.reference = "Reference is too short (min 4 chars).";
+
+    return next;
   };
 
-  const onPickReceipt = (e) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    setReceipt({ name: f.name, size: f.size });
-    e.target.value = "";
-  };
+  const isReadyToSubmit = () => Object.keys(validateDeposit()).length === 0;
 
-  // ✅ load balance + deposits
+  // ✅ load balance
   const loadMe = async () => {
     try {
       const { data } = await memberApi.get("/member/me");
@@ -130,14 +154,33 @@ export default function MemberDepositBank() {
     }
   };
 
+  // ✅ load deposits (bank only) and map to this UI
   const loadDeposits = async () => {
     setLoadingHistory(true);
     try {
       const { data } = await memberApi.get("/member/deposits");
       const arr = Array.isArray(data) ? data : [];
-      setDeposits(arr);
+
+      const bankOnly = arr.filter((d) => String(d?.method || "").toLowerCase() === "bank");
+
+      const mapped = bankOnly.map((d) => {
+        const uiS = mapDbToUi(d?.status);
+        return {
+          id: d?.tx_ref || `DP-${d?.id ?? ""}`,
+          date: fmtDate(d?.created_at),
+          amount: Number(d?.amount || 0),
+          status: uiS, // Reviewing / Credited / Rejected
+          timeline: timelineForUiStatus(uiS),
+          bank: d?.network || bank || "",
+          country: d?.country || country || "",
+          // keep extras if you want later
+          _raw: d,
+        };
+      });
+
+      setHistory(mapped);
     } catch (e) {
-      setDeposits([]);
+      setHistory([]);
       alert(e?.response?.data?.message || "Failed to load deposit history");
     } finally {
       setLoadingHistory(false);
@@ -147,335 +190,383 @@ export default function MemberDepositBank() {
   useEffect(() => {
     loadMe();
     loadDeposits();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ✅ ONLY BANK deposit history (method === "Bank")
-  // ✅ show bank name in "Method" column (from network)
-  const historyRows = useMemo(() => {
-    const bankOnly = (Array.isArray(deposits) ? deposits : []).filter(
-      (d) => String(d?.method || "").toLowerCase() === "bank"
-    );
-
-    const mapped = bankOnly.map((d) => ({
-      id: String(d.id),
-      date: fmtDate(d.created_at),
-      method: d.network || "Bank", // 👈 show selected bank name
-      amount: Number(d.amount || 0),
-      status: uiStatus(d.status), // Pending/Completed/Failed
-      ref: d.tx_ref || `DP-${d.id}`,
-    }));
-
-    if (historyTab === "All") return mapped;
-    return mapped.filter((h) => h.status === historyTab);
-  }, [deposits, historyTab]);
-
-  // ✅ create BANK deposit request
-  // asset = USD
-  // network = selected bank name
   const submit = async () => {
-    if (!country) return alert("Please select a country.");
-    if (!selectedBank) return alert("Please select a bank.");
+    if (isSubmitting) return;
 
-    const n = Number(amount);
-    if (!Number.isFinite(n) || n <= 0) return alert("Please enter a valid amount.");
-    if (!senderName.trim()) return alert("Please enter Sender Name.");
+    const next = validateDeposit();
+    setErrors(next);
+    if (Object.keys(next).length) return;
 
+    setIsSubmitting(true);
     try {
+      const n = Number(amount);
+
+      // If user didn't type a reference, generate one
+      const txRef = reference?.trim()
+        ? reference.trim()
+        : `DP-${Math.floor(100000 + Math.random() * 900000)}`;
+
       await memberApi.post("/member/deposits", {
         amount: n,
-        method: "Bank", // ✅ to separate from crypto
-        asset: "USD", // ✅ as you requested
-        network: selectedBank.name, // ✅ bank name as "network"
-        tx_ref: reference,
-        proof_url: "", // no upload endpoint yet
+        method: "Bank", // ✅ separate from crypto
+        asset: "USD",
+        network: bank, // ✅ bank name stored in network
+        tx_ref: txRef,
+        proof_url: "",
+
+        // extra fields (backend can ignore if not needed)
+        country,
+        sender_name: payerName.trim(),
+        sender_account: payerAccount.trim(),
+        routing_number: routingNumber.trim(),
+        branch_number: branchNumber.trim(),
       });
 
-      alert("Deposit request submitted ✅");
-
       setAmount("");
-      setSenderName("");
-      setReceipt(null);
+      setPayerName("");
+      setPayerAccount("");
+      setReference("");
+      setRoutingNumber("");
+      setBranchNumber("");
 
+      setErrors((prev) => ({ ...prev, form: "Deposit request submitted ✅" }));
+      setTimeout(() => setErrors((p) => ({ ...p, form: "" })), 2500);
+
+      await loadMe();
       await loadDeposits();
     } catch (e) {
       alert(e?.response?.data?.message || "Failed to submit deposit");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  return (
-    <div className="db-page">
-      <div className="db-overlay" />
+  const steps = ["Submitted", "Reviewing", "Processing", "Credited"];
 
-      <header className="db-header">
-        <button className="db-back" onClick={() => nav(-1)} type="button">
+  return (
+    <div className="vipWhite db3">
+      {/* Top bar */}
+      <header className="topbarW">
+        <button className="backIcon" onClick={() => nav(-1)} aria-label="Back">
           ←
         </button>
 
-        <div className="db-title">
-          <h1>Deposit by Bank</h1>
-          <p>Select country & bank. Complete payment and submit reference.</p>
+        <div className="topTitle">
+          <div className="topBrandRow">
+            <span className="topBrand">Deposit by Bank</span>
+            <span className="vipBadge vipBadgeAx">Secure</span>
+          </div>
+          <div className="topSub">Submit your deposit details for faster verification</div>
         </div>
 
-        <button className="db-ghostBtn" type="button" onClick={() => nav("/member/service")}>
-          Help
+        <button className="homeBtn" onClick={() => nav("/member/deposit/records")} aria-label="Home">
+          History
         </button>
       </header>
 
-      <main className="db-wrap">
-        {/* Top balance + rules */}
-        <section className="db-topRow">
-          <div className="db-card db-balance">
-            <div className="db-balanceHead">
-              <div className="db-kicker">Wallet Balance</div>
-              <span className="db-pill">Available</span>
-            </div>
-
-            <div className="db-balanceAmount">
-              <span className="db-usd">${money(balance)}</span>
-              <span className="db-unit">USD</span>
-            </div>
-
-            <div className="db-mutedSmall">Bank deposits may take time to confirm after payment.</div>
+      {/* ✅ Frozen supported networks block */}
+      <section className="db3-netSticky" aria-label="Supported networks">
+        <div className="db3-netInner">
+          <div className="db3-netTitle">
+            Supported Networks <span className="db3-netChip">Verified</span>
           </div>
 
-          <div className="db-card db-status">
-            <div className="db-statusTitle">Deposit Rules</div>
-            <ul className="db-list">
-              <li>
-                Use the exact <b>Reference Code</b> provided.
-              </li>
-              <li>Send from an account you own (name must match).</li>
-              <li>Upload payment receipt for faster processing.</li>
-            </ul>
-          </div>
-        </section>
-
-        {/* Select country + bank */}
-        <section className="db-card db-selectors">
-          <div className="db-sectionHead">
-            <div>
-              <div className="db-sectionTitle">1) Select Country</div>
-              <div className="db-mutedSmall">Banks & mobile options are shown based on country.</div>
-            </div>
-          </div>
-
-          <div className="db-row">
-            <div className="db-field">
-              <div className="db-label">Country</div>
-              <select className="db-select" value={country} onChange={(e) => setCountry(e.target.value)}>
-                {countries.map((c) => (
-                  <option
-                    key={c.code}
-                    value={c.code}
-                    style={{
-                      backgroundColor: "#051436",
-                    }}
-                  >
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="db-field">
-              <div className="db-label">Available Banks</div>
-              <div className="db-bankRow">
-                {banks.length ? (
-                  banks.map((b) => (
-                    <button
-                      key={b.id}
-                      className={"db-bankCard " + (b.id === selectedBankId ? "is-active" : "")}
-                      type="button"
-                      onClick={() => setSelectedBankId(b.id)}
-                      title={b.name}
-                    >
-                      <div className="db-bankLogo" aria-hidden="true">
-                        {b.name.slice(0, 2).toUpperCase()}
-                      </div>
-                      <div className="db-bankInfo">
-                        <div className="db-bankName">{b.name}</div>
-                        <div className="db-bankType">{b.type}</div>
-                      </div>
-                    </button>
-                  ))
-                ) : (
-                  <div className="db-empty">No banks configured for this country.</div>
-                )}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Details + Submit */}
-        <section className="db-grid">
-          <div className="db-card db-details">
-            <div className="db-sectionTitle">2) Bank Details</div>
-            <div className="db-mutedSmall">Send payment to the following beneficiary account.</div>
-
-            <div className="db-kv">
-              <div className="db-k">Beneficiary</div>
-              <div className="db-v">
-                {DEMO_PAYEE_DETAILS.payeeName}
-                <button className="db-secondaryBtn" onClick={() => copy(DEMO_PAYEE_DETAILS.payeeName)} type="button">
-                  Copy
-                </button>
-              </div>
-            </div>
-
-            <div className="db-kv">
-              <div className="db-k">Bank</div>
-              <div className="db-v">
-                {DEMO_PAYEE_DETAILS.bankName}
-                <button className="db-secondaryBtn" onClick={() => copy(DEMO_PAYEE_DETAILS.bankName)} type="button">
-                  Copy
-                </button>
-              </div>
-            </div>
-
-            <div className="db-kv">
-              <div className="db-k">Account Name</div>
-              <div className="db-v">
-                {DEMO_PAYEE_DETAILS.accountName}
-                <button className="db-secondaryBtn" onClick={() => copy(DEMO_PAYEE_DETAILS.accountName)} type="button">
-                  Copy
-                </button>
-              </div>
-            </div>
-
-            <div className="db-kv">
-              <div className="db-k">Account Number</div>
-              <div className="db-v">
-                {DEMO_PAYEE_DETAILS.accountNumber}
-                <button className="db-secondaryBtn" onClick={() => copy(DEMO_PAYEE_DETAILS.accountNumber)} type="button">
-                  Copy
-                </button>
-              </div>
-            </div>
-
-            <div className="db-kv">
-              <div className="db-k">SWIFT</div>
-              <div className="db-v">
-                {DEMO_PAYEE_DETAILS.swift}
-                <button className="db-secondaryBtn" onClick={() => copy(DEMO_PAYEE_DETAILS.swift)} type="button">
-                  Copy
-                </button>
-              </div>
-            </div>
-
-            <div className="db-note">⚠️ {DEMO_PAYEE_DETAILS.note}</div>
-          </div>
-
-          <div className="db-card db-submit">
-            <div className="db-sectionTitle">3) Submit Deposit Request</div>
-            <div className="db-mutedSmall">After payment, submit the details below for confirmation.</div>
-
-            <div className="db-form">
-              <div className="db-field">
-                <div className="db-label">Reference Code</div>
-                <div className="db-refRow">
-                  <div className="db-ref">{reference}</div>
-                  <button className="db-primarySmall" type="button" onClick={() => copy(reference)}>
-                    Copy
-                  </button>
+          <div className="db3-marquee" aria-label="Partner logos">
+            <div className="db3-track">
+              {[...PARTNER_LOGOS, ...PARTNER_LOGOS].map((l, idx) => (
+                <div key={l.name + idx} className="db3-logoPill" title={l.name}>
+                  <img className="db3-logoImg" src={l.src} alt={l.name} loading="lazy" />
                 </div>
-              </div>
-
-              <div className="db-field">
-                <div className="db-label">Deposit Amount</div>
-                <input
-                  className="db-input"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="Enter amount (USD)"
-                  inputMode="decimal"
-                />
-                <div className="db-mutedSmall">Minimum: 10 USD • Processing: 5–30 minutes</div>
-              </div>
-
-              <div className="db-field">
-                <div className="db-label">Sender Name</div>
-                <input
-                  className="db-input"
-                  value={senderName}
-                  onChange={(e) => setSenderName(e.target.value)}
-                  placeholder="Name used in your bank transfer"
-                />
-              </div>
-
-              <div className="db-field">
-                <div className="db-label">Upload Receipt (optional)</div>
-                <div className="db-uploadRow">
-                  <button className="db-secondaryBtn" type="button" onClick={() => fileRef.current?.click()}>
-                    📎 Add File
-                  </button>
-                  <input ref={fileRef} type="file" accept="image/*,.pdf" hidden onChange={onPickReceipt} />
-                  <div className="db-uploadName">{receipt ? receipt.name : "No file selected"}</div>
-                </div>
-              </div>
-
-              <button className="db-primaryBtn" type="button" onClick={submit} disabled={!banks.length}>
-                Confirm Deposit
-              </button>
-
-              <div className="db-mutedSmall">By submitting, you confirm the payment details are correct.</div>
-            </div>
-          </div>
-        </section>
-
-        {/* Deposit History */}
-        <section className="db-card db-history">
-          <div className="db-historyHead">
-            <div>
-              <div className="db-sectionTitle">Deposit History</div>
-              <div className="db-mutedSmall">Track pending and completed deposits.</div>
-            </div>
-
-            <div className="db-historyTabs">
-              {["All", "Pending", "Completed", "Failed"].map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  className={"db-tab " + (historyTab === t ? "is-active" : "")}
-                  onClick={() => setHistoryTab(t)}
-                >
-                  {t}
-                </button>
               ))}
             </div>
           </div>
 
-          <div className="db-historyTable">
-            <div className="db-historyRow head">
-              <span>Date</span>
-              <span>Method</span>
-              <span>Amount</span>
-              <span>Status</span>
-              <span>Reference</span>
-              <span>Action</span>
+          <div className="db3-netNote">
+            Deposits are matched using reference + sender information. Provider list is demo.
+          </div>
+        </div>
+      </section>
+
+      <main className="wrapW">
+        {/* Balance block */}
+        <section className="balanceCardAx">
+          <div className="balanceLeft">
+            <div className="balanceLabelAx">Current Balance</div>
+
+            <div className="balanceValueW">
+              {money(balance)} <span className="unitW">USD</span>
             </div>
 
-            {historyRows.map((d) => (
-              <div key={d.id} className="db-historyRow">
-                <span>{d.date}</span>
-                <span>{d.method}</span>
-                <span>${money(d.amount)}</span>
-                <span className={"db-status " + d.status.toLowerCase()}>{d.status}</span>
-                <span className="db-refMini">{d.ref}</span>
-                <button className="db-secondaryBtn" type="button" onClick={() => copy(d.ref)}>
-                  Copy
-                </button>
+            <div className="metaRowW">
+              <span className="pillW pillAx">Min {MIN_DEPOSIT} USD</span>
+              <span className="pillW pillAx">Verification up to 24h</span>
+              <span className="pillW pillAx">Anti-fraud checks</span>
+            </div>
+          </div>
+
+          <div className="balanceRightW balanceRightAx">
+            <div className="miniInfo">
+              <div className="miniLabelAx">Status</div>
+              <div className="miniValue">Active</div>
+            </div>
+
+            <div className="miniInfo">
+              <div className="miniLabelAx">Minimum</div>
+              <div className="miniValue">{MIN_DEPOSIT} USD</div>
+            </div>
+          </div>
+        </section>
+
+        {/* Deposit Request */}
+        <section className="cardW db3-requestCard" id="deposit-request">
+          <div className="db3-cardHead">
+            <h2 className="h2W">Deposit Request</h2>
+            <span className="smallMutedW">Enter real bank transfer info</span>
+          </div>
+
+          {errors.form ? <div className="db3-banner">{errors.form}</div> : null}
+
+          <div className="db3-grid">
+            <div className="db3-field">
+              <label>Country</label>
+              <select
+                value={country}
+                onChange={(e) => {
+                  setCountry(e.target.value);
+                  setErrors((p) => ({ ...p, country: "" }));
+                  setBank("");
+                }}
+              >
+                {countries.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              {errors.country ? (
+                <div className="db3-error">{errors.country}</div>
+              ) : (
+                <div className="db3-help">Select the bank country where you sent the transfer.</div>
+              )}
+            </div>
+
+            <div className="db3-field">
+              <label>Bank</label>
+              <select
+                value={bank}
+                onChange={(e) => {
+                  setBank(e.target.value);
+                  setErrors((p) => ({ ...p, bank: "" }));
+                }}
+              >
+                <option value="">Select bank</option>
+                {banks.length ? (
+                  banks.map((b) => (
+                    <option key={b} value={b}>
+                      {b}
+                    </option>
+                  ))
+                ) : (
+                  <option value="" disabled>
+                    Bank list will appear after selecting a supported country.
+                  </option>
+                )}
+              </select>
+              {errors.bank ? (
+                <div className="db3-error">{errors.bank}</div>
+              ) : (
+                <div className="db3-help">Banks load by selected country (demo list).</div>
+              )}
+            </div>
+
+            <div className="db3-field">
+              <label>Payer (Sender) Name</label>
+              <input
+                value={payerName}
+                onChange={(e) => {
+                  setPayerName(e.target.value);
+                  setErrors((p) => ({ ...p, payerName: "" }));
+                }}
+                autoComplete="name"
+                placeholder="Name on sender account"
+              />
+              {errors.payerName ? <div className="db3-error">{errors.payerName}</div> : null}
+            </div>
+
+            <div className="db3-field">
+              <label>Payer Account Number</label>
+              <input
+                value={payerAccount}
+                onChange={(e) => {
+                  setPayerAccount(e.target.value);
+                  setErrors((p) => ({ ...p, payerAccount: "" }));
+                }}
+                inputMode="numeric"
+                autoComplete="off"
+                placeholder="Sender account number"
+              />
+              {errors.payerAccount ? <div className="db3-error">{errors.payerAccount}</div> : null}
+            </div>
+
+            <div className="db3-field">
+              <label>Reference / Transfer Note (recommended)</label>
+              <input
+                value={reference}
+                onChange={(e) => {
+                  setReference(e.target.value);
+                  setErrors((p) => ({ ...p, reference: "" }));
+                }}
+                placeholder="e.g. MW-USER-1021"
+                autoComplete="off"
+              />
+              {errors.reference ? (
+                <div className="db3-error">{errors.reference}</div>
+              ) : (
+                <div className="db3-help">Use your unique reference to match deposit faster.</div>
+              )}
+            </div>
+
+            <div className="db3-field">
+              <label>Deposit Amount (USD)</label>
+              <input
+                value={amount}
+                onChange={(e) => {
+                  setAmount(e.target.value);
+                  setErrors((p) => ({ ...p, amount: "" }));
+                }}
+                placeholder="Enter amount"
+                inputMode="decimal"
+              />
+              {errors.amount ? (
+                <div className="db3-error">{errors.amount}</div>
+              ) : (
+                <div className="db3-help">Minimum: {MIN_DEPOSIT} USD</div>
+              )}
+            </div>
+
+            <div className="db3-field">
+              <label>Routing Number (optional)</label>
+              <input value={routingNumber} onChange={(e) => setRoutingNumber(e.target.value)} inputMode="numeric" />
+            </div>
+
+            <div className="db3-field">
+              <label>Branch Number (optional)</label>
+              <input value={branchNumber} onChange={(e) => setBranchNumber(e.target.value)} inputMode="numeric" />
+            </div>
+          </div>
+
+          <div className="db3-summary">
+            <div>
+              <span>Amount</span>
+              <span>${money(Number(amount || 0))}</span>
+            </div>
+            <div className="strong">
+              <span>Expected Credit</span>
+              <span>${money(Number(amount || 0))}</span>
+            </div>
+          </div>
+
+          {/* Desktop button */}
+          <button
+            className="db3-primaryBtn db3-desktopOnly"
+            onClick={submit}
+            type="button"
+            disabled={isSubmitting || !isReadyToSubmit()}
+          >
+            {isSubmitting ? "Submitting..." : "Confirm Deposit"}
+          </button>
+
+          <p className="db3-note">
+            Submit only real transfer details. Fake info, fake screenshots, or mismatched names may lead to rejection.
+          </p>
+        </section>
+
+        {/* History */}
+        <section className="cardW">
+          <div className="db3-cardHead">
+            <h2 className="h2W">Deposit History & Status</h2>
+            <span className="smallMutedW">{loadingHistory ? "Loading…" : "Tracking timeline"}</span>
+          </div>
+
+          <div className="db3-history">
+            {!loadingHistory && !history.length ? (
+              <div className="db3-banner">No bank deposit records found.</div>
+            ) : null}
+
+            {history.map((h) => (
+              <div key={h.id} className="db3-historyCard">
+                <div className="db3-historyTop">
+                  <div>
+                    <div className="db3-id">{h.id}</div>
+                    <div className="db3-date">{h.date}</div>
+                    {h.bank ? <div className="db3-metaLine">Bank: {h.bank}</div> : null}
+                    {h.country ? <div className="db3-metaLine">Country: {h.country}</div> : null}
+                  </div>
+
+                  <div className="db3-historyActions">
+                    <div className={"db3-status " + statusKey(h.status)}>{h.status}</div>
+                  </div>
+                </div>
+
+                <div className="db3-historyAmount">${money(h.amount)}</div>
+
+                <div className="db3-timeline">
+                  {steps.map((step) => {
+                    const done = h.timeline?.includes(step);
+                    const rejected = h.status === "Rejected";
+
+                    const dotClass =
+                      rejected && (step === "Processing" || step === "Credited")
+                        ? "failed"
+                        : done
+                        ? "done"
+                        : "";
+
+                    return (
+                      <div key={step} className={"db3-step " + (done ? "doneText" : "")}>
+                        <span className={"dot " + dotClass} />
+                        <span>{step}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {h.status === "Rejected" && (
+                  <div className="db3-failHint">Reason: details mismatch / invalid reference / compliance review.</div>
+                )}
               </div>
             ))}
-
-            {loadingHistory && <div className="db-historyEmpty">Loading…</div>}
-            {!loadingHistory && !historyRows.length && (
-              <div className="db-historyEmpty">No records found for this status.</div>
-            )}
           </div>
         </section>
       </main>
 
-      {/* ✅ KEEP OLD BOTTOM BAR EXACTLY */}
+      {/* Sticky mobile confirm bar */}
+      <div className="db3-stickyBar" role="region" aria-label="Deposit action bar">
+        <div className="db3-stickyMeta">
+          <div className="db3-stickyLabel">Amount</div>
+          <div className="db3-stickyValue">${money(Number(amount || 0))}</div>
+        </div>
+
+        <button
+          className="db3-stickyBtn"
+          type="button"
+          onClick={() => {
+            submit();
+            const next = validateDeposit();
+            if (Object.keys(next).length) {
+              document.getElementById("deposit-request")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+          }}
+          disabled={isSubmitting || !isReadyToSubmit()}
+        >
+          {isSubmitting ? "Submitting..." : "Confirm"}
+        </button>
+      </div>
+
+      {/* ✅ Bottom nav (from old backend file) */}
       <div className="memberBottomNavFixed">
         <MemberBottomNav active="mine" />
       </div>

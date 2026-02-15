@@ -46,15 +46,23 @@ export default function TaskList() {
   const nav = useNavigate();
   const loc = useLocation();
 
-  const startingBalance = loc.state?.balance ?? 97280.12;
+  const [balance, setBalance] = useState(0);
 
-  const [balance] = useState(startingBalance);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState("All");
 
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
+
+  const loadMe = async () => {
+    try {
+      const { data } = await memberApi.get("/member/me");
+      setBalance(Number(data?.balance || 0));
+    } catch {
+      // ignore
+    }
+  };
 
 const load = async () => {
   setLoading(true);
@@ -118,6 +126,7 @@ const load = async () => {
 };
 
   useEffect(() => {
+      loadMe();
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -149,9 +158,19 @@ const load = async () => {
         </div>
 
         <div className="tl-right">
-          <button className="tl-ghost" type="button" onClick={load} disabled={loading}>
+
+          <button
+            className="tl-ghost"
+            type="button"
+            onClick={async () => {
+              await loadMe();
+              await load();
+            }}
+            disabled={loading}
+          >
             {loading ? "Loading..." : "Refresh"}
           </button>
+
         </div>
       </header>
 
@@ -178,7 +197,7 @@ const load = async () => {
 				<button className="mn-miniBtn" onClick={() => nav("/member/withdraw")}>
 				  Withdraw
 				</button>              
-              <button className="tl-mini" type="button" onClick={() => alert("Customer Service")}>
+              <button className="tl-mini" type="button" onClick={() => nav("/member/customerService")}>                
                 Support
               </button>
             </div>

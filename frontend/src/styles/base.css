@@ -70,3 +70,10 @@ h1, h2, h3 {
   background: #f1f5f9;
   color: black;
 }
+
+/* Mobile adjustment for .small */
+@media (max-width: 768px) {
+  .small {
+    padding-bottom: 5%;
+  }
+}

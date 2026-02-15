@@ -414,3 +414,9 @@
   color: #ef4444;
   border: 1px solid rgba(239,68,68,.30);
 }
+
+@media (max-width: 768px) {
+  .vipCard.vip3 {
+    margin-bottom: 10vh;
+  }
+}

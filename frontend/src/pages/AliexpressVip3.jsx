@@ -62,7 +62,7 @@ export default function AliexpressVip3() {
 
   // ✅ instant redirect (no modal, no confirm, no timeout)
   const startMatching = () => {
-    nav("/member/tasks-set");
+    nav("/member/tasks");
   };
 
   return (

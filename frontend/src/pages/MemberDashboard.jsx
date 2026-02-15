@@ -18,6 +18,17 @@ function rankLabel(r) {
   return "Trial";
 }
 
+/* ---------------- CONFIG ---------------- */
+const API_HOST = "http://159.198.40.145:5010";
+
+function toAbsUrl(p) {
+  const s = String(p || "").trim();
+  if (!s) return "";
+  if (s.startsWith("http://") || s.startsWith("https://")) return s;
+  if (s.startsWith("/")) return API_HOST + s;
+  return API_HOST + "/" + s;
+}
+
 export default function Home() {
   const navigate = useNavigate();
   const me = getMember(); // from local storage (logged in member)
@@ -46,6 +57,18 @@ useEffect(() => {
 }, []);
 
 const rankText = rankLabel(profile?.ranking);
+
+const rawAvatar =
+  profile?.avatar_url ||
+  profile?.photo_url ||
+  profile?.profile_photo_url ||
+  profile?.profile_picture_url ||
+  profile?.profile_photo ||
+  "";
+
+const avatarUrl = toAbsUrl(rawAvatar);
+const hasAvatar = !!avatarUrl;
+
 
   const stats = [
     { label: "Account status", value: "Active", tone: "good" },
@@ -162,10 +185,13 @@ const rankText = rankLabel(profile?.ranking);
           <div className="profileLeft">
             <div className="mine-avatar">
               <img
-                src={`https://i.pravatar.cc/150?u=${profile?.short_id || me?.short_id || "guest"}`}
+                src={hasAvatar ? avatarUrl : "/user.png"}
                 alt="User Avatar"
                 className="mine-avatar-img"
-              />
+                onError={(e) => {
+                  e.currentTarget.src = "/user.png";
+                }}
+              />              
             </div>
             {/* <div className="avatarWrap">
               <img

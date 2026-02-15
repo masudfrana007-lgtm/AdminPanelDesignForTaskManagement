@@ -327,3 +327,149 @@
   -webkit-appearance: none;
   outline: none;
 }
+
+/* =====================================================
+   MOBILE COMFORT TUNING (ONLY MOBILE)
+   Put at END of memberMine.css
+   ===================================================== */
+@media (max-width: 520px) {
+
+  /* overall page padding slightly tighter */
+  .minePage{
+    padding: 14px 12px 110px;
+    background-attachment: scroll; /* fixed bg can feel janky on mobile */
+  }
+
+  /* HERO: lighter + tighter */
+  .mine-hero{
+    margin-top: 12px;
+    padding: 14px 14px 12px;
+    border-radius: 18px;
+  }
+
+  .mine-hero-top{
+    gap: 12px;
+  }
+
+  .mine-avatar{
+    width: 52px;
+    height: 52px;
+  }
+
+  .mine-vip-pill{
+    font-size: 11px;
+    padding: 3px 9px;
+  }
+
+  .mine-ref{
+    margin-top: 8px;
+    gap: 8px;
+    font-size: 12px;
+    flex-wrap: wrap; /* prevents overflow */
+  }
+
+  .mine-ref-code{
+    padding: 4px 10px;
+  }
+
+  .mine-balance{
+    margin-top: 12px;
+  }
+
+  .mine-balance-title{
+    font-size: 18px;
+    margin-bottom: 6px;
+  }
+
+  .mine-balance-unit{
+    font-size: 13px;
+  }
+
+  .mine-balance-val{
+    font-size: 28px;
+    text-shadow: 0 8px 18px rgba(0,0,0,0.24);
+  }
+
+  /* Support button: smaller, still tappable */
+  .mine-support{
+    padding-top: 4px;
+  }
+  .mine-support-btn{
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 12px;
+  }
+
+  /* QUICK ACTIONS: make 2x2 grid on small phones */
+  .mine-actions-wrap{
+    margin-top: 12px;
+  }
+
+  .mine-actions{
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .mine-action{
+    gap: 6px;
+  }
+
+  .mine-action-icon{
+    font-size: 34px;
+    box-shadow: none; /* reduces “bulky” feel */
+  }
+
+  .custom-icon{
+    width: 34px;
+    height: 34px;
+  }
+
+  .mine-action-label{
+    font-size: 12px;
+  }
+
+  /* LISTS: tighter cards */
+  .mine-lists{
+    margin-top: 12px;
+    gap: 12px;
+  }
+
+  .mine-list{
+    border-radius: 16px;
+  }
+
+  .mine-item{
+    padding: 12px;
+  }
+
+  .mine-item-left{
+    gap: 10px;
+  }
+
+  .mine-item-ico{
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+  }
+
+  .list-icon-img{
+    width: 20px;
+    height: 20px;
+  }
+
+  .mine-item-label{
+    font-size: 13px;
+  }
+
+  .mine-item-arrow{
+    font-size: 16px;
+  }
+}
+
+/* Extra small phones */
+@media (max-width: 380px){
+  .mine-balance-val{ font-size: 26px; }
+  .mine-support-btn{ padding: 7px 10px; }
+}

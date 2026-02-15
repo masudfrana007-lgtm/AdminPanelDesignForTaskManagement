@@ -6,9 +6,20 @@ import AppLayout from "../components/AppLayout";
 import { getUser } from "../auth";
 import "../styles/app.css";
 
-const RANKS = ["Trial", "V1", "V2", "V3", "V4", "V5", "V6"];
+const RANKS = ["Trial", "V1", "V2", "V3"];
 const STATUSES = ["pending", "approved", "rejected"];
 const GENDERS = ["male", "female", "other"];
+
+function rankLabel(v) {
+  const x = String(v || "").trim().toUpperCase();
+  if (x === "V1") return "VIP 1";
+  if (x === "V2") return "VIP 2";
+  if (x === "V3") return "VIP 3";
+  if (x === "TRIAL") return "Trial";
+  // optional: V4 -> VIP 4 etc
+  if (/^V\d+$/.test(x)) return `VIP ${x.slice(1)}`;
+  return x || "-";
+}
 
 function norm(v) {
   return String(v ?? "").trim();
@@ -237,11 +248,13 @@ const save = async () => {
 
                 <div>
                   <div className="label">Ranking</div>
-                  <select className="input" value={form.ranking} onChange={onChange("ranking")}>
-                    {RANKS.map((x) => (
-                      <option key={x} value={x}>{x}</option>
-                    ))}
-                  </select>
+                    <select className="input" value={form.ranking} onChange={onChange("ranking")}>
+                      {RANKS.map((x) => (
+                        <option key={x} value={x}>
+                          {rankLabel(x)}
+                        </option>
+                      ))}
+                    </select>                  
                 </div>
 
                 <div>

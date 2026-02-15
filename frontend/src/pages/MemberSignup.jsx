@@ -100,7 +100,7 @@ export default function MemberSignup() {
 
         {/* Title */}
         <div className="auth-title">Sign Up</div>
-        <div className="auth-sub">Join TK Branding and start earning</div>
+        <div className="auth-sub">Join Eorder.io and start earning</div>
 
         <form onSubmit={submit} style={{ display: "grid", gap: 12 }}>
           {/* Username */}

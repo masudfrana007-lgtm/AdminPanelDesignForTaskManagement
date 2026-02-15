@@ -1,7 +1,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
+import DashboardMain from "./pages/DashboardMain";
 import Users from "./pages/Users";
 import Tasks from "./pages/Tasks";
 import Sets from "./pages/Sets";
@@ -9,6 +9,8 @@ import Members from "./pages/Members"; // ← ADD THIS
 import CreateMember from "./pages/CreateMember";
 import AssignSets from "./pages/AssignSets";
 import AssignSetCreate from "./pages/AssignSetCreate"; // ✅ add
+import VipWalletAddresses from "./pages/VipWalletAddresses";
+
 import MemberLogin from "./pages/MemberLogin";
 import MemberDashboard from "./pages/MemberDashboard";
 import MemberProtectedRoute from "./components/MemberProtectedRoute";
@@ -76,7 +78,8 @@ import PlatformRulesGuide from "./pages/PlatformRulesGuide";
 // import Teams from "./pages/Teams";
 
 // Beneficiary Management
-import BeneficiaryManagement from "./pages/BeneficiaryManagement";
+import Beneficiaries from "./pages/Beneficiaries";
+//import BeneficiaryManagement from "./pages/BeneficiaryManagement";
 import AddCryptoBeneficiary from "./pages/AddCryptoBeneficiary";
 import AddBankBeneficiary from "./pages/AddBankBeneficiary";
 
@@ -106,6 +109,10 @@ import SupportChat from "./pages/SupportChat";
 
 import CsLogin from "./pages/CsLogin";
 
+import ProfileEdit from "./pages/ProfileEdit";
+
+import CustomerService from "./pages/CustomerService";
+
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
   
@@ -117,7 +124,7 @@ export const router = createBrowserRouter([
     element: <CsLogin />,
   },
 
-  { path: "/", element: <ProtectedRoute><Dashboard /></ProtectedRoute> },
+  { path: "/", element: <ProtectedRoute><DashboardMain /></ProtectedRoute> },
 
   /* ✅ PUBLIC / TEST ROUTE */
   {
@@ -237,6 +244,15 @@ export const router = createBrowserRouter([
     element: (
       <MemberProtectedRoute>
         <MemberService />
+      </MemberProtectedRoute>
+    ),
+  },
+
+  {
+    path: "/member/customerService",
+    element: (
+      <MemberProtectedRoute>
+        <CustomerService />
       </MemberProtectedRoute>
     ),
   },
@@ -433,11 +449,20 @@ export const router = createBrowserRouter([
 // },
 
 // Beneficiary Management Routes
+// {
+//   path: "/beneficiary-management",
+//   element: (
+//     <MemberProtectedRoute>
+//       <BeneficiaryManagement />
+//     </MemberProtectedRoute>
+//   ),
+// },
+
 {
   path: "/beneficiary-management",
   element: (
     <MemberProtectedRoute>
-      <BeneficiaryManagement />
+      <Beneficiaries />
     </MemberProtectedRoute>
   ),
 },
@@ -541,6 +566,24 @@ export const router = createBrowserRouter([
   path: "/support/:id",
   element: (
       <SupportChat />
+  ),
+},
+
+{
+  path: "/member-profile-edit",
+  element: (
+    <MemberProtectedRoute>
+      <ProfileEdit />
+    </MemberProtectedRoute>
+  ),
+},
+
+{
+  path: "/vip-wallets",
+  element: (
+    <ProtectedRoute roles={["owner", "admin"]}>
+      <VipWalletAddresses />
+    </ProtectedRoute>
   ),
 },
 

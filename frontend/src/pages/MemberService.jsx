@@ -1,7 +1,5 @@
 // src/pages/MemberService.jsx
-// ✅ FIXED — uses memberApi interceptor like all other member pages (no manual headers)
-// ✅ design/layout unchanged
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/memberService.css";
 import MemberBottomNav from "../components/MemberBottomNav";
@@ -10,16 +8,36 @@ import memberApi from "../services/memberApi";
 function pad2(x) {
   return String(x).padStart(2, "0");
 }
-
 function toHHMM(iso) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "--:--";
   return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 }
+function safeId(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+function isNearBottom(el, px = 140) {
+  if (!el) return true;
+  return el.scrollHeight - el.scrollTop - el.clientHeight < px;
+}
+
+// ✅ MATCH TASKS: always load images from backend directly
+const FILE_BASE = "http://159.198.40.145:5010";
+
+// ✅ safe join for image URL
+function joinUrl(base, p) {
+  const path = String(p || "").trim();
+  if (!path) return "";
+  if (/^https?:\/\//i.test(path)) return path; // already absolute
+  const b = String(base || "").replace(/\/+$/, "");
+  const u = path.startsWith("/") ? path : `/${path}`;
+  return `${b}${u}`;
+}
 
 export default function CustomerService() {
   const nav = useNavigate();
-  const [channel, setChannel] = useState("direct"); // "direct" | "telegram"
+  const [channel, setChannel] = useState("direct");
   const [message, setMessage] = useState("");
   const [helpOpen, setHelpOpen] = useState(false);
 
@@ -30,11 +48,26 @@ export default function CustomerService() {
   const TELEGRAM_USERNAME = "@YourSupport";
   const TELEGRAM_LINK = "https://t.me/YourSupport";
 
-  // ✅ DB state
   const [conversationId, setConversationId] = useState(null);
-  const [messages, setMessages] = useState([]); // DB messages (mapped to UI)
-  const [agentTyping, setAgentTyping] = useState(false); // keep UI slot
+  const [messages, setMessages] = useState([]);
+  const [agentTyping, setAgentTyping] = useState(false);
   const [err, setErr] = useState("");
+
+  // upload UI state
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  // polling refs
+  const pollTimerRef = useRef(null);
+  const inFlightRef = useRef(false);
+  const aliveRef = useRef(true);
+  const lastSigRef = useRef("");
+  const stickToBottomRef = useRef(true);
+  const visRef = useRef(!document.hidden);
+  const focusRef = useRef(document.hasFocus());
+
+  const [imgOpen, setImgOpen] = useState(false);
+  const [imgSrc, setImgSrc] = useState("");
+  const [imgAlt, setImgAlt] = useState("");
 
   const faqs = useMemo(
     () => [
@@ -58,81 +91,176 @@ export default function CustomerService() {
     []
   );
 
-  // ✅ load conversation + messages once (reload page to refresh)
-  useEffect(() => {
-    (async () => {
-      try {
-        setErr("");
+  const openImage = (src, alt = "photo") => {
+    setImgSrc(src);
+    setImgAlt(alt);
+    setImgOpen(true);
+  };
 
-        // If token missing, same behavior as other member pages (redirect)
+  const closeImage = () => {
+    setImgOpen(false);
+    setImgSrc("");
+    setImgAlt("");
+  };
+
+  const mapMsgs = useCallback((arr) => {
+    const a = Array.isArray(arr) ? arr : [];
+    return a.map((m) => ({
+      id: String(m.id),
+      from: m.sender_type === "agent" ? "agent" : "user",
+      kind: m.kind || "text",
+      text: m.text || "",
+      fileUrl: m.file_url || "",
+      fileName: m.file_name || "",
+      time: toHHMM(m.created_at),
+      status:
+        m.sender_type === "member"
+          ? m.read_by_agent
+            ? "read"
+            : "delivered"
+          : undefined,
+    }));
+  }, []);
+
+  const signatureOf = useCallback((arr) => {
+    const a = Array.isArray(arr) ? arr : [];
+    if (!a.length) return "0";
+    const last = a[a.length - 1];
+    return `${a.length}|${last?.id ?? ""}|${last?.created_at ?? ""}|${
+      last?.sender_type ?? ""
+    }|${last?.kind ?? ""}|${last?.text ?? ""}|${last?.file_url ?? ""}`;
+  }, []);
+
+  const loadAll = useCallback(
+    async ({ silent = false } = {}) => {
+      if (inFlightRef.current) return;
+      inFlightRef.current = true;
+
+      try {
+        if (!silent) setErr("");
+
         const token = localStorage.getItem("member_token");
         if (!token) {
-          setErr("Session expired. Please login again.");
+          if (!silent) setErr("Session expired. Please login again.");
           nav("/member/login");
           return;
         }
 
-        // 1) get/create conversation (✅ NO manual headers; interceptor handles auth)
-        const { data: convo } = await memberApi.get("/member/support/conversation");
-
-        const cid = convo?.id || null;
-        setConversationId(cid);
-
+        let cid = conversationId;
         if (!cid) {
-          setErr("Conversation not ready. Please reload.");
-          return;
+          const { data: convo } = await memberApi.get(
+            "/member/support/conversation"
+          );
+          cid = safeId(convo?.id);
+          if (!cid) {
+            if (!silent) setErr("Conversation not ready. Please reload.");
+            return;
+          }
+          if (!aliveRef.current) return;
+          setConversationId(cid);
         }
 
-        // 2) load messages (✅ NO manual headers)
         const { data: msgs } = await memberApi.get("/member/support/messages", {
           params: { conversation_id: cid },
         });
 
-        const arr = Array.isArray(msgs) ? msgs : [];
+        const sig = signatureOf(msgs);
+        if (!aliveRef.current) return;
 
-        // map DB -> same UI shape you already use (design unchanged)
-        const mapped = arr.map((m) => ({
-          id: String(m.id),
-          from: m.sender_type === "agent" ? "agent" : "user",
-          kind: m.kind || "text",
-          text: m.text || "",
-          time: toHHMM(m.created_at),
-          status:
-            m.sender_type === "member"
-              ? m.read_by_agent
-                ? "read"
-                : "delivered"
-              : undefined,
-        }));
+        if (sig !== lastSigRef.current) {
+          lastSigRef.current = sig;
+          setMessages(mapMsgs(msgs));
 
-        setMessages(mapped);
-
-        // optional: mark agent msgs read by member (✅ NO manual headers)
-        await memberApi
-          .post("/member/support/mark-read", { conversation_id: cid })
-          .catch(() => {});
+          memberApi
+            .post("/member/support/mark-read", { conversation_id: cid })
+            .catch(() => {});
+        }
       } catch (e) {
-        setErr(e?.response?.data?.message || "Failed to load support chat");
-        if (e?.response?.status === 401) nav("/member/login");
+        if (!aliveRef.current) return;
+        const status = e?.response?.status;
+        if (!silent)
+          setErr(e?.response?.data?.message || "Failed to load support chat");
+        if (status === 401) nav("/member/login");
+      } finally {
+        inFlightRef.current = false;
       }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    [conversationId, mapMsgs, nav, signatureOf]
+  );
+
+  useEffect(() => {
+    const el = chatRef.current;
+    if (!el) return;
+    const onScroll = () => (stickToBottomRef.current = isNearBottom(el));
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Auto scroll (same as yours)
   useEffect(() => {
-    if (!chatRef.current) return;
-    chatRef.current.scrollTo({ top: chatRef.current.scrollHeight, behavior: "smooth" });
+    const el = chatRef.current;
+    if (!el) return;
+    if (stickToBottomRef.current)
+      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [messages, agentTyping]);
 
-  // ✅ clear chat (same UI; just reload)
-  const clearChat = () => {
-    window.location.reload();
+  useEffect(() => {
+    aliveRef.current = true;
+
+    const pickInterval = () => {
+      if (channel !== "direct") return 12000;
+      if (visRef.current && focusRef.current) return 2000;
+      if (visRef.current && !focusRef.current) return 5000;
+      return 15000;
+    };
+
+    const tick = async () => {
+      if (!aliveRef.current) return;
+      await loadAll({ silent: true });
+      pollTimerRef.current = setTimeout(tick, pickInterval());
+    };
+
+    const onVis = () => {
+      visRef.current = !document.hidden;
+      clearTimeout(pollTimerRef.current);
+      pollTimerRef.current = setTimeout(tick, 0);
+    };
+    const onFocus = () => {
+      focusRef.current = true;
+      clearTimeout(pollTimerRef.current);
+      pollTimerRef.current = setTimeout(tick, 0);
+    };
+    const onBlur = () => {
+      focusRef.current = false;
+      clearTimeout(pollTimerRef.current);
+      pollTimerRef.current = setTimeout(tick, 0);
+    };
+
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("blur", onBlur);
+
+    loadAll({ silent: false }).finally(() => {
+      if (!aliveRef.current) return;
+      clearTimeout(pollTimerRef.current);
+      pollTimerRef.current = setTimeout(tick, 0);
+    });
+
+    return () => {
+      aliveRef.current = false;
+      clearTimeout(pollTimerRef.current);
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("blur", onBlur);
+    };
+  }, [channel, loadAll]);
+
+  const reloadPage = () => {
+    lastSigRef.current = "";
+    loadAll({ silent: false });
   };
 
-  const reloadPage = () => window.location.reload();
+  const clearChat = () => window.location.reload();
 
-  // ✅ Send message to DB then reload (✅ NO manual headers)
   const sendText = async () => {
     const text = message.trim();
     if (!text) return;
@@ -143,7 +271,6 @@ export default function CustomerService() {
       nav("/member/login");
       return;
     }
-
     if (!conversationId) {
       setErr("Conversation not ready. Please reload.");
       return;
@@ -153,17 +280,103 @@ export default function CustomerService() {
     setMessage("");
 
     try {
-      await memberApi.post("/member/support/send", { conversation_id: conversationId, text });
-      reloadPage();
+      await memberApi.post("/member/support/send", {
+        conversation_id: conversationId,
+        text,
+      });
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `local-${Date.now()}`,
+          from: "user",
+          kind: "text",
+          text,
+          fileUrl: "",
+          time: toHHMM(new Date().toISOString()),
+          status: "delivered",
+        },
+      ]);
+
+      lastSigRef.current = "";
+      await loadAll({ silent: true });
     } catch (e) {
       setErr(e?.response?.data?.message || "Failed to send message");
       if (e?.response?.status === 401) nav("/member/login");
     }
   };
 
-  // ✅ keep UI icons, but no upload needed
+  // ✅ photo upload (match Tasks)
+  const uploadPhoto = async (file) => {
+    if (!file) return;
+
+    const token = localStorage.getItem("member_token");
+    if (!token) {
+      setErr("Session expired. Please login again.");
+      nav("/member/login");
+      return;
+    }
+    if (!conversationId) {
+      setErr("Conversation not ready. Please reload.");
+      return;
+    }
+
+    if (!/^image\//i.test(file.type || "")) {
+      setErr("Please select an image file.");
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      setErr("Max photo size is 3MB.");
+      return;
+    }
+
+    setErr("");
+    setUploadingPhoto(true);
+
+    try {
+      const fd = new FormData();
+      fd.append("conversation_id", String(conversationId));
+      fd.append("photo", file);
+
+      // ✅ IMPORTANT: same as Tasks
+      const { data } = await memberApi.post("/member/support/send-photo", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      const url = data?.file_url || "";
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: String(data?.id || `photo-${Date.now()}`),
+          from: "user",
+          kind: "photo",
+          text: "",
+          fileUrl: url,
+          time: toHHMM(data?.created_at || new Date().toISOString()),
+          status: "delivered",
+          fileName: data?.file_name || file.name,
+        },
+      ]);
+
+      lastSigRef.current = "";
+      await loadAll({ silent: true });
+    } catch (e) {
+      setErr(e?.response?.data?.message || "Failed to upload photo");
+      if (e?.response?.status === 401) nav("/member/login");
+    } finally {
+      setUploadingPhoto(false);
+      if (photoInputRef.current) photoInputRef.current.value = "";
+    }
+  };
+
+  const addPhotoMessage = () => {
+    if (uploadingPhoto) return;
+    photoInputRef.current?.click();
+  };
+
   const addFileMessage = () => {
-    setErr("Upload is not available right now. Please send text only.");
+    setErr("Document upload is not available right now.");
   };
 
   const statusIcon = (status) => {
@@ -175,7 +388,6 @@ export default function CustomerService() {
 
   return (
     <div className="cs-page">
-      {/* Header */}
       <header className="cs-header">
         <button className="cs-back" onClick={() => nav(-1)} type="button">
           ←
@@ -193,20 +405,19 @@ export default function CustomerService() {
           <button className="cs-headBtn" type="button" onClick={() => setHelpOpen(true)}>
             Help Center
           </button>
-
           <button className="cs-headBtn" type="button" onClick={reloadPage}>
             Reload
           </button>
-
           <button className="cs-headBtn" type="button" onClick={clearChat}>
             Clear
           </button>
         </div>
       </header>
 
-      {err ? <div style={{ padding: "10px 18px", color: "#b91c1c" }}>{err}</div> : null}
+      {err ? (
+        <div style={{ padding: "10px 18px", color: "#b91c1c" }}>{err}</div>
+      ) : null}
 
-      {/* Switch */}
       <section className="cs-switchWrap">
         <div className="cs-switch">
           <button
@@ -229,7 +440,6 @@ export default function CustomerService() {
         </div>
       </section>
 
-      {/* Body */}
       <main className="cs-content">
         <section className="cs-main">
           {channel === "direct" ? (
@@ -251,33 +461,38 @@ export default function CustomerService() {
 
               <div className="cs-chat" ref={chatRef}>
                 {messages.map((m) => (
-                  <div key={m.id} className={"cs-msg " + (m.from === "user" ? "user" : "agent")}>
+                  <div
+                    key={m.id}
+                    className={"cs-msg " + (m.from === "user" ? "user" : "agent")}
+                  >
                     <div className="cs-bubble cs-pop">
                       {m.kind === "text" && <div className="cs-text">{m.text}</div>}
 
                       {m.kind === "photo" && (
                         <div className="cs-file">
-                          <div className="cs-fileIcon">🖼️</div>
-                          <div className="cs-fileBody">
-                            <div className="cs-fileName">{m.name}</div>
-                            <div className="cs-fileMeta">Photo</div>
-                          </div>
+                          <button
+                            type="button"
+                            className="cs-photoBtn"
+                            onClick={() => openImage(joinUrl(FILE_BASE, m.fileUrl), m.fileName || "photo")}
+                            aria-label="Open photo"
+                          >
+                            <img
+                              className="cs-photoThumb"
+                              src={joinUrl(FILE_BASE, m.fileUrl)}
+                              alt={m.fileName || "photo"}
+                              loading="lazy"
+                            />
+                          </button>
+
+                          {m.fileName ? (
+                            <div className="cs-fileName">{m.fileName}</div>
+                          ) : null}
                         </div>
                       )}
 
-                      {m.kind === "file" && (
-                        <div className="cs-file">
-                          <div className="cs-fileIcon">📄</div>
-                          <div className="cs-fileBody">
-                            <div className="cs-fileName">{m.name}</div>
-                            <div className="cs-fileMeta">Document</div>
-                          </div>
-                        </div>
-                      )}
 
                       <div className="cs-metaRow">
                         <span className="cs-time">{m.time}</span>
-
                         {m.from === "user" && (
                           <span className={"cs-read " + (m.status === "read" ? "is-read" : "")}>
                             {statusIcon(m.status)}
@@ -304,24 +519,35 @@ export default function CustomerService() {
               </div>
 
               <footer className="cs-inputBar">
-                <button className="cs-iconBtn" type="button" title="Upload photo" onClick={addFileMessage}>
-                  📷
+                <button
+                  className="cs-iconBtn"
+                  type="button"
+                  title="Upload photo"
+                  onClick={addPhotoMessage}
+                  disabled={uploadingPhoto}
+                >
+                  {uploadingPhoto ? "⏳" : "📷"}
                 </button>
+
                 <input
                   ref={photoInputRef}
                   type="file"
                   accept="image/*"
                   style={{ display: "none" }}
-                  onChange={() => addFileMessage()}
+                  onChange={(e) => uploadPhoto(e.target.files?.[0])}
                 />
 
-                <button className="cs-iconBtn" type="button" title="Upload document" onClick={addFileMessage}>
+                <button
+                  className="cs-iconBtn"
+                  type="button"
+                  title="Upload document"
+                  onClick={addFileMessage}
+                >
                   📎
                 </button>
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
                   style={{ display: "none" }}
                   onChange={() => addFileMessage()}
                 />
@@ -333,9 +559,15 @@ export default function CustomerService() {
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && sendText()}
+                  disabled={uploadingPhoto}
                 />
 
-                <button className="cs-sendBtn" disabled={!message.trim()} onClick={sendText} type="button">
+                <button
+                  className="cs-sendBtn"
+                  disabled={!message.trim() || uploadingPhoto}
+                  onClick={sendText}
+                  type="button"
+                >
                   Send
                 </button>
               </footer>
@@ -406,7 +638,6 @@ export default function CustomerService() {
 
             <div className="cs-modalBody">
               <div className="cs-helpSectionTitle">FAQ</div>
-
               {faqs.map((f, i) => (
                 <details key={i} className="cs-helpItem">
                   <summary className="cs-helpQ">{f.q}</summary>
@@ -427,6 +658,18 @@ export default function CustomerService() {
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {imgOpen && (
+        <div className="cs-imgOverlay" role="dialog" aria-modal="true" onClick={closeImage}>
+          <div className="cs-imgModal" onClick={(e) => e.stopPropagation()}>
+            <button className="cs-imgClose" type="button" onClick={closeImage} aria-label="Close">
+              ✕
+            </button>
+
+            <img className="cs-imgFull" src={imgSrc} alt={imgAlt || "photo"} />
           </div>
         </div>
       )}

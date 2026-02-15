@@ -1,494 +1,582 @@
-/* ===== Bybit accent variables (yellow/orange) ===== */
 :root{
-  --bybit-yellow: #FFC107;
-  --bybit-orange: #FF8A00;
-  --bybit-glow: rgba(255, 193, 7, 0.22);
-  --bybit-border: rgba(255, 193, 7, 0.32);
+  --bg:#d9e1ef;
+  --top:#ecf7f787;
+  --panel:#b8c5d7;
+  --panel2:#dde3ec;
+  --text:#0f172a;
+  --muted:#4b5563;
+  --line:#bed4f7;
+
+  --brand:#f5b301;
+  --brandSoft:rgba(245,179,1,.12);
+
+  --success:#16a34a;
+  --danger:#ef4444;
+
+  --shadow:0 14px 30px rgba(15, 23, 42, .18);
 }
 
-/* Full page background (OLD background image kept) */
-.dc-page{
-  min-height: 100vh;
-  position: relative;
-  padding: 22px;
-
-  /* keep your old background */
-  background: url('../assets/bg/deposit.png') no-repeat center center fixed;
-  background-size: cover;
-
-  color: #eaf2ff;
-
-  /* ✅ important: leave space so bottom nav doesn't cover content */
-  padding-bottom: 120px;
-}
-
-.dc-overlay{
-  position:absolute; inset:0;
-  background: linear-gradient(180deg, rgba(0,0,0,.20), rgba(0,0,0,.35));
-  pointer-events:none;
+/* Page */
+.dcPage{
+  min-height:100vh;
+  background:var(--bg);
+  color:var(--text);
+  font-family:system-ui, Segoe UI, Roboto, Arial;
 }
 
 /* Header */
-.dc-header{
-  position: relative;
-  max-width: 1100px;
-  margin: 0 auto 18px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.dc-back{
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,.14);
-  background: rgba(255,255,255,.08);
-  color: #fff;
-  cursor: pointer;
-}
-
-.dc-title h1{
-  font-size: 22px;
-  margin: 0;
-  letter-spacing: .2px;
-  color: white;
-}
-.dc-title p{
-  margin: 4px 0 0;
-  font-size: 13px;
-  opacity: .85;
-}
-.dc-headerActions{ margin-left: auto; display:flex; gap:10px; }
-
-/* Layout */
-.dc-wrap{
-  position: relative;
-  max-width: 1100px;
-  margin: 0 auto;
-}
-
-.dc-wallet-card{
-  background:
-    linear-gradient(135deg, #ffe082ab, #ffc1078c) !important;
-  border: 1px solid rgba(248, 237, 237, 0.966) !important;
-  color: #fff7da !important;
-}
-
-.dc-gridTop{
-  display: grid;
-  grid-template-columns: 1.2fr .8fr;
-  gap: 14px;
-  margin-bottom: 14px;
-}
-
-.dc-gridMain{
-  display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 14px;
-}
-
-.dc-left{ display:flex; flex-direction:column; gap:14px; }
-.dc-right{ position: relative; }
-
-/* Glass card */
-.dc-card{
-  border-radius: 18px;
-  border: 1px solid rgba(255,255,255,.14);
-  background: rgba(255,255,255,.08);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  box-shadow: 0 20px 50px rgba(0,0,0,.35);
-  padding: 16px;
-}
-
-/* Wallet highlight */
-.dc-balance--highlight{
-  min-height: 150px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-
-  background:
-    linear-gradient(
-      120deg,
-      rgba(255,255,255,0.22) 0%,
-      rgba(255,255,255,0.06) 28%,
-      rgba(255,255,255,0.00) 60%
-    ),
-    linear-gradient(
-      180deg,
-      rgba(120, 90, 18, 0.92) 0%,
-      rgba(165, 125, 28, 0.88) 40%,
-      rgba(95, 70, 10, 0.94) 100%
-    );
-
-  border: 1px solid rgba(255, 205, 110, 0.45);
-
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.55),
-    inset 0 18px 30px rgba(255, 225, 140,.20),
-    inset 0 -2px 0 rgba(70,50,8,.65),
-    0 22px 46px rgba(0,0,0,.48);
-
-  color: #fff7da;
-}
-
-.dc-balanceTop{
-  display:flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.dc-balanceTitleRow{
-  display:flex;
-  align-items:center;
-  gap: 10px;
-}
-
-.dc-dot{ width: 10px; height: 10px; border-radius: 99px; }
-.dc-dot--cyan{
-  background: linear-gradient(135deg, #FFE082, #FFC107);
-  box-shadow:
-    0 0 18px rgba(255,193,7,.85),
-    inset 0 1px 0 rgba(255,255,255,.75);
-}
-
-.dc-balanceTitle{
-  font-size: 14px;
-  font-weight: 800;
-  /* color: rgba(255, 235, 180, 0.95); */
-  color: #ffffff;
-  letter-spacing: .3px;
-}
-
-.dc-balanceAmounts{ margin-top: 10px; }
-
-.dc-balanceMain{
-  display:flex;
-  align-items: baseline;
-  gap: 10px;
-}
-
-.dc-balanceUsd{
-  font-size: 36px;
-  font-weight: 900;
-  color: #ffffff;
-  letter-spacing: .35px;
-  text-shadow: 0 2px 6px rgba(0,0,0,.35);
-}
-
-.dc-balanceUnit{
-  font-size: 14px;
-  font-weight: 800;
-  color: rgba(255, 225, 160, 0.95);
-}
-
-.dc-balanceSub{
-  margin-top: 6px;
-  font-size: 13px;
-  font-weight: 700;
-  color: rgba(255, 215, 140, 0.95);
-}
-
-.dc-balanceActions{ display:flex; gap:10px; flex-wrap:wrap; }
-
-/* Status card */
-.dc-statusTitle{ font-weight: 700; margin-bottom: 10px; }
-.dc-statusRow{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom: 8px; }
-.dc-chip{
-  font-size: 12px;
-  padding: 8px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,.14);
-  background: rgba(0,0,0,.15);
-}
-
-/* Step headers */
-.dc-stepHead{
-  display:flex; gap:12px; align-items:flex-start; margin-bottom: 12px;
-}
-.dc-stepNum{
-  width: 30px; height: 30px;
-  border-radius: 10px;
-  display:flex; align-items:center; justify-content:center;
-  font-weight: 800;
-  background: rgba(255,255,255,.14);
-  border: 1px solid rgba(255,255,255,.18);
-}
-.dc-stepTitle{ font-weight: 800; }
-
-.dc-mutedSmall{ font-size: 12px; opacity: .85; }
-.dc-muted{ opacity: .85; }
-
-/* Asset buttons */
-.dc-assetRow{
+.dcTop{
   display:grid;
-  grid-template-columns: repeat(4, minmax(0,1fr));
-  gap: 10px;
-}
-.dc-assetBtn{
-  display:flex; gap:10px; align-items:center;
-  padding: 10px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.12);
-  background: rgba(0,0,0,.16);
-  cursor: pointer;
-  color: #fff;
-  transition: transform .12s ease, background .12s ease, border-color .12s ease, box-shadow .12s ease;
-}
-.dc-assetBtn:hover{ transform: translateY(-1px); }
-
-.dc-assetBtn.is-selected{
-  background: linear-gradient(135deg, rgba(255, 193, 7, 0.18), rgba(255, 140, 0, 0.12));
-  border-color: var(--bybit-border);
-  box-shadow: 0 0 0 1px rgba(255,193,7,.10) inset, 0 14px 30px rgba(0,0,0,.30);
-}
-.dc-assetBtn.is-selected .dc-assetSym{ color: var(--bybit-yellow); }
-.dc-assetSym{ font-weight: 900; }
-
-/* Crypto logos */
-.dc-coinLogo{
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: #fff;
-  padding: 3px;
-  object-fit: contain;
-  box-shadow: 0 4px 12px rgba(0,0,0,.25);
+  grid-template-columns:44px 1fr 84px;
+  align-items:center;
+  padding:12px 16px;
+  background:var(--top);
+  border-bottom:1px solid rgba(15,23,42,.12);
 }
 
-/* Network buttons */
-.dc-netRow{ display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; }
-.dc-netBtn{
-  text-align:left;
-  padding: 12px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.12);
-  background: rgba(0,0,0,.16);
+.dcBack,
+.dcHistoryBtn{
+  height:40px;
+  border-radius:12px;
+  border:1px solid rgba(15,23,42,.18);
+  background:rgba(8,166,214,.28);
+  color:var(--text);
   cursor:pointer;
-  color:#fff;
-  transition: transform .12s ease, background .12s ease, border-color .12s ease, box-shadow .12s ease;
+  font-weight:600;
 }
-.dc-netBtn:hover{ transform: translateY(-1px); }
 
-.dc-netBtn.is-selected{
-  background: linear-gradient(135deg, rgba(255, 193, 7, 0.18), rgba(255, 140, 0, 0.12));
-  border-color: var(--bybit-border);
-  box-shadow: 0 0 0 1px rgba(255,193,7,.10) inset, 0 14px 30px rgba(0,0,0,.30);
+.dcTitle{
+  text-align:center;
+  font-weight:700;
+  font-size:15px;
 }
-.dc-netBtn.is-selected .dc-netName{ color: var(--bybit-yellow); }
 
-.dc-netTop{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom: 6px; }
-.dc-netName{ font-weight: 900; }
+/* Container */
+.dcContainer{
+  max-width:980px;
+  margin:0 auto;
+  padding-bottom:24px;
+}
 
-/* Badges */
-.dc-badge{
-  font-size: 11px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,.14);
-  background: rgba(255,255,255,.08);
-}
-.dc-badge.is-green{ background: rgba(0,200,120,.16); border-color: rgba(0,200,120,.25); }
-.dc-badge.is-blue{ background: rgba(80,160,255,.16); border-color: rgba(80,160,255,.25); }
-.dc-badge.is-red{ background: rgba(255,90,90,.16); border-color: rgba(255,90,90,.25); }
-.dc-badge.is-gray{ background: rgba(180,180,180,.12); }
-
-.dc-warning{
-  margin-top: 12px;
-  padding: 10px 12px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,200,120,.25);
-  background: rgba(255,180,80,.12);
-  font-size: 12px;
-  display:flex; gap:10px; align-items:flex-start;
-}
-.dc-warningIcon{ font-size: 14px; }
-
-/* Address section */
-.dc-addressGrid{
-  display:grid;
-  grid-template-columns: 240px 1fr;
-  gap: 12px;
-  align-items: start;
-}
-.dc-qrBox{
-  border-radius: 16px;
-  border: 1px solid rgba(255,255,255,.14);
-  background: rgba(0,0,0,.18);
-  padding: 12px;
-}
-.dc-qrFake{
-  height: 180px;
-  border-radius: 12px;
-  border: 1px dashed rgba(255,255,255,.20);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  position: relative;
+/* Balance */
+.dcBalance{
+  margin:16px;
+  padding:20px;
+  border-radius:18px;
+  position:relative;
   overflow:hidden;
-}
-.dc-qrSquares{
-  position:absolute; inset:0;
-  background-image:
-    linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(255,255,255,.08) 1px, transparent 1px);
-  background-size: 18px 18px;
-  opacity: .55;
-}
-.dc-qrText{
-  position: relative;
-  font-weight: 900;
-  font-size: 18px;
-  opacity: .9;
-}
 
-.dc-field{ margin-bottom: 12px; }
-.dc-label{ font-size: 12px; opacity: .85; margin-bottom: 6px; }
-.dc-required{
-  margin-left: 8px;
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(255,90,90,.16);
-  border: 1px solid rgba(255,90,90,.22);
-}
-.dc-inputLike{
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.14);
-  background: rgba(0,0,0,.18);
-  padding: 12px;
-  overflow: hidden;
-}
-.dc-mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 12px; }
-.dc-fieldActions{ margin-top: 10px; display:flex; gap:10px; }
-.dc-input{
-  width: 100%;
-  padding: 12px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.14);
-  background: rgba(0,0,0,.18);
-  color: #fff;
-  outline: none;
-}
+  background: linear-gradient(
+    135deg,
+    #f1c30bfa 0%,
+    #9669029c 52%,
+    #000101 100%
+  );
 
-/* Info grid */
-.dc-infoGrid{
-  display:grid;
-  grid-template-columns: repeat(4, minmax(0,1fr));
-  gap: 10px;
-  margin-top: 10px;
-}
-.dc-infoItem{
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.12);
-  background: rgba(0,0,0,.16);
-  padding: 12px;
-}
-.dc-infoValue{ font-weight: 900; margin-top: 6px; }
-
-/* Buttons */
-.dc-miniBtn, .dc-ghostBtn, .dc-primaryBtn, .dc-secondaryBtn, .dc-linkBtn{
-  cursor:pointer;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.14);
-  padding: 10px 12px;
-  color: #fff;
-  background: rgba(255,255,255,.08);
-}
-.dc-miniBtn{ padding: 9px 12px; font-size: 13px; background: rgba(0,0,0,.18); }
-.dc-ghostBtn{ background: rgba(255,255,255,.08); }
-
-.dc-primaryBtn{
-  background: linear-gradient(90deg, rgba(80,160,255,.55), rgba(140,220,255,.35));
-  border-color: rgba(170,220,255,.35);
-  font-weight: 900;
-  padding: 12px 14px;
-}
-.dc-secondaryBtn{
-  background: rgba(0,0,0,.18);
-  border-color: rgba(255,255,255,.14);
-  font-weight: 800;
-  padding: 12px 14px;
-}
-.dc-actions{
-  display:flex;
-  gap: 10px;
-  margin-top: 14px;
-  flex-wrap: wrap;
-}
-.dc-linkBtn{
-  background: transparent;
-  border: none;
-  padding: 8px 0;
-  opacity: .9;
-  text-decoration: underline;
-}
-.dc-helpRow{
-  display:flex;
-  gap: 14px;
-  margin-top: 10px;
-  flex-wrap: wrap;
-}
-
-/* Side panel highlight */
-.dc-card.dc-side{
-  background:
-    radial-gradient(circle at 15% 20%, rgba(255, 193, 7, 0.22), transparent 45%),
-    radial-gradient(circle at 85% 80%, rgba(255, 140, 0, 0.18), transparent 55%),
-    linear-gradient(135deg, rgba(40, 22, 68, 0.72), rgba(18, 10, 32, 0.55));
-  border: 1px solid rgba(255, 193, 7, 0.22);
   box-shadow:
-    0 22px 55px rgba(0,0,0,.35),
-    0 0 0 1px rgba(255, 193, 7, 0.10) inset;
+    0 14px 34px rgba(43,124,255,.30),
+    inset 0 0 0 1px rgba(255,255,255,.40);
 }
 
-.dc-side{ position: sticky; top: 14px; }
-.dc-sideTitle{ font-weight: 900; margin-bottom: 10px; color: rgba(255, 210, 120, 0.95); }
-.dc-sideLine{ display:flex; justify-content:space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.08); }
-.dc-sideLine:last-child{ border-bottom: none; }
-.dc-strong{ font-weight: 900; }
-.dc-divider{ height:1px; background: rgba(255,255,255,.12); margin: 12px 0; }
-.dc-list{ margin: 0; padding-left: 16px; opacity: .9; }
-.w100{ width: 100%; margin-top: 10px; }
+/* Shine */
+.dcBalance::after{
+  content:"";
+  position:absolute;
+  top:-60%;
+  left:-40%;
+  width:60%;
+  height:220%;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.35) 45%,
+    rgba(255,255,255,0) 100%
+  );
+  transform: rotate(18deg);
+  animation: dcShine 3s ease-in-out infinite;
+  pointer-events:none;
+}
 
-/* Toast (lift it above bottom nav) */
-.dc-toast{
-  position: fixed;
-  left: 50%;
-  bottom: 110px; /* ✅ above the bottom nav */
-  transform: translateX(-50%);
-  padding: 10px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,.18);
-  background: rgba(0,0,0,.45);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  z-index: 50;
+@keyframes dcShine{
+  0%{ transform: translateX(-60%) rotate(18deg); opacity:.0; }
+  20%{ opacity:.55; }
+  45%{ transform: translateX(220%) rotate(18deg); opacity:.0; }
+  100%{ transform: translateX(220%) rotate(18deg); opacity:0; }
+}
+
+.dcBalanceLabel{
+  font-size:12px;
+  color:rgba(15,23,42,.78);
+  font-weight:600;
+}
+
+.dcBalanceValue{
+  margin-top:6px;
+  font-size:26px;
+  font-weight:800;
+  letter-spacing:.2px;
+  color:#0f172a;
+}
+
+.dcBalanceMeta{
+  margin-top:6px;
+  font-size:12px;
+  color:rgba(15,23,42,.72);
+}
+
+/* Coins */
+.dcCoins{ padding:0 16px; }
+
+.dcCoinsTitle{
+  font-size:13px;
+  margin:10px 0 8px;
+  color:rgba(15,23,42,.70);
+  font-weight:700;
+}
+
+.dcCoinRow{
+  display:flex;
+  gap:12px;
+  overflow-x:auto;
+  padding-bottom:6px;
+  -webkit-overflow-scrolling:touch;
+}
+
+.dcCoin{
+  min-width:160px;
+  padding:12px;
+  border-radius:16px;
+  border:1px solid rgba(15,23,42,.14);
+  background:var(--panel2);
+  color:var(--text);
+  cursor:pointer;
+  text-align:left;
+  box-shadow:0 10px 18px rgba(15,23,42,.06);
+}
+
+.dcCoin.active{
+  border-color:rgba(245,179,1,.65);
+  background:rgba(245,179,1,.14);
+}
+
+.dcCoinTop{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.dcCoinIcon{
+  width:30px;
+  height:30px;
+  object-fit:contain;
+  border-radius:8px;
+  background:rgba(255,255,255,.55);
+  padding:4px;
+  box-shadow:0 8px 14px rgba(15,23,42,.10);
+}
+
+.dcCoinTexts{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+
+.dcCoinCode{ font-weight:800; }
+.dcCoinName{
+  font-size:12px;
+  color:rgba(15,23,42,.60);
+}
+
+.dcHelper{
+  margin-top:8px;
+  font-size:12px;
+  color:rgba(15,23,42,.62);
+}
+
+/* Address book */
+.dcWallet{ margin:16px; }
+
+.dcWalletHead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:10px;
+}
+
+.dcWalletTitle{
+  font-size:13px;
+  color:rgba(15,23,42,.70);
+  font-weight:700;
+}
+
+.dcAddWallet{
+  border:none;
+  background:none;
+  color:#0b4eb3de;
+  font-size:12px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.dcWalletList{
+  display:grid;
+  gap:10px;
+}
+
+.dcSavedWallet{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px;
+  border-radius:16px;
+  border:1px solid rgba(15,23,42,.14);
+  background:var(--panel2);
+  cursor:pointer;
+  box-shadow:0 10px 18px rgba(15,23,42,.06);
+}
+
+.dcSavedWallet.active{
+  border-color:rgba(245,179,1,.65);
+  background:rgba(245,179,1,.12);
+}
+
+.dcWalletLeft{ text-align:left; }
+
+.dcWalletLabel{
+  font-size:13px;
+  font-weight:800;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.dcTag{
+  font-size:11px;
+  font-weight:900;
+  padding:3px 8px;
+  border-radius:999px;
+  border:1px solid rgba(15,23,42,.14);
+  background:rgba(245,179,1,.16);
+}
+
+.dcWalletAddr{
+  font-size:12px;
+  color:rgba(15,23,42,.60);
+  margin-top:2px;
+}
+
+.dcWalletNet{
+  font-size:12px;
+  color:#0b4fb3;
+  font-weight:900;
+}
+
+/* Card */
+.dcCard{
+  margin:16px;
+  padding:18px;
+  border-radius:18px;
+  background:var(--panel2);
+  border:1px solid rgba(15,23,42,.14);
+  box-shadow:var(--shadow);
+}
+
+.dcGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+
+.dcField{ margin-bottom:14px; }
+
+.dcField label{
+  display:block;
+  font-size:12px;
+  color:rgba(15,23,42,.70);
+  font-weight:800;
+  margin-bottom:6px;
+}
+
+.dcField input,
+.dcField select{
+  width:100%;
+  height:44px;
+  border-radius:12px;
+  border:1px solid rgba(15,23,42,.16);
+  background:#b2cde8;
+  color:#0f172a;
+  padding:0 14px;
+  outline:none;
+}
+
+.dcField input:focus,
+.dcField select:focus{
+  border-color:rgba(245,179,1,.75);
+  box-shadow:0 0 0 4px rgba(0, 0, 0, 0.18);
+}
+
+.dcAmountRow{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+.dcAmountRow button{
+  height:44px;
+  padding:0 16px;
+  border-radius:12px;
+  border:1px solid rgba(245,179,1,.75);
+  background:rgba(245,179,1,.16);
+  color:#0f172a;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.dcCalc{
+  margin-top:8px;
+  font-size:12px;
+  color:rgba(15,23,42,.70);
+}
+
+.dcCalc span{
+  color:var(--success);
+  font-weight:900;
+}
+
+.dcHint{
+  margin-top:7px;
+  font-size:12px;
+  color:rgba(15,23,42,.62);
+}
+
+.dcError{
+  margin-top:8px;
+  font-size:12px;
+  color:var(--danger);
+  font-weight:800;
+}
+
+/* Address box with actions */
+.dcAddressBox{
+  display:flex;
+  align-items:stretch;
+  justify-content:space-between;
+  gap:10px;
+  padding:12px;
+  border-radius:14px;
+  border:1px solid rgba(15,23,42,.14);
+  background:rgba(255,255,255,.35);
+}
+
+.dcAddressText{
+  font-size:13px;
+  font-weight:800;
+  color:#0f172a;
+  word-break:break-all;
+  line-height:1.35;
+}
+
+.dcAddressActions{
+  display:flex;
+  gap:8px;
+  align-items:flex-start;
+  flex-shrink:0;
+}
+
+.dcMiniBtn{
+  height:36px;
+  padding:0 12px;
+  border-radius:12px;
+  border:1px solid rgba(15,23,42,.16);
+  background:rgba(255,255,255,.40);
+  cursor:pointer;
+  font-weight:900;
+}
+
+.dcMiniBtn:disabled{
+  opacity:.55;
+  cursor:not-allowed;
+}
+
+/* Submit */
+.dcSubmit{
+  width:100%;
+  height:48px;
+  margin-top:8px;
+  border-radius:16px;
+  border:none;
+  background:var(--brand);
+  color:#000000;
+  font-weight:900;
+  cursor:pointer;
+  box-shadow:0 12px 24px rgba(245,179,1,.25);
+}
+
+.dcSubmit:disabled{
+  opacity:.55;
+  cursor:not-allowed;
+  box-shadow:none;
+}
+
+/* Rules */
+.dcRules{
+  margin-top:14px;
+  font-size:12px;
+  color:rgba(15,23,42,.70);
+  line-height:1.7;
 }
 
 /* Responsive */
-@media (max-width: 980px){
-  .dc-gridTop{ grid-template-columns: 1fr; }
-  .dc-gridMain{ grid-template-columns: 1fr; }
-  .dc-side{ position: relative; top: 0; }
-  .dc-assetRow{ grid-template-columns: repeat(2, minmax(0,1fr)); }
-  .dc-netRow{ grid-template-columns: 1fr; }
-  .dc-addressGrid{ grid-template-columns: 1fr; }
-  .dc-infoGrid{ grid-template-columns: repeat(2, minmax(0,1fr)); }
-}
-/* keep bottom nav fixed */
-.memberBottomNavFixed{
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 9999;
+@media (max-width:820px){
+  .dcGrid{ grid-template-columns:1fr; }
+  .dcContainer{ max-width:100%; }
+  .dcCoin{ min-width:150px; }
 }
 
-/* important: make sure page content doesn't hide behind the fixed menu */
-.dc-page{
-  padding-bottom: 140px; /* adjust if your bottom bar height is different */
+@media (max-width:520px){
+  .dcTop{ grid-template-columns:44px 1fr 76px; }
+  .dcHistoryBtn{ font-size:12px; }
+  .dcBalanceValue{ font-size:22px; }
+  .dcCoin{ min-width:140px; }
+  .dcCard, .dcBalance{ margin:12px; padding:14px; }
+}
+
+/* Modal */
+.dcModalOverlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.45);
+  display:grid;
+  place-items:center;
+  z-index:1000;
+  padding:16px;
+}
+
+.dcModal{
+  width:min(460px, 100%);
+  background:var(--panel2);
+  border-radius:18px;
+  box-shadow:0 24px 60px rgba(0,0,0,.25);
+  border:1px solid rgba(15,23,42,.14);
+  overflow:hidden;
+}
+
+.dcModalHead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:14px 14px;
+  background:rgba(255,255,255,.30);
+  border-bottom:1px solid rgba(15,23,42,.12);
+}
+
+.dcModalTitle{
+  font-weight:900;
+  color:#0f172a;
+}
+
+.dcModalClose{
+  width:36px;
+  height:36px;
+  border-radius:12px;
+  border:1px solid rgba(15,23,42,.16);
+  background:rgba(255,255,255,.40);
+  cursor:pointer;
+  font-weight:900;
+}
+
+.dcModalBody{ padding:14px; }
+
+.dcModalLabel{
+  display:block;
+  font-size:12px;
+  font-weight:800;
+  color:rgba(15,23,42,.70);
+  margin:10px 0 6px;
+}
+
+.dcModalInput{
+  width:100%;
+  height:42px;
+  border-radius:12px;
+  border:1px solid rgba(15,23,42,.16);
+  background:#8cbef0;
+  color:#0f172a;
+  padding:0 12px;
+  outline:none;
+}
+
+.dcModalInput:focus{
+  border-color:rgba(245,179,1,.75);
+  box-shadow:0 0 0 4px rgba(245,179,1,.18);
+}
+
+.dcCheckRow{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-top:12px;
+  user-select:none;
+  font-size:12px;
+  font-weight:800;
+  color:rgba(15,23,42,.72);
+}
+
+.dcCheckRow input{
+  width:16px;
+  height:16px;
+}
+
+.dcModalSave{
+  width:100%;
+  height:46px;
+  margin-top:12px;
+  border-radius:14px;
+  border:none;
+  background:var(--brand);
+  color:#111827;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.dcModalSave:disabled{
+  opacity:.55;
+  cursor:not-allowed;
+}
+
+.dcModalTip{
+  margin-top:10px;
+  font-size:12px;
+  color:rgba(15,23,42,.62);
+}
+
+/* QR placeholder */
+.dcQrBox{
+  display:grid;
+  gap:10px;
+  place-items:center;
+  padding:16px;
+  border-radius:16px;
+  border:1px dashed rgba(15,23,42,.22);
+  background:rgba(255,255,255,.35);
+}
+
+.dcQrPlaceholder{
+  width:150px;
+  height:150px;
+  border-radius:18px;
+  display:grid;
+  place-items:center;
+  font-weight:1000;
+  letter-spacing:.3px;
+  border:1px solid rgba(15,23,42,.16);
+  background:rgba(255,255,255,.55);
+}
+
+.dcQrText{
+  font-size:12px;
+  color:rgba(15,23,42,.70);
+  font-weight:900;
 }

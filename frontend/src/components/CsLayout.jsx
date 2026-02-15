@@ -39,7 +39,7 @@ export default function CsLayout({ children, title = "" }) {
         </div>
       </div>
 
-      <div className="page-content" style={{ padding: 14 }}>
+      <div className="page-content" style={{ padding: 14, width:'100%' }}>
         {children}
       </div>
     </div>

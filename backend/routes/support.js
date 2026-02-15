@@ -39,14 +39,26 @@ router.get("/inbox", async (req, res) => {
   res.json(r.rows);
 });
 
-// ✅ get conversation messages
+// ✅ get conversation messages (FIXED: include file_url + file_name)
 router.get("/conversations/:id/messages", async (req, res) => {
   const conversationId = Number(req.params.id);
-  if (!Number.isFinite(conversationId)) return res.status(400).json({ message: "Invalid id" });
+  if (!Number.isFinite(conversationId)) {
+    return res.status(400).json({ message: "Invalid id" });
+  }
 
   const r = await pool.query(
-    `SELECT id, conversation_id, sender_type, kind, text,
-            read_by_agent, read_by_member, created_at
+    `SELECT
+        id,
+        conversation_id,
+        sender_type,
+        kind,
+        text,
+        file_url,
+        file_name,
+        file_size,
+        read_by_agent,
+        read_by_member,
+        created_at
      FROM support_messages
      WHERE conversation_id = $1
      ORDER BY created_at ASC, id ASC`,

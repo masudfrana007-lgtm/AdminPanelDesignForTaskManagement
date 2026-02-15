@@ -1,31 +1,69 @@
 // src/pages/WithdrawalMethod.jsx
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/WithdrawalMethod.css";
 import withdrawBg from "../assets/bg/withdraw.png";
 import MemberBottomNav from "../components/MemberBottomNav";
+import memberApi from "../services/memberApi";
 
-import usdtIcon from "../assets/icons/usdt.png";
+const API_HOST = "http://159.198.40.145:5010";
 
-const user = {
-  name: "User",
-  vip: 3,
-  inviteCode: "ABCD-1234",
-  uid: "U92837465",
-  balance: 97280.12,
-};
+function toAbsUrl(p) {
+  const s = String(p || "").trim();
+  if (!s) return "";
+  if (s.startsWith("http://") || s.startsWith("https://")) return s;
+  if (s.startsWith("/")) return API_HOST + s;
+  return API_HOST + "/" + s;
+}
 
 function money(n) {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n);
 }
 
+function rankLabel(r) {
+  const x = String(r || "").trim().toUpperCase();
+  if (x === "V1") return 1;
+  if (x === "V2") return 2;
+  if (x === "V3") return 3;
+  return 0;
+}
+
 export default function WithdrawalMethod() {
   const nav = useNavigate();
 
+  const [me, setMe] = useState(null);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    (async () => {
+      setErr("");
+      try {
+        const { data } = await memberApi.get("/member/me");
+        setMe(data || null);
+      } catch (e) {
+        setMe(null);
+        setErr(e?.response?.data?.message || "Failed to load profile");
+      }
+    })();
+  }, []);
+
+  // ✅ real values
+  const vip = rankLabel(me?.ranking);
+  const referenceCode = me?.sponsor_short_id || "-";
+  const balance = Number(me?.balance || 0);
+
+  // (optional) if you later want avatar image in the circle
+  const rawAvatar =
+    me?.avatar_url ||
+    me?.photo_url ||
+    me?.profile_photo_url ||
+    me?.profile_picture_url ||
+    me?.profile_photo ||
+    "";
+  const avatarUrl = toAbsUrl(rawAvatar);
+
   return (
-    <div
-      className="page wd-method"
-      style={{ backgroundImage: `url(${withdrawBg})` }}
-    >
+    <div className="page wd-method" style={{ backgroundImage: `url(${withdrawBg})` }}>
       {/* Header */}
       <div className="wd-header">
         <button className="wd-back" onClick={() => nav(-1)} type="button">
@@ -34,28 +72,30 @@ export default function WithdrawalMethod() {
 
         <div className="wd-header-title">
           <div className="wd-title">Withdraw Funds</div>
-          <div className="wd-sub">
-            Choose a withdrawal method that is safe and convenient
-          </div>
+          <div className="wd-sub">Choose a withdrawal method that is safe and convenient</div>
         </div>
 
-        {/* ✅ make sure this route exists in your router */}
         <button className="wd-help" onClick={() => nav("/member/service")} type="button">
           Support
         </button>
       </div>
 
       <div className="wd-wrap">
+        {err ? <div className="wd-error">{err}</div> : null}
+
         {/* Profile + Balance */}
-        <section className="balanceCardAx">
-          <div className="balanceLeft">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-              <div className="pf-avatar">
-                <img
-                  src={`https://i.pravatar.cc/150?u=${user?.short_id || user.uid}`}
-                  alt="User Avatar"
-                  className="mine-avatar-img"
-                />
+        <div className="wd-profileCard">
+          <div className="wd-profLeft">
+            {/* keep your existing avatar circle style.
+               If you want the real photo, uncomment the <img> */}
+            <div className="wd-avatar" aria-hidden="true">
+              {/* {avatarUrl ? <img src={avatarUrl} alt="" /> : null} */}
+            </div>
+
+            <div className="wd-profMeta">
+              <div className="wd-profRow">
+                <span className="wd-profName">{me?.name || me?.nickname || "User"}</span>
+                <span className="wd-vip">VIP {vip}</span>
               </div>
               <div className="wd-profMeta">
                 <div className="wd-profRow">
@@ -63,10 +103,9 @@ export default function WithdrawalMethod() {
                   <span className="wd-vip">VIP {user.vip}</span>
                 </div>
 
-                <div className="wd-codeRow">
-                  <span className="wd-codeLabel">UID:</span>
-                  <span className="wd-codePill">{user.uid}</span>
-                </div>
+              <div className="wd-codeRow">
+                <span className="wd-codeLabel">Reference code:</span>
+                <span className="wd-codePill">{referenceCode}</span>
               </div>
             </div>
           </div>
@@ -75,7 +114,7 @@ export default function WithdrawalMethod() {
             <div className="wd-balLabel">Available Balance</div>
             <div className="wd-balValue">
               <span className="wd-balUnit">USDT</span>
-              <span className="wd-balNum">{money(user.balance)}</span>
+              <span className="wd-balNum">{money(balance)}</span>
             </div>
             <div className="wd-balHint">Withdrawals may require verification</div>
           </div>
@@ -83,12 +122,7 @@ export default function WithdrawalMethod() {
 
         {/* Options */}
         <div className="wd-options">
-          <div
-            className="wd-card"
-            onClick={() => nav("/member/withdraw/crypto")}
-            role="button"
-            tabIndex={0}
-          >
+          <div className="wd-card" onClick={() => nav("/member/withdraw/crypto")} role="button" tabIndex={0}>
             <div className="wd-cardHead">
               <div className="dm-icon crypto usdt-badge">
                 <img src={usdtIcon} alt="USDT" className="dm-icon-img" width="35" />
@@ -121,12 +155,7 @@ export default function WithdrawalMethod() {
             </button>
           </div>
 
-          <div
-            className="wd-card"
-            onClick={() => nav("/member/withdraw/bank")}
-            role="button"
-            tabIndex={0}
-          >
+          <div className="wd-card" onClick={() => nav("/member/withdraw/bank")} role="button" tabIndex={0}>
             <div className="wd-cardHead">
               <div className="wd-icon bank">🏦</div>
               <div className="wd-cardText">
@@ -175,8 +204,7 @@ export default function WithdrawalMethod() {
         </div>
       </div>
 
-      {/* ✅ SAME bottom bar (reusable) */}
-      <MemberBottomNav active="mine" />      
+      <MemberBottomNav active="mine" />
     </div>
   );
 }
