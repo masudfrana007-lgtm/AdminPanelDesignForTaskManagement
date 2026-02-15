@@ -458,3 +458,10 @@
   .pieRow{ grid-template-columns: 1fr; }
   .txBody{ max-height: 260px; }
 }
+
+/* DashboardMain.css */
+.db {
+  width: 100%;
+  /* if your sidebar is fixed and AppLayout doesn't already offset content */
+  /* margin-left: 240px; */
+}
