@@ -1,6 +1,5 @@
 import express from "express";
 import bcrypt from "bcrypt";
-import { nanoid } from "nanoid";
 import { pool } from "../db.js";
 import { auth } from "../middleware/auth.js";
 import { allowRoles } from "../middleware/roles.js";
@@ -14,7 +13,7 @@ router.post("/", auth, async (req, res) => {
     const fieldErrors = parsed.error.flatten().fieldErrors;
     return res.status(400).json({
       message: "Validation failed",
-      fieldErrors
+      fieldErrors,
     });
   }
 
@@ -32,33 +31,31 @@ router.post("/", auth, async (req, res) => {
 
   const hash = await bcrypt.hash(password, 10);
 
-  let inserted = false;
-  let result;
+  try {
+    // ✅ DB trigger generates short_id (Mxxxxx / Axxxxx)
+    const r = await pool.query(
+      `INSERT INTO users (name, email, password, role, created_by)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, short_id, name, email, role, created_by, created_at`,
+      [name, email, hash, role, req.user.id]
+    );
 
-  while (!inserted) {
-    const shortId = nanoid(8);
+    return res.status(201).json(r.rows[0]);
+  } catch (e) {
+    const msg = String(e);
 
-    try {
-      const r = await pool.query(
-        `INSERT INTO users (short_id, name, email, password, role, created_by)
-         VALUES ($1, $2, $3, $4, $5, $6)
-         RETURNING id, short_id, name, email, role, created_by, created_at`,
-        [shortId, name, email, hash, role, req.user.id]
-      );
-      result = r.rows[0];
-      inserted = true;
-    } catch (e) {
-      if (String(e).includes("short_id")) {
-        continue; // collision → retry
-      }
-      if (String(e).includes("users_email_key")) {
-        return res.status(409).json({ message: "Email already exists" });
-      }
-      return res.status(500).json({ message: "Server error" });
+    if (msg.includes("users_email_key")) {
+      return res.status(409).json({ message: "Email already exists" });
     }
-  }
 
-  res.status(201).json(result);
+    // optional: if short_id conflicts (should not happen with your DB loop)
+    if (msg.includes("users_short_id_key") || msg.includes("short_id")) {
+      return res.status(500).json({ message: "Short ID generation conflict" });
+    }
+
+    console.error(e);
+    return res.status(500).json({ message: "Server error" });
+  }
 });
 
 router.get("/", auth, allowRoles("admin", "owner"), async (req, res) => {

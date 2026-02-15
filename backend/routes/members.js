@@ -1,6 +1,5 @@
 import express from "express";
 import bcrypt from "bcrypt";
-import { nanoid } from "nanoid";
 import { pool } from "../db.js";
 import { auth } from "../middleware/auth.js";
 import { allowRoles } from "../middleware/roles.js";
@@ -25,7 +24,7 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    // ✅ referral_code MUST match users.short_id (owner/agent)
+    // referral_code must match users.short_id (old or new format both work)
     const ref = await pool.query(
       `SELECT id
        FROM users
@@ -44,48 +43,46 @@ router.post("/", async (req, res) => {
     const passHash = await bcrypt.hash(password, 10);
     const approval_status = "pending";
 
-    while (true) {
-      try {
-        const short_id = nanoid(8);
+    try {
+      // ✅ DO NOT pass short_id; DB trigger generates Uxxxxx
+      const r = await pool.query(
+        `INSERT INTO members
+         (nickname, phone, country, password,
+          sponsor_id, ranking, withdraw_privilege, approval_status, created_by, gender)
+         VALUES
+         ($1,$2,$3,$4,$5,'Trial',true,$6,$7,$8)
+         RETURNING id, short_id, nickname, phone, country, sponsor_id,
+                  ranking, withdraw_privilege, approval_status, created_by, created_at, gender`,
+        [
+          nickname,
+          phone,
+          country,
+          passHash,
+          sponsor_id,
+          approval_status,
+          sponsor_id,
+          gender,
+        ]
+      );
 
-        const r = await pool.query(
-          `INSERT INTO members
-           (short_id, nickname, phone, country, password,
-            sponsor_id, ranking, withdraw_privilege, approval_status, created_by, gender)
-           VALUES
-           ($1,$2,$3,$4,$5,$6,'Trial',true,$7,$8,$9)
-           RETURNING id, short_id, nickname, phone, country, sponsor_id,
-                    ranking, withdraw_privilege, approval_status, created_by, created_at, gender`,
-          [
-            short_id,
-            nickname,
-            phone,
-            country,
-            passHash,
-            sponsor_id,
-            approval_status,
-            sponsor_id,   
-            gender,
-          ]
-        );
+      return res.status(201).json(r.rows[0]);
+    } catch (e) {
+      const msg = String(e);
 
-        return res.status(201).json(r.rows[0]);
-      } catch (e) {
-        const msg = String(e);
-
-        if (msg.includes("members_short_id_key")) continue;
-
-        if (msg.includes("members_nickname_key")) {
-          return res.status(400).json({ message: "Username already exists" });
-        }
-
-        if (msg.includes("members_phone_key")) {
-          return res.status(400).json({ message: "Phone number already exists" });
-        }
-
-        console.error(e);
-        return res.status(500).json({ message: "Server error" });
+      if (msg.includes("members_nickname_key")) {
+        return res.status(400).json({ message: "Username already exists" });
       }
+      if (msg.includes("members_phone_key")) {
+        return res.status(400).json({ message: "Phone number already exists" });
+      }
+
+      // if short_id generation somehow conflicts (shouldn't, if DB function checks)
+      if (msg.includes("members_short_id_key") || msg.includes("short_id")) {
+        return res.status(500).json({ message: "Short ID generation conflict" });
+      }
+
+      console.error(e);
+      return res.status(500).json({ message: "Server error" });
     }
   } catch (e) {
     console.error(e);
