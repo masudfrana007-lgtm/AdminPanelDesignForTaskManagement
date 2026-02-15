@@ -11,5 +11,5 @@ export default defineConfig({
     "**/*.GIF",
     "**/*.SVG",
   ],
-  server: { port: 5100 },
+  server: { port: 5173 },
 });

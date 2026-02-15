@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/WithdrawalMethod.css";
 import withdrawBg from "../assets/bg/withdraw.png";
+import usdtIcon from "../assets/icons/usdt.png";
 import MemberBottomNav from "../components/MemberBottomNav";
 import memberApi from "../services/memberApi";
 
@@ -97,11 +98,6 @@ export default function WithdrawalMethod() {
                 <span className="wd-profName">{me?.name || me?.nickname || "User"}</span>
                 <span className="wd-vip">VIP {vip}</span>
               </div>
-              <div className="wd-profMeta">
-                <div className="wd-profRow">
-                  <span className="wd-profName">{user.name}</span>
-                  <span className="wd-vip">VIP {user.vip}</span>
-                </div>
 
               <div className="wd-codeRow">
                 <span className="wd-codeLabel">Reference code:</span>
@@ -118,7 +114,7 @@ export default function WithdrawalMethod() {
             </div>
             <div className="wd-balHint">Withdrawals may require verification</div>
           </div>
-        </section>
+        </div>
 
         {/* Options */}
         <div className="wd-options">
