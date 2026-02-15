@@ -157,6 +157,7 @@
   font-size: 12px;
   opacity: 0.85;
   font-weight: 800;
+  text-align: end;
 }
 
 .wd-balValue {
@@ -182,6 +183,7 @@
   margin-top: 6px;
   font-size: 12px;
   opacity: 0.75;
+  text-align: end;
 }
 
 /* Options */

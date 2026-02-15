@@ -602,3 +602,48 @@
 .tl-row:not(.tl-rowHead):has(.tl-status.is-pending){
   display: none !important;
 }
+
+/* ===== Set Completed Summary ===== */
+.td-summaryCard{
+  background:
+    radial-gradient(900px 260px at 10% 0%, rgba(34,197,94,.18), transparent 60%),
+    radial-gradient(700px 220px at 100% 0%, rgba(37,99,235,.16), transparent 55%),
+    #fff;
+}
+
+.td-summaryGrid{
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.td-summaryBox{
+  border: 1px solid var(--line2);
+  border-radius: 16px;
+  padding: 12px;
+  background: rgba(15,23,42,.02);
+}
+
+.td-summaryBox.isProfit{
+  border-color: rgba(22,163,74,.22);
+  background: rgba(22,163,74,.10);
+}
+
+.td-summaryLabel{
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 900;
+}
+
+.td-summaryValue{
+  margin-top: 6px;
+  font-size: 18px;
+  font-weight: 1000;
+}
+
+@media (min-width: 720px){
+  .td-summaryGrid{
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}

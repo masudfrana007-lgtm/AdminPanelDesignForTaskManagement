@@ -632,8 +632,9 @@
 @media(max-width:720px){
   .db3-grid{ grid-template-columns:1fr; }
   .db3-stickyBar{ display:flex; }
-  .wrapW{ padding-bottom: 86px; } /* space for sticky bar */
+  .wrapW{ margin-top: 2px !important; padding-top: 0 !important; padding-bottom: 86px; } /* space for sticky bar */
   .db3-desktopOnly{ display:none; }
+  .db3-netNote{ display: none; } /* hide on mobile */
 }
 
 /* Desktop balance layout */
@@ -643,9 +644,9 @@
 /* ✅ Ultra-compact but readable mobile balance card */
 @media (max-width: 720px){
   .balanceCardAx{
-    padding: 8px 10px !important;
-    gap: 6px !important;
-    border-radius: 14px;
+    padding: 6px 10px !important;
+    gap: 4px !important;
+    border-radius: 12px;
   }
 
   /* Hide right stats to save height */
@@ -655,26 +656,26 @@
 
   /* Label */
   .balanceLabelAx{
-    font-size: 11px;     /* ⬆️ slightly bigger */
-    margin-bottom: 2px;
+    font-size: 10px;
+    margin-bottom: 1px;
   }
 
   /* MAIN BALANCE (important) */
   .balanceValueW{
-    font-size: 22px;     /* ⬆️ increased for clarity */
-    line-height: 1.1;
-    margin-top: 2px;
+    font-size: 18px;
+    line-height: 1;
+    margin-top: 1px;
   }
 
   /* Pills */
   .metaRowW{
-    margin-top: 6px;
-    gap: 6px;
+    margin-top: 4px;
+    gap: 4px;
   }
 
   .pillW{
-    padding: 5px 9px;
-    font-size: 11px;     /* ⬆️ readable but compact */
+    padding: 4px 8px;
+    font-size: 10px;
   }
 
   /* Tone down effects */

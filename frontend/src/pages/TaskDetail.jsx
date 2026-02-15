@@ -1,3 +1,4 @@
+// src/pages/TaskDetail.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/TaskDetail.css";
@@ -42,6 +43,21 @@ export default function TaskDetail() {
 
   // live payload
   const [activeSet, setActiveSet] = useState(null);
+
+  // ✅ keep final summary even if backend returns no active set
+  const [finalSummary, setFinalSummary] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("td_finalSummary") || "null");
+    } catch {
+      return null;
+    }
+  });
+
+  // persist
+  useEffect(() => {
+    if (finalSummary) localStorage.setItem("td_finalSummary", JSON.stringify(finalSummary));
+    else localStorage.removeItem("td_finalSummary");
+  }, [finalSummary]);
 
   // ✅ member wallet/profile (balance)
   const [me, setMe] = useState(null);
@@ -97,34 +113,31 @@ export default function TaskDetail() {
     load();
   }, []);
 
-// ✅ all tasks from backend (full list)
-const allTasks = Array.isArray(activeSet?.tasks) ? activeSet.tasks : [];
+  // ✅ derive data from backend
+  const allTasks = Array.isArray(activeSet?.tasks) ? activeSet.tasks : [];
+  const currentIndex = Number(activeSet?.assignment?.current_task_index || 0);
+  const totalTasks = Number(activeSet?.total_tasks || allTasks.length || 0);
 
-const currentIndex = Number(activeSet?.assignment?.current_task_index || 0);
+  // ✅ HIDE pending/future tasks: show only completed + current
+  const tasks = useMemo(() => {
+    const end = Math.min(currentIndex + 1, allTasks.length); // include current only
+    return allTasks.slice(0, end);
+  }, [allTasks, currentIndex]);
 
-// ✅ keep REAL total from backend
-const totalTasks = Number(activeSet?.total_tasks || allTasks.length || 0);
+  // ✅ keep viewIndex on current task, but safe
+  useEffect(() => {
+    if (!Number.isFinite(currentIndex)) return;
+    setViewIndex(Math.min(currentIndex, Math.max(0, tasks.length - 1)));
+  }, [currentIndex, tasks.length]);
 
-// ✅ HIDE pending/future tasks: show only completed + current
-const tasks = useMemo(() => {
-  const end = Math.min(currentIndex + 1, allTasks.length); // include current only
-  return allTasks.slice(0, end);
-}, [allTasks, currentIndex]);
+  // ✅ if tasks shrink, clamp index
+  useEffect(() => {
+    setViewIndex((i) => Math.min(i, Math.max(0, tasks.length - 1)));
+  }, [tasks.length]);
 
-// ✅ keep viewIndex on current task, but safe
-useEffect(() => {
-  if (!Number.isFinite(currentIndex)) return;
-  setViewIndex(Math.min(currentIndex, Math.max(0, tasks.length - 1)));
-}, [currentIndex, tasks.length]);
-
-// ✅ if tasks shrink, clamp index
-useEffect(() => {
-  setViewIndex((i) => Math.min(i, Math.max(0, tasks.length - 1)));
-}, [tasks.length]);
-
-// bounds (now based on filtered tasks)
-const canPrev = viewIndex > 0;
-const canNext = viewIndex < tasks.length - 1;
+  // bounds (now based on filtered tasks)
+  const canPrev = viewIndex > 0;
+  const canNext = viewIndex < tasks.length - 1;
 
   // ✅ only current task can be submitted
   const isCurrentTask = viewIndex === currentIndex;
@@ -132,9 +145,8 @@ const canNext = viewIndex < tasks.length - 1;
   // ✅ show the task at viewIndex
   const t = tasks[viewIndex] || null;
 
-  // ✅ map backend -> UI
+  // ✅ map backend -> UI task
   const task = useMemo(() => {
-
     if (!activeSet?.active || !t) return null;
 
     return {
@@ -164,7 +176,6 @@ const canNext = viewIndex < tasks.length - 1;
   // ✅ Total Profit from API-completed orders (tasks before currentIndex)
   const totalProfit = useMemo(() => {
     if (!Array.isArray(tasks) || currentIndex <= 0) return 0;
-
     return tasks.slice(0, currentIndex).reduce((sum, ct) => {
       const qty = Number(ct.quantity || 1);
       const unitPrice = Number(ct.rate || 0);
@@ -177,6 +188,53 @@ const canNext = viewIndex < tasks.length - 1;
   // ✅ completed count is backend progress
   const completedCount = currentIndex;
 
+  // ✅ detect set completion (when currentIndex reaches totalTasks)
+  const isSetCompleted = useMemo(() => {
+    return Number(totalTasks) > 0 && Number(currentIndex) >= Number(totalTasks);
+  }, [totalTasks, currentIndex]);
+
+  // ✅ session summary (based on completed tasks)
+  const sessionSummary = useMemo(() => {
+    const completed = Math.min(Number(currentIndex) || 0, Number(totalTasks) || 0);
+
+    const rows = allTasks.slice(0, completed).map((ct) => {
+      const qty = Number(ct.quantity || 1);
+      const rate = Number(ct.rate || 0);
+      const amount = qty * rate;
+      const profit = (amount * Number(ct.commission_rate || 0)) / 100;
+      return { amount, profit };
+    });
+
+    const totalAmount = rows.reduce((s, x) => s + x.amount, 0);
+    const totalProfitCalc = rows.reduce((s, x) => s + x.profit, 0);
+
+    return {
+      completed,
+      total: Number(totalTasks) || 0,
+      totalAmount,
+      totalProfit: totalProfitCalc,
+      setName: activeSet?.set?.name ?? "-",
+      sponsor: activeSet?.sponsor_short_id ?? "—",
+      assignedAt: activeSet?.assignment?.created_at ?? null,
+      // ✅ a key so we can clear old summary when a new set starts
+      setKey: `${activeSet?.set?.name ?? "-"}|${activeSet?.sponsor_short_id ?? "—"}|${activeSet?.assignment?.created_at ?? "-"}`,
+    };
+  }, [allTasks, currentIndex, totalTasks, activeSet]);
+
+  // ✅ clear old stored summary when a NEW set starts (so old summary doesn't show later)
+  useEffect(() => {
+    if (!activeSet?.active) return;
+    if (!totalTasks) return;
+
+    const hasOngoingSet = currentIndex < totalTasks;
+    if (!hasOngoingSet) return;
+
+    if (finalSummary?.setKey && finalSummary.setKey !== sessionSummary.setKey) {
+      setFinalSummary(null);
+    }
+    // if no stored summary, nothing to do
+  }, [activeSet?.active, currentIndex, totalTasks, sessionSummary.setKey, finalSummary?.setKey]);
+
   // ✅ Combo task: show big win confetti when page loads (per task)
   useEffect(() => {
     if (!task) return;
@@ -187,9 +245,7 @@ const canNext = viewIndex < tasks.length - 1;
 
     setShowComboWin(true);
 
-    // 🎉 festival-style confetti for ~2.2s
     const end = Date.now() + 5000;
-
     const frame = () => {
       confetti({
         particleCount: 18,
@@ -197,16 +253,13 @@ const canNext = viewIndex < tasks.length - 1;
         startVelocity: 20,
         gravity: 1.2,
         ticks: 300,
-        origin: { x: Math.random(), y: -0.05 }, // ✅ from top
+        origin: { x: Math.random(), y: -0.05 },
       });
 
       if (Date.now() < end) requestAnimationFrame(frame);
     };
 
     frame();
-
-    // auto close after a bit (optional)
-    // ✅ do NOT auto close; user must click "Start Now" (or overlay)
     return () => {};
   }, [task ? `${task.id}:${task.type}` : null, isCurrentTask]);
 
@@ -249,6 +302,19 @@ const canNext = viewIndex < tasks.length - 1;
   // ✅ ONLY place that completes current task in backend
   const proceedToNextTask = async () => {
     if (isLoading) return;
+
+    // ✅ if NEXT completion ends the set, snapshot NOW (before backend clears active-set)
+    const willFinish = Number(totalTasks) > 0 && Number(currentIndex + 1) >= Number(totalTasks);
+
+    if (willFinish) {
+      setFinalSummary({
+        ...sessionSummary,
+        completed: Number(totalTasks),
+        total: Number(totalTasks),
+        finishedAt: new Date().toISOString(),
+      });
+    }
+
     try {
       await memberApi.post("/member/complete-task", {});
       setIsSuccess(false);
@@ -258,6 +324,7 @@ const canNext = viewIndex < tasks.length - 1;
     }
   };
 
+  // ✅ loading first paint
   if (loading && !activeSet) {
     return (
       <div className="td-page" style={{ padding: 16 }}>
@@ -266,20 +333,129 @@ const canNext = viewIndex < tasks.length - 1;
     );
   }
 
+  // ✅ if backend says no task, show summary if we have it
   if (!task) {
+    // 1) ✅ stored snapshot summary (works even when backend returns activeSet=null)
+    if (
+      finalSummary &&
+      Number(finalSummary.total) > 0 &&
+      Number(finalSummary.completed) >= Number(finalSummary.total)
+    ) {
+      return (
+        <div className="td-page">
+          <header className="td-top">
+            <div className="td-topInner">
+              <button className="td-back" onClick={() => nav(-1)} type="button">
+                ←
+              </button>
+
+              <div className="td-headMid">
+                <div className="td-titleRow">
+                  <div className="td-pageTitle">Set Completed</div>
+                  <div className="td-pageSub">
+                    SET-{finalSummary.setName} • Sponsor {finalSummary.sponsor}
+                  </div>
+                </div>
+              </div>
+
+              <div className="td-finance">
+                <div className="td-finItem">
+                  <div className="td-finLabel">Wallet Balance</div>
+                  <div className="td-finValue">${money(balance)}</div>
+                </div>
+
+                <div className="td-finItem">
+                  <div className="td-finLabel">Total Profit Earned</div>
+                  <div className="td-finValue is-profit">+${money(finalSummary.totalProfit)}</div>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <main className="td-wrap">
+            <div className="td-container">
+              <section className="td-card td-summaryCard">
+                <div className="td-cardHead">
+                  <div>
+                    <div className="td-cardTitle">🎉 Congratulations!</div>
+                    <div className="td-cardSub">
+                      You completed <b>{finalSummary.completed}</b> / <b>{finalSummary.total}</b> orders.
+                    </div>
+                  </div>
+                  <span className="td-pill ok">Completed</span>
+                </div>
+
+                <div className="td-summaryGrid">
+                  <div className="td-summaryBox">
+                    <div className="td-summaryLabel">Orders Completed</div>
+                    <div className="td-summaryValue">
+                      {finalSummary.completed}/{finalSummary.total}
+                    </div>
+                  </div>
+
+                  <div className="td-summaryBox">
+                    <div className="td-summaryLabel">Total Order Volume</div>
+                    <div className="td-summaryValue">${money(finalSummary.totalAmount)}</div>
+                  </div>
+
+                  <div className="td-summaryBox isProfit">
+                    <div className="td-summaryLabel">Total Profit</div>
+                    <div className="td-summaryValue">+${money(finalSummary.totalProfit)}</div>
+                  </div>
+                </div>
+
+                <div className="td-actions" style={{ marginTop: 14 }}>
+                  <button className="td-finishBtn is-next" type="button" onClick={() => nav("/member/tasks")}>
+                    Back to Tasks →
+                  </button>
+
+                  <button className="td-finishBtn" type="button" onClick={() => nav("/member/history")}>
+                    View History
+                  </button>
+                </div>
+              </section>
+            </div>
+          </main>
+
+          <MemberBottomNav active="mine" />
+        </div>
+      );
+    }
+
+    // 2) optional: live completion (rare if backend keeps activeSet)
+    if (isSetCompleted) {
+      return (
+        <div className="td-page" style={{ padding: 16 }}>
+          <button className="td-back" onClick={() => nav(-1)} type="button">
+            ←
+          </button>
+          <div style={{ marginTop: 10 }}>Set completed.</div>
+          <div style={{ marginTop: 10 }}>
+            <button className="td-finishBtn is-next" type="button" onClick={() => nav("/member/history")}>
+              View History →
+            </button>
+          </div>
+          <MemberBottomNav active="mine" />
+        </div>
+      );
+    }
+
+    // 3) normal empty state
     return (
       <div className="td-page" style={{ padding: 16 }}>
         <button className="td-back" onClick={() => nav(-1)} type="button">
           ←
         </button>
         <div style={{ marginTop: 10 }}>{err || "No active order."}</div>
+        <MemberBottomNav active="mine" />
       </div>
     );
   }
 
+  // ✅ normal task detail UI
   return (
     <div className="td-page">
-      {/* HEADER (matches your CSS) */}
+      {/* HEADER */}
       <header className="td-top">
         <div className="td-topInner">
           <button className="td-back" onClick={() => nav(-1)} disabled={isLoading} type="button">
@@ -390,8 +566,7 @@ const canNext = viewIndex < tasks.length - 1;
                   <span className="td-pill warn">{isCurrentTask ? "Pending" : "Locked"}</span>
                 </div>
 
-
-                    <div className="td-lr">
+                <div className="td-lr">
                   {/* LEFT */}
                   <div className="td-left">
                     <div className="td-imageBox">
@@ -456,39 +631,16 @@ const canNext = viewIndex < tasks.length - 1;
                       )}
                     </div>
                   </div>
-                 </div>
+                </div>
 
-
-                  {/* ✅ FULL WIDTH BELOW BOTH */}
-                  {/*<div className="td-miniMeta" style={{ gridColumn: "1 / -1" }}>*/}
-                 <div className="td-miniMeta">
-{/*                    <div className="td-miniRow">
-                      <span>Created</span>
-                      <b>{fmtGMT(task.assignedAt)}</b>
+                <div className="td-miniMeta">
+                  {task.description ? (
+                    <div className="td-miniRow" style={{ alignItems: "flex-start" }}>
+                      <span>Description</span>
+                      <b style={{ maxWidth: "70%", lineHeight: 1.45 }}>{task.description}</b>
                     </div>
-
-                    <div className="td-miniRow">
-                      <span>Order Amount</span>
-                      <b>${money(orderAmount)}</b>
-                    </div>
-
-                    <div className="td-miniRow">
-                      <span>Estimated Commission</span>
-                      <b className="td-profitText">+${money(taskProfit)}</b>
-                    </div>
-*/}
-                    {/* ✅ Product Description */}
-                    {task.description ? (
-                      <div className="td-miniRow" style={{ alignItems: "flex-start" }}>
-                        <span>Description</span>
-                        <b style={{ maxWidth: "70%", lineHeight: 1.45 }}>
-                          {task.description}
-                        </b>
-                      </div>
-                    ) : null}
-                  </div>
-
-
+                  ) : null}
+                </div>
               </section>
 
               <section className="td-rules">
@@ -505,7 +657,7 @@ const canNext = viewIndex < tasks.length - 1;
         </div>
       </main>
 
-      {/* BOTTOM BAR (matches your CSS) */}
+      {/* BOTTOM BAR */}
       <footer className="td-bottomBar">
         <div className="td-bottomInner">
           <div className="td-progress">
@@ -529,16 +681,8 @@ const canNext = viewIndex < tasks.length - 1;
 
       {/* ✅ COMBO BIG WIN OVERLAY */}
       {showComboWin && (
-        <div
-          className="td-overlay"
-          style={{ background: "rgba(0,0,0,.70)", zIndex: 9999 }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div
-            className="td-successCard"
-            style={{ maxWidth: 560, textAlign: "center", transform: "scale(1.06)" }}
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="td-overlay" style={{ background: "rgba(0,0,0,.70)", zIndex: 9999 }} onClick={(e) => e.stopPropagation()}>
+          <div className="td-successCard" style={{ maxWidth: 560, textAlign: "center", transform: "scale(1.06)" }} onClick={(e) => e.stopPropagation()}>
             <h2 style={{ fontSize: 32, marginBottom: 8 }}>🎉 Congratulations!</h2>
             <p style={{ fontSize: 16, opacity: 0.95, marginBottom: 16 }}>
               You received a <b>COMBO</b> task — <b>Big Win Festival</b> 🎊
@@ -556,24 +700,22 @@ const canNext = viewIndex < tasks.length - 1;
             </div>
 
             <div className="td-successBtns" style={{ justifyContent: "center" }}>
-
               <button
                 className="td-finishBtn is-next"
                 type="button"
                 onClick={() => {
-                  setShowComboWin(false); // close modal (also stops confetti if you tied it to showComboWin)
-                  submit();               // ✅ same logic as "Submit Order"
+                  setShowComboWin(false);
+                  submit();
                 }}
               >
                 Start Now →
               </button>
-
             </div>
           </div>
         </div>
       )}
 
-      {/* LOADING OVERLAY (matches your CSS) */}
+      {/* LOADING OVERLAY */}
       {isLoading && (
         <div className="td-overlay">
           <div className="td-loadingCard">
@@ -586,7 +728,7 @@ const canNext = viewIndex < tasks.length - 1;
         </div>
       )}
 
-      {/* SUCCESS OVERLAY (matches your CSS) */}
+      {/* SUCCESS OVERLAY */}
       {isSuccess && (
         <div className="td-overlay success">
           <div className="td-successCard">
@@ -625,12 +767,9 @@ const canNext = viewIndex < tasks.length - 1;
         </div>
       )}
 
-            {/* ✅ INSUFFICIENT BALANCE POPUP */}
+      {/* ✅ INSUFFICIENT BALANCE POPUP */}
       {showInsufficient && (
-        <div
-          className="td-modalOverlay"
-          onClick={(e) => e.stopPropagation()} // ✅ prevent outside close
-        >          
+        <div className="td-modalOverlay" onClick={(e) => e.stopPropagation()}>
           <div className="td-modalCard" onClick={(e) => e.stopPropagation()}>
             <div className="td-modalTop">
               <div className="td-modalTitle">Recharge Required</div>
@@ -639,9 +778,7 @@ const canNext = viewIndex < tasks.length - 1;
               </button>
             </div>
 
-            <div className="td-modalText">
-              your current balance is lower than the package order, please recharge
-            </div>
+            <div className="td-modalText">your current balance is lower than the package order, please recharge</div>
 
             <div className="td-modalGrid">
               <div className="td-modalBox">
@@ -674,9 +811,7 @@ const canNext = viewIndex < tasks.length - 1;
         </div>
       )}
 
-
-      {/* ✅ SAME bottom bar (reusable) */}
-      <MemberBottomNav active="mine" />            
+      <MemberBottomNav active="mine" />
     </div>
   );
 }
