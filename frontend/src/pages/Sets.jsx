@@ -68,6 +68,35 @@ export default function Sets() {
     });
   }, [tasksInSet, taskQuery]);
 
+  // ---- Set summary numbers (for Set Details header) ----
+  const setSummary = useMemo(() => {
+    const totalTask = tasksInSet.length;
+
+    const isCombo = (t) => {
+      const x = String(t.task_type || "").trim().toLowerCase();
+      return x === "combo" || x.includes("combo");
+    };
+
+    let totalCombo = 0;
+    let totalComboValue = 0;
+    let totalProfit = 0;
+
+    for (const t of tasksInSet) {
+      const qty = Number(t.quantity || 0);
+      const rate = Number(t.rate || 0);
+      const price = Number(t.price ?? qty * rate);
+
+      totalProfit += commissionAmount(t);
+
+      if (isCombo(t)) {
+        totalCombo += 1;
+        totalComboValue += price;
+      }
+    }
+
+    return { totalTask, totalCombo, totalComboValue, totalProfit };
+  }, [tasksInSet]);
+
   const toast = (msg, ms = 1200) => {
     setOk(msg);
     setTimeout(() => setOk(""), ms);
@@ -325,19 +354,24 @@ const deleteSet = async (id) => {
               <th style={{ width: 90 }}>Rate</th>
               <th style={{ width: 120 }}>Comm %</th>
               <th style={{ width: 120 }}>Comm</th>
-              <th style={{ width: 120 }}>Price</th>
-              <th style={{ width: 210, textAlign: "right" }}>Action</th>
+              <th style={{ width: 80 }}>Price</th>
+              <th style={{ width: 120, textAlign: "center" }}>Action</th>
             </tr>
           </thead>
 
           <tbody>
             {rows.map((t, idx) => {
               const isEditing = !!editingPos[t.id];
+
+                const isCombo =
+                  String(t.task_type || "").trim().toLowerCase() === "combo" ||
+                  String(t.task_type || "").trim().toLowerCase().includes("combo");
+
               const price =
                 t.price ?? Number(t.quantity || 0) * Number(t.rate || 0);
 
               return (
-                <tr key={t.id}>
+                <tr key={t.id} className={isCombo ? "sx-rowCombo" : ""}>
                   <td>
                     <span className="sx-pill">{t.position ?? idx + 1}</span>
                   </td>
@@ -572,27 +606,51 @@ const deleteSet = async (id) => {
               </div>
             ) : (
               <>
-                <div className="sx-stickyTop">
-                  <div className="sx-cardTitle">Set Details</div>
-                  <div className="sx-detailRow">
-                    <div>
-                      <div className="sx-detailName">{selectedSet?.name}</div>
-                      <div className="sx-detailSub">
-                        Capacity{" "}
-                        <span className="sx-chip">
-                          {currentCount}/{max}
-                        </span>
-                      </div>
-                    </div>
+<div className="sx-stickyTop">
+  <div className="sx-cardTitle">Set Details</div>
 
-                    <input
-                      className="sx-input"
-                      placeholder="Search tasks (title/type)..."
-                      value={taskQuery}
-                      onChange={(e) => setTaskQuery(e.target.value)}
-                    />
-                  </div>
-                </div>
+  <div className="sx-detailRow">
+    <div>
+      <div className="sx-detailName">{selectedSet?.name}</div>
+      <div className="sx-detailSub">
+        Capacity{" "}
+        <span className="sx-chip">
+          {currentCount}/{max}
+        </span>
+      </div>
+
+      {/* ✅ 4 summary boxes */}
+      <div className="sx-metrics">
+        <div className="sx-metric">
+          <div className="sx-metricLabel">Total Task</div>
+          <div className="sx-metricValue">{setSummary.totalTask}</div>
+        </div>
+
+        <div className="sx-metric">
+          <div className="sx-metricLabel">Total Combo</div>
+          <div className="sx-metricValue">{setSummary.totalCombo}</div>
+        </div>
+
+        <div className="sx-metric">
+          <div className="sx-metricLabel">Total Combo Value</div>
+          <div className="sx-metricValue">{money(setSummary.totalComboValue)}</div>
+        </div>
+
+        <div className="sx-metric">
+          <div className="sx-metricLabel">Total Profit</div>
+          <div className="sx-metricValue">{money(setSummary.totalProfit)}</div>
+        </div>
+      </div>
+    </div>
+
+    <input
+      className="sx-input"
+      placeholder="Search tasks (title/type)..."
+      value={taskQuery}
+      onChange={(e) => setTaskQuery(e.target.value)}
+    />
+  </div>
+</div>
 
                 <div className="sx-section">
                   <div className="sx-sectionTop">
