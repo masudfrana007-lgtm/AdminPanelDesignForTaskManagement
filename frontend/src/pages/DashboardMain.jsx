@@ -321,9 +321,6 @@ export default function DashboardMain() {
             <article className="panel panelTx">
               <div className="pHead">
                 <div className="pTitle">Recent Transactions</div>
-                <button className="linkBtn" type="button" onClick={() => nav("/wallet-ledger")}>
-                  View All
-                </button>
               </div>
 
               <div className="txTable">

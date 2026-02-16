@@ -153,20 +153,57 @@ router.get("/dashboard/recent", auth, async (req, res) => {
 
     const r = await pool.query(
       `
-      SELECT
-        wl.id,
-        wl.type,
-        wl.direction,
-        wl.amount,
-        wl.ref_type,
-        wl.ref_id,
-        wl.note,
-        wl.created_at,
-        m.nickname AS member_nickname,
-        m.short_id AS member_short_id
-      FROM wallet_ledger wl
-      JOIN members m ON m.id = wl.member_id
-      ORDER BY wl.created_at DESC
+      SELECT * FROM (
+        -- 1) ledger (commission/deposit/withdraw if you insert them)
+        SELECT
+          wl.id::text                AS id,
+          wl.type                    AS type,
+          wl.direction               AS direction,
+          wl.amount                  AS amount,
+          wl.ref_type                AS ref_type,
+          wl.ref_id                  AS ref_id,
+          wl.note                    AS note,
+          wl.created_at              AS created_at,
+          m.nickname                 AS member_nickname,
+          m.short_id                 AS member_short_id
+        FROM wallet_ledger wl
+        JOIN members m ON m.id = wl.member_id
+
+        UNION ALL
+
+        -- 2) deposits (fallback)
+        SELECT
+          ('D' || d.id)::text        AS id,
+          'deposit'                  AS type,
+          'credit'                   AS direction,
+          d.amount                   AS amount,
+          'deposit'                  AS ref_type,
+          d.id                       AS ref_id,
+          d.status                   AS note,
+          d.created_at               AS created_at,
+          m.nickname                 AS member_nickname,
+          m.short_id                 AS member_short_id
+        FROM deposits d
+        JOIN members m ON m.id = d.member_id
+
+        UNION ALL
+
+        -- 3) withdrawals (fallback)
+        SELECT
+          ('W' || w.id)::text        AS id,
+          'withdraw'                 AS type,
+          'debit'                    AS direction,
+          w.amount                   AS amount,
+          'withdrawal'               AS ref_type,
+          w.id                       AS ref_id,
+          w.status                   AS note,
+          w.created_at               AS created_at,
+          m.nickname                 AS member_nickname,
+          m.short_id                 AS member_short_id
+        FROM withdrawals w
+        JOIN members m ON m.id = w.member_id
+      ) x
+      ORDER BY created_at DESC
       LIMIT $1
       `,
       [limit]
