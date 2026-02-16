@@ -1,3 +1,4 @@
+// src/pages/Sets.jsx
 import { useEffect, useMemo, useState } from "react";
 import api from "../services/api";
 import AppLayout from "../components/AppLayout";
@@ -17,7 +18,7 @@ export default function Sets() {
   const [createForm, setCreateForm] = useState({ name: "", max_tasks: 3 });
 
   const [editingPos, setEditingPos] = useState({}); // taskId -> true/false
-  const [posDraft, setPosDraft] = useState({}); // taskId -> number/string
+  const [posDraft, setPosDraft] = useState({}); // taskId -> number
 
   const [setQuery, setSetQuery] = useState("");
   const [taskQuery, setTaskQuery] = useState("");
@@ -40,23 +41,16 @@ export default function Sets() {
     return (price * cr) / 100;
   };
 
+  const isComboTask = (t) => {
+    const x = String(t.task_type || "").trim().toLowerCase();
+    return x === "combo" || x.includes("combo");
+  };
+
   const filteredSets = useMemo(() => {
     const q = setQuery.trim().toLowerCase();
     if (!q) return sets;
     return sets.filter((s) => String(s.name || "").toLowerCase().includes(q));
   }, [sets, setQuery]);
-
-  const availableTasks = useMemo(() => {
-    const idsInSet = new Set(tasksInSet.map((t) => t.id));
-    const arr = tasks.filter((t) => !idsInSet.has(t.id));
-    const q = taskQuery.trim().toLowerCase();
-    if (!q) return arr;
-    return arr.filter((t) => {
-      const title = String(t.title || "").toLowerCase();
-      const type = String(t.task_type || "").toLowerCase();
-      return title.includes(q) || type.includes(q);
-    });
-  }, [tasks, tasksInSet, taskQuery]);
 
   const filteredTasksInSet = useMemo(() => {
     const q = taskQuery.trim().toLowerCase();
@@ -68,14 +62,23 @@ export default function Sets() {
     });
   }, [tasksInSet, taskQuery]);
 
+  const availableTasks = useMemo(() => {
+    const idsInSet = new Set(tasksInSet.map((t) => t.id));
+    const arr = tasks.filter((t) => !idsInSet.has(t.id));
+
+    const q = taskQuery.trim().toLowerCase();
+    if (!q) return arr;
+
+    return arr.filter((t) => {
+      const title = String(t.title || "").toLowerCase();
+      const type = String(t.task_type || "").toLowerCase();
+      return title.includes(q) || type.includes(q);
+    });
+  }, [tasks, tasksInSet, taskQuery]);
+
   // ---- Set summary numbers (for Set Details header) ----
   const setSummary = useMemo(() => {
     const totalTask = tasksInSet.length;
-
-    const isCombo = (t) => {
-      const x = String(t.task_type || "").trim().toLowerCase();
-      return x === "combo" || x.includes("combo");
-    };
 
     let totalCombo = 0;
     let totalComboValue = 0;
@@ -88,7 +91,7 @@ export default function Sets() {
 
       totalProfit += commissionAmount(t);
 
-      if (isCombo(t)) {
+      if (isComboTask(t)) {
         totalCombo += 1;
         totalComboValue += price;
       }
@@ -153,51 +156,87 @@ export default function Sets() {
     }
   };
 
-const deleteSet = async (id) => {
-  setErr("");
-  setOk("");
+  const deleteSet = async (id) => {
+    setErr("");
+    setOk("");
 
-  // 1) first ask the server what will happen (preview)
-  let preview = null;
-  try {
-    const { data } = await api.get(`/sets/${id}/delete-preview`);
-    preview = data;
-  } catch (e) {
-    // if preview endpoint fails, fallback to old flow
-    const okConfirm = window.confirm(
-      `Delete this set?\n\nThis cannot be undone.`
-    );
-    if (!okConfirm) return;
-
+    // 1) first ask the server what will happen (preview)
+    let preview = null;
     try {
-      await api.delete(`/sets/${id}`);
-      toast("Set deleted");
-      await load();
-      if (selectedSetId === id) {
-        setSelectedSetId(null);
-        setTasksInSet([]);
+      const { data } = await api.get(`/sets/${id}/delete-preview`);
+      preview = data;
+    } catch (e) {
+      // if preview endpoint fails, fallback to old flow
+      const okConfirm = window.confirm(`Delete this set?\n\nThis cannot be undone.`);
+      if (!okConfirm) return;
+
+      try {
+        await api.delete(`/sets/${id}`);
+        toast("Set deleted");
+        await load();
+        if (selectedSetId === id) {
+          setSelectedSetId(null);
+          setTasksInSet([]);
+        }
+        return;
+      } catch (e2) {
+        return setErr(e2?.response?.data?.message || "Failed to delete set");
+      }
+    }
+
+    const setName = preview?.set?.name || `#${id}`;
+    const assignedCount = Number(preview?.assigned_count || 0);
+    const activeCount = Number(preview?.active_count || 0);
+    const activeMembers = Array.isArray(preview?.active_members)
+      ? preview.active_members
+      : [];
+
+    // 2) if unused -> normal delete confirm
+    if (assignedCount === 0) {
+      const okConfirm = window.confirm(
+        `Delete set "${setName}"?\n\nThis will permanently delete the set and all tasks inside it.\n\nThis cannot be undone.`
+      );
+      if (!okConfirm) return;
+
+      try {
+        await api.delete(`/sets/${id}`);
+        toast("Set deleted");
+        await load();
+
+        if (selectedSetId === id) {
+          setSelectedSetId(null);
+          setTasksInSet([]);
+        }
+      } catch (e2) {
+        setErr(e2?.response?.data?.message || "Failed to delete set");
       }
       return;
-    } catch (e2) {
-      return setErr(e2?.response?.data?.message || "Failed to delete set");
     }
-  }
 
-  const setName = preview?.set?.name || `#${id}`;
-  const assignedCount = Number(preview?.assigned_count || 0);
-  const activeCount = Number(preview?.active_count || 0);
-  const activeMembers = Array.isArray(preview?.active_members) ? preview.active_members : [];
+    // 3) used -> show who is running it now, then archive confirm
+    const who = activeMembers
+      .slice(0, 12)
+      .map((m) => `- ${m.short_id || m.member_id} (${m.nickname || "-"})`)
+      .join("\n");
 
-  // 2) if unused -> normal delete confirm
-  if (assignedCount === 0) {
-    const okConfirm = window.confirm(
-      `Delete set "${setName}"?\n\nThis will permanently delete the set and all tasks inside it.\n\nThis cannot be undone.`
-    );
+    const more =
+      activeMembers.length > 12
+        ? `\n...and ${activeMembers.length - 12} more`
+        : "";
+
+    const msg =
+      `This set was USED before, so please confirm before deleting.\n\n` +
+      `Set: "${setName}"\n` +
+      `Assigned total: ${assignedCount}\n` +
+      `Running now: ${activeCount}\n\n` +
+      (activeCount > 0 ? `Running members:\n${who}${more}\n\n` : "") +
+      `Confirm archive? (History/earnings will remain.)`;
+
+    const okConfirm = window.confirm(msg);
     if (!okConfirm) return;
 
     try {
-      await api.delete(`/sets/${id}`);
-      toast("Set deleted");
+      await api.delete(`/sets/${id}?force=true`);
       await load();
 
       if (selectedSetId === id) {
@@ -205,45 +244,9 @@ const deleteSet = async (id) => {
         setTasksInSet([]);
       }
     } catch (e2) {
-      setErr(e2?.response?.data?.message || "Failed to delete set");
+      setErr(e2?.response?.data?.message || "Failed to archive set");
     }
-    return;
-  }
-
-  // 3) used -> show who is running it now, then archive confirm
-  const who = activeMembers
-    .slice(0, 12)
-    .map((m) => `- ${m.short_id || m.member_id} (${m.nickname || "-"})`)
-    .join("\n");
-
-  const more = activeMembers.length > 12 ? `\n...and ${activeMembers.length - 12} more` : "";
-
-  const msg =
-    `This set was USED before, so please confirm before deleting.\n\n` +
-    `Set: "${setName}"\n` +
-    `Assigned total: ${assignedCount}\n` +
-    `Running now: ${activeCount}\n\n` +
-    (activeCount > 0
-      ? `Running members:\n${who}${more}\n\n`
-      : "") +
-    `Confirm archive? (History/earnings will remain.)`;
-
-  const okConfirm = window.confirm(msg);
-  if (!okConfirm) return;
-
-  try {
-    await api.delete(`/sets/${id}?force=true`);
-//    toast("Set archived");
-    await load();
-
-    if (selectedSetId === id) {
-      setSelectedSetId(null);
-      setTasksInSet([]);
-    }
-  } catch (e2) {
-    setErr(e2?.response?.data?.message || "Failed to archive set");
-  }
-};
+  };
 
   const addTask = async (taskId) => {
     setErr("");
@@ -316,6 +319,31 @@ const deleteSet = async (id) => {
   const TaskTable = ({ rows, mode }) => {
     const isRemove = mode === "remove";
 
+    // ✅ compute accumulated totals once (fast) in current row order
+    const acc = useMemo(() => {
+      let runComm = 0;
+      let runPrice = 0;
+
+      return rows.map((t) => {
+        const qty = Number(t.quantity || 0);
+        const rate = Number(t.rate || 0);
+        const price = Number(t.price ?? qty * rate);
+        const comm = commissionAmount(t);
+
+        runComm += comm;
+        runPrice += price;
+
+        return { taskId: t.id, accComm: runComm, accPrice: runPrice };
+      });
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [rows]);
+
+    const accMap = useMemo(() => {
+      const m = new Map();
+      acc.forEach((x) => m.set(x.taskId, x));
+      return m;
+    }, [acc]);
+
     const startEdit = (t, idx) => {
       setEditingPos((p) => ({ ...p, [t.id]: true }));
       setPosDraft((p) => ({ ...p, [t.id]: Number(t.position ?? idx + 1) }));
@@ -346,29 +374,33 @@ const deleteSet = async (id) => {
         <table className="sx-table">
           <thead>
             <tr>
-              <th style={{ width: 70 }}>Pos</th>
+              <th style={{ width: 60 }}>Pos</th>
+              <th style={{ width: 80 }}>Task ID</th>
               <th style={{ width: 92 }}>Image</th>
               <th>Title</th>
-              <th style={{ width: 120 }}>Type</th>
-              <th style={{ width: 70 }}>Qty</th>
-              <th style={{ width: 90 }}>Rate</th>
-              <th style={{ width: 120 }}>Comm %</th>
-              <th style={{ width: 120 }}>Comm</th>
-              <th style={{ width: 80 }}>Price</th>
-              <th style={{ width: 120, textAlign: "center" }}>Action</th>
+              <th style={{ width: 110 }}>Type</th>
+              <th style={{ width: 60 }}>Qty</th>
+              <th style={{ width: 80 }}>Rate</th>
+              <th style={{ width: 80 }}>Comm %</th>
+              <th style={{ width: 110 }}>Comm</th>
+              <th style={{ width: 120 }}>Acc Comm</th>
+              <th style={{ width: 110 }}>Price</th>
+              <th style={{ width: 120 }}>Acc Price</th>
+              <th style={{ width: 150, textAlign: "center" }}>Action</th>
             </tr>
           </thead>
 
           <tbody>
             {rows.map((t, idx) => {
               const isEditing = !!editingPos[t.id];
+              const isCombo = isComboTask(t);
 
-                const isCombo =
-                  String(t.task_type || "").trim().toLowerCase() === "combo" ||
-                  String(t.task_type || "").trim().toLowerCase().includes("combo");
+              const qty = Number(t.quantity || 0);
+              const rate = Number(t.rate || 0);
+              const price = Number(t.price ?? qty * rate);
+              const comm = commissionAmount(t);
 
-              const price =
-                t.price ?? Number(t.quantity || 0) * Number(t.rate || 0);
+              const a = accMap.get(t.id) || { accComm: comm, accPrice: price };
 
               return (
                 <tr key={t.id} className={isCombo ? "sx-rowCombo" : ""}>
@@ -377,12 +409,12 @@ const deleteSet = async (id) => {
                   </td>
 
                   <td>
+                    <span className="sx-mono">{t.id}</span>
+                  </td>
+
+                  <td>
                     {t.image_url ? (
-                      <img
-                        className="sx-avatar"
-                        src={`${API_HOST}${t.image_url}`}
-                        alt=""
-                      />
+                      <img className="sx-avatar" src={`${API_HOST}${t.image_url}`} alt="" />
                     ) : (
                       <div className="sx-avatar sx-avatar--ph" />
                     )}
@@ -391,22 +423,29 @@ const deleteSet = async (id) => {
                   <td>
                     <div className="sx-title">{t.title}</div>
                     <div className="sx-sub">
-                      ID: <span className="sx-mono">{t.id}</span>
+                      SetTask: <span className="sx-mono">{t.set_task_id}</span>
                     </div>
                   </td>
 
-                  <td style={{ textTransform: "capitalize" }}>
-                    {t.task_type || "-"}
+                  <td style={{ textTransform: "capitalize" }}>{t.task_type || "-"}</td>
+                  <td>{qty}</td>
+                  <td>{money(rate)}</td>
+                  <td>{Number(t.commission_rate || 0)}%</td>
+
+                  <td>
+                    <b>{money(comm)}</b>
                   </td>
 
-                  <td>{t.quantity}</td>
-                  <td>{money(t.rate)}</td>
-                  <td>{t.commission_rate}%</td>
                   <td>
-                    <b>{money(commissionAmount(t))}</b>
+                    <b>{money(a.accComm)}</b>
                   </td>
+
                   <td>
                     <b>{money(price)}</b>
+                  </td>
+
+                  <td>
+                    <b>{money(a.accPrice)}</b>
                   </td>
 
                   <td style={{ textAlign: "right" }}>
@@ -435,7 +474,7 @@ const deleteSet = async (id) => {
                               type="number"
                               min={1}
                               className="sx-input sx-input--mini"
-                              value={posDraft[t.id] ?? (t.position ?? idx + 1)}
+                              value={posDraft[t.id] ?? Number(t.position ?? idx + 1)}
                               onChange={(e) =>
                                 setPosDraft((p) => ({
                                   ...p,
@@ -443,29 +482,17 @@ const deleteSet = async (id) => {
                                 }))
                               }
                             />
-                            <button
-                              className="sx-btn"
-                              type="button"
-                              onClick={() => confirmAndMove(t, idx)}
-                            >
+                            <button className="sx-btn" type="button" onClick={() => confirmAndMove(t, idx)}>
                               Update
                             </button>
-                            <button
-                              className="sx-btn sx-btn--soft"
-                              type="button"
-                              onClick={() => cancelEdit(t, idx)}
-                            >
+                            <button className="sx-btn sx-btn--soft" type="button" onClick={() => cancelEdit(t, idx)}>
                               Cancel
                             </button>
                           </>
                         )}
                       </div>
                     ) : (
-                      <button
-                        className="sx-btn"
-                        onClick={() => addTask(t.id)}
-                        type="button"
-                      >
+                      <button className="sx-btn" onClick={() => addTask(t.id)} type="button">
                         Add
                       </button>
                     )}
@@ -476,10 +503,8 @@ const deleteSet = async (id) => {
 
             {!rows.length && (
               <tr>
-                <td colSpan={10} className="sx-emptyRow">
-                  {isRemove
-                    ? "No tasks inside this set yet."
-                    : "All tasks are already in this set."}
+                <td colSpan={13} className="sx-emptyRow">
+                  {isRemove ? "No tasks inside this set yet." : "All tasks are already in this set."}
                 </td>
               </tr>
             )}
@@ -495,9 +520,7 @@ const deleteSet = async (id) => {
         <div className="sx-header">
           <div>
             <div className="sx-h1">Sets</div>
-            <div className="sx-h2">
-              Create sets and manage task order inside each package.
-            </div>
+            <div className="sx-h2">Create sets and manage task order inside each package.</div>
           </div>
 
           <div className="sx-status">
@@ -554,11 +577,7 @@ const deleteSet = async (id) => {
                 );
               })}
 
-              {!filteredSets.length && (
-                <div className="sx-empty">
-                  No sets found. Try another search.
-                </div>
-              )}
+              {!filteredSets.length && <div className="sx-empty">No sets found. Try another search.</div>}
             </div>
 
             <div className="sx-divider" />
@@ -570,9 +589,7 @@ const deleteSet = async (id) => {
                 <input
                   className="sx-input"
                   value={createForm.name}
-                  onChange={(e) =>
-                    setCreateForm((p) => ({ ...p, name: e.target.value }))
-                  }
+                  onChange={(e) => setCreateForm((p) => ({ ...p, name: e.target.value }))}
                 />
               </div>
 
@@ -583,9 +600,7 @@ const deleteSet = async (id) => {
                   type="number"
                   min={1}
                   value={createForm.max_tasks}
-                  onChange={(e) =>
-                    setCreateForm((p) => ({ ...p, max_tasks: e.target.value }))
-                  }
+                  onChange={(e) => setCreateForm((p) => ({ ...p, max_tasks: e.target.value }))}
                 />
               </div>
 
@@ -600,57 +615,52 @@ const deleteSet = async (id) => {
             {!selectedSetId ? (
               <div className="sx-emptyBig">
                 <div className="sx-emptyBigTitle">Select a set</div>
-                <div className="sx-emptyBigSub">
-                  Choose a set from the left to view and manage tasks.
-                </div>
+                <div className="sx-emptyBigSub">Choose a set from the left to view and manage tasks.</div>
               </div>
             ) : (
               <>
-<div className="sx-stickyTop">
-  <div className="sx-cardTitle">Set Details</div>
+                <div className="sx-stickyTop">
+                  <div className="sx-cardTitle">Set Details</div>
 
-  <div className="sx-detailRow">
-    <div>
-      <div className="sx-detailName">{selectedSet?.name}</div>
-      <div className="sx-detailSub">
-        Capacity{" "}
-        <span className="sx-chip">
-          {currentCount}/{max}
-        </span>
-      </div>
+                  <div className="sx-detailRow">
+                    <div>
+                      <div className="sx-detailName">{selectedSet?.name}</div>
+                      <div className="sx-detailSub">
+                        Capacity <span className="sx-chip">{currentCount}/{max}</span>
+                      </div>
 
-      {/* ✅ 4 summary boxes */}
-      <div className="sx-metrics">
-        <div className="sx-metric">
-          <div className="sx-metricLabel">Total Task</div>
-          <div className="sx-metricValue">{setSummary.totalTask}</div>
-        </div>
+                      {/* ✅ 4 summary boxes */}
+                      <div className="sx-metrics">
+                        <div className="sx-metric">
+                          <div className="sx-metricLabel">Total Task</div>
+                          <div className="sx-metricValue">{setSummary.totalTask}</div>
+                        </div>
 
-        <div className="sx-metric">
-          <div className="sx-metricLabel">Total Combo</div>
-          <div className="sx-metricValue">{setSummary.totalCombo}</div>
-        </div>
+                        <div className="sx-metric">
+                          <div className="sx-metricLabel">Total Combo</div>
+                          <div className="sx-metricValue">{setSummary.totalCombo}</div>
+                        </div>
 
-        <div className="sx-metric">
-          <div className="sx-metricLabel">Total Combo Value</div>
-          <div className="sx-metricValue">{money(setSummary.totalComboValue)}</div>
-        </div>
+                        <div className="sx-metric">
+                          <div className="sx-metricLabel">Total Combo Value</div>
+                          <div className="sx-metricValue">{money(setSummary.totalComboValue)}</div>
+                        </div>
 
-        <div className="sx-metric">
-          <div className="sx-metricLabel">Total Profit</div>
-          <div className="sx-metricValue">{money(setSummary.totalProfit)}</div>
-        </div>
-      </div>
-    </div>
+                        <div className="sx-metric">
+                          <div className="sx-metricLabel">Total Profit</div>
+                          <div className="sx-metricValue">{money(setSummary.totalProfit)}</div>
+                        </div>
+                      </div>
+                    </div>
 
-    <input
-      className="sx-input"
-      placeholder="Search tasks (title/type)..."
-      value={taskQuery}
-      onChange={(e) => setTaskQuery(e.target.value)}
-    />
-  </div>
-</div>
+                    <input
+                      className="sx-input"
+                      placeholder="Search tasks (title/type)..."
+                      value={taskQuery}
+                      onChange={(e) => setTaskQuery(e.target.value)}
+                    />
+                  </div>
+                </div>
 
                 <div className="sx-section">
                   <div className="sx-sectionTop">
