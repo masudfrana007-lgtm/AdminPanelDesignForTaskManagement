@@ -284,9 +284,6 @@ export default function DepositBank() {
             </div>
           </div>
 
-          <div className="db3-netNote">
-            Deposits are matched using reference + sender information. Provider list is demo.
-          </div>
         </div>
       </section>
 
