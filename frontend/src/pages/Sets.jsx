@@ -124,12 +124,45 @@ export default function Sets() {
     }
   };
 
-  const deleteSet = async (id) => {
-    setErr("");
-    setOk("");
+const deleteSet = async (id) => {
+  setErr("");
+  setOk("");
 
+  // 1) first ask the server what will happen (preview)
+  let preview = null;
+  try {
+    const { data } = await api.get(`/sets/${id}/delete-preview`);
+    preview = data;
+  } catch (e) {
+    // if preview endpoint fails, fallback to old flow
     const okConfirm = window.confirm(
-      `Delete this set?\n\nThis will delete the set and all tasks inside it.\n\nThis cannot be undone.`
+      `Delete this set?\n\nThis cannot be undone.`
+    );
+    if (!okConfirm) return;
+
+    try {
+      await api.delete(`/sets/${id}`);
+      toast("Set deleted");
+      await load();
+      if (selectedSetId === id) {
+        setSelectedSetId(null);
+        setTasksInSet([]);
+      }
+      return;
+    } catch (e2) {
+      return setErr(e2?.response?.data?.message || "Failed to delete set");
+    }
+  }
+
+  const setName = preview?.set?.name || `#${id}`;
+  const assignedCount = Number(preview?.assigned_count || 0);
+  const activeCount = Number(preview?.active_count || 0);
+  const activeMembers = Array.isArray(preview?.active_members) ? preview.active_members : [];
+
+  // 2) if unused -> normal delete confirm
+  if (assignedCount === 0) {
+    const okConfirm = window.confirm(
+      `Delete set "${setName}"?\n\nThis will permanently delete the set and all tasks inside it.\n\nThis cannot be undone.`
     );
     if (!okConfirm) return;
 
@@ -145,7 +178,43 @@ export default function Sets() {
     } catch (e2) {
       setErr(e2?.response?.data?.message || "Failed to delete set");
     }
-  };
+    return;
+  }
+
+  // 3) used -> show who is running it now, then archive confirm
+  const who = activeMembers
+    .slice(0, 12)
+    .map((m) => `- ${m.short_id || m.member_id} (${m.nickname || "-"})`)
+    .join("\n");
+
+  const more = activeMembers.length > 12 ? `\n...and ${activeMembers.length - 12} more` : "";
+
+  const msg =
+    `This set was USED before, so please confirm before deleting.\n\n` +
+    `Set: "${setName}"\n` +
+    `Assigned total: ${assignedCount}\n` +
+    `Running now: ${activeCount}\n\n` +
+    (activeCount > 0
+      ? `Running members:\n${who}${more}\n\n`
+      : "") +
+    `Confirm archive? (History/earnings will remain.)`;
+
+  const okConfirm = window.confirm(msg);
+  if (!okConfirm) return;
+
+  try {
+    await api.delete(`/sets/${id}?force=true`);
+    toast("Set archived");
+    await load();
+
+    if (selectedSetId === id) {
+      setSelectedSetId(null);
+      setTasksInSet([]);
+    }
+  } catch (e2) {
+    setErr(e2?.response?.data?.message || "Failed to archive set");
+  }
+};
 
   const addTask = async (taskId) => {
     setErr("");
