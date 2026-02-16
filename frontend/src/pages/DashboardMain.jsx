@@ -1,60 +1,30 @@
+// src/pages/DashboardMain.jsx
 import "./DashboardMain.css";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUser, logout } from "../auth";
+import api from "../services/api";
 import AppLayout from "../components/AppLayout";
-
-const stats = [
-  {
-    title: "Deposit",
-    sub: "Deposit today",
-    icon: "⬇️",
-    theme: "green",
-    rows: [
-      ["Deposit today", 1345],
-      ["Deposit in Month", 8240],
-      ["Total deposit till today", 22569],
-    ],
-  },
-  {
-    title: "Withdraw",
-    sub: "Withdraw today",
-    icon: "⬆️",
-    theme: "red",
-    rows: [
-      ["Withdraw today", 323],
-      ["Withdraw in Month", 5700],
-      ["Total withdraw till today", 16245],
-    ],
-  },
-  {
-    title: "Sales Report",
-    sub: "Net sell todays",
-    icon: "🛒",
-    theme: "purple",
-    rows: [
-      ["Net sell today", 2740],
-      ["Net sell in month", 16823],
-    ],
-  },
-];
-
-const tx = [
-  { id: "TRX-0532", date: "23 Apr 2024", amount: 960 },
-  { id: "TRX-0529", date: "22 Apr 2024", amount: 240 },
-  { id: "TRX-0525", date: "21 Apr 2024", amount: 850 },
-  { id: "TRX-0519", date: "20 Apr 2024", amount: 1210 },
-  { id: "TRX-0573", date: "29 Apr 2024", amount: 555 },
-  { id: "TRX-0512", date: "29 Apr 2024", amount: 850 },
-  { id: "TRX-0513", date: "19 Apr 2024", amount: 850 },
-  { id: "TRX-0511", date: "19 Apr 2024", amount: 555 },
-];
 
 function money(n) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
     maximumFractionDigits: 0,
-  }).format(n);
+  }).format(Number(n || 0));
+}
+
+function fmtDate(iso) {
+  if (!iso) return "-";
+  const d = new Date(iso);
+  // simple readable format
+  return d.toLocaleString("en-GB", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 /** Build a smooth-ish SVG path from points */
@@ -66,10 +36,8 @@ function pathFromPoints(points, w = 560, h = 240, pad = 18) {
   const minY = Math.min(...ys);
   const maxY = Math.max(...ys);
 
-  const sx = (x) =>
-    pad + ((x - minX) / (maxX - minX || 1)) * (w - pad * 2);
-  const sy = (y) =>
-    h - pad - ((y - minY) / (maxY - minY || 1)) * (h - pad * 2);
+  const sx = (x) => pad + ((x - minX) / (maxX - minX || 1)) * (w - pad * 2);
+  const sy = (y) => h - pad - ((y - minY) / (maxY - minY || 1)) * (h - pad * 2);
 
   const pts = points.map(([x, y]) => [sx(x), sy(y)]);
   let d = `M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
@@ -90,7 +58,102 @@ export default function DashboardMain() {
     nav("/login", { replace: true });
   };
 
-  // fake series (close to your screenshot vibe)
+  const [sum, setSum] = useState(null);
+  const [recent, setRecent] = useState([]);
+  const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      setErr("");
+      setLoading(true);
+      try {
+        const [s, r] = await Promise.all([
+          api.get("/users/dashboard/summary"),
+          api.get("/users/dashboard/recent?limit=10"),
+        ]);
+
+        if (!alive) return;
+        setSum(s.data || null);
+        setRecent(Array.isArray(r.data) ? r.data : []);
+      } catch (e) {
+        if (!alive) return;
+        setErr(e?.response?.data?.message || "Failed to load dashboard data");
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // ✅ real stats for cards
+  const stats = useMemo(() => {
+    const deposits = sum?.deposits || {};
+    const withdrawals = sum?.withdrawals || {};
+    const users = sum?.users || {};
+    const sets = sum?.sets || {};
+    const tasks = sum?.tasks || {};
+    const members = sum?.members || {};
+    const support = sum?.support || {};
+
+    return [
+      {
+        title: "Deposit",
+        sub: "System deposits",
+        icon: "⬇️",
+        theme: "green",
+        rows: [
+          ["Approved amount", Number(deposits.approved_amount || 0)],
+          ["Pending amount", Number(deposits.pending_amount || 0)],
+          ["Total deposits", Number(deposits.total || 0)], // count
+        ],
+        moneyMask: [true, true, false],
+      },
+      {
+        title: "Withdraw",
+        sub: "System withdrawals",
+        icon: "⬆️",
+        theme: "red",
+        rows: [
+          ["Approved amount", Number(withdrawals.approved_amount || 0)],
+          ["Pending amount", Number(withdrawals.pending_amount || 0)],
+          ["Total withdrawals", Number(withdrawals.total || 0)], // count
+        ],
+        moneyMask: [true, true, false],
+      },
+      {
+        title: "Platform",
+        sub: "Core totals",
+        icon: "🧩",
+        theme: "purple",
+        rows: [
+          ["Users", Number(users.total || 0)],
+          ["Members", Number(members.total || 0)],
+          ["Support open", Number(support.open || 0)],
+        ],
+        moneyMask: [false, false, false],
+      },
+      {
+        title: "Tasks & Sets",
+        sub: "Packages totals",
+        icon: "📦",
+        theme: "green",
+        rows: [
+          ["Tasks", Number(tasks.total || 0)],
+          ["Sets", Number(sets.total || 0)],
+          ["Combo sets", Number(sets.combo_sets || 0)],
+        ],
+        moneyMask: [false, false, false],
+      },
+    ];
+  }, [sum]);
+
+  // keep your chart shape (placeholder), but show real numbers in tooltip
   const revenue = [
     [1, 40],
     [2, 55],
@@ -102,7 +165,7 @@ export default function DashboardMain() {
     [8, 58],
     [9, 76],
   ];
-  const withdraw = [
+  const withdrawSeries = [
     [1, 22],
     [2, 28],
     [3, 18],
@@ -113,16 +176,34 @@ export default function DashboardMain() {
     [8, 34],
     [9, 48],
   ];
-
   const revPath = pathFromPoints(revenue);
-  const wdrPath = pathFromPoints(withdraw);
+  const wdrPath = pathFromPoints(withdrawSeries);
+
+  const hintRevenue = Number(sum?.deposits?.approved_amount || 0);
+  const hintWithdraw = Number(sum?.withdrawals?.approved_amount || 0);
+
+  // pie from real values
+  const dep = Number(sum?.deposits?.approved_amount || 0);
+  const wdr = Number(sum?.withdrawals?.approved_amount || 0);
+  const total = dep + wdr || 1;
+  const depPct = dep / total;
+  const wdrPct = wdr / total;
+
+  const C = 2.764 * 44;
+  const depDash = `${C * depPct} ${C}`;
+  const wdrDash = `${C * wdrPct} ${C}`;
+  const wdrOffset = -(C * depPct);
 
   return (
     <AppLayout>
       <div className="db">
-        {/* Top bar (inside content area) */}
-        {/* Page grid */}
         <div className="dbGrid">
+          {err && (
+            <div className="msg err" style={{ gridColumn: "1 / -1" }}>
+              {err}
+            </div>
+          )}
+
           {/* Stat cards */}
           <section className="dbCards">
             {stats.map((card) => (
@@ -133,7 +214,9 @@ export default function DashboardMain() {
                   </div>
                   <div className="sMeta">
                     <div className="sTitle">{card.title}</div>
-                    <div className="sSub">{card.sub}</div>
+                    <div className="sSub">
+                      {loading ? "Loading…" : card.sub} {role ? `• ${role}` : ""}
+                    </div>
                   </div>
 
                   <div className="sSpark" aria-hidden="true">
@@ -155,10 +238,12 @@ export default function DashboardMain() {
                 </div>
 
                 <div className="sRows">
-                  {card.rows.map(([label, value]) => (
+                  {card.rows.map(([label, value], idx) => (
                     <div className="sRow" key={label}>
                       <span className="sLabel">{label}</span>
-                      <span className="sValue">{money(value)}</span>
+                      <span className="sValue">
+                        {loading ? "…" : card.moneyMask?.[idx] ? money(value) : value}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -172,18 +257,15 @@ export default function DashboardMain() {
               <div className="pHead">
                 <div>
                   <div className="pTitle">Revenue & Withdraw Overview</div>
-                  <div className="pSub">Comparison from last 14 days</div>
+                  <div className="pSub">Snapshot (approved amounts)</div>
                 </div>
 
                 <div className="tabs" role="tablist" aria-label="Range">
-                  <button className="tab" type="button">
-                    Last 7 Days
-                  </button>
                   <button className="tab isActive" type="button">
-                    Last 30
+                    Overview
                   </button>
-                  <button className="tab" type="button">
-                    Months
+                  <button className="tab" type="button" onClick={doLogout}>
+                    Logout
                   </button>
                 </div>
               </div>
@@ -198,21 +280,10 @@ export default function DashboardMain() {
                   </span>
                 </div>
 
-                <svg
-                  className="chart"
-                  viewBox="0 0 640 280"
-                  role="img"
-                  aria-label="Revenue and withdraw line chart"
-                >
+                <svg className="chart" viewBox="0 0 640 280" role="img" aria-label="Line chart">
                   <g className="grid">
                     {Array.from({ length: 5 }).map((_, i) => (
-                      <line
-                        key={i}
-                        x1="40"
-                        x2="620"
-                        y1={40 + i * 50}
-                        y2={40 + i * 50}
-                      />
+                      <line key={i} x1="40" x2="620" y1={40 + i * 50} y2={40 + i * 50} />
                     ))}
                   </g>
 
@@ -220,38 +291,28 @@ export default function DashboardMain() {
                   <path className="lineRed" d={wdrPath} />
 
                   <g className="hint">
-                    <rect x="250" y="92" rx="12" ry="12" width="160" height="86" />
-                    <text x="265" y="122" className="hintT">
-                      Revenue
+                    <rect x="230" y="92" rx="12" ry="12" width="240" height="86" />
+                    <text x="245" y="122" className="hintT">
+                      Revenue (Approved Deposits)
                     </text>
-                    <text x="265" y="145" className="hintV">
-                      {money(1345)}
+                    <text x="245" y="145" className="hintV">
+                      {loading ? "…" : money(hintRevenue)}
                     </text>
 
-                    <text x="340" y="122" className="hintT">
-                      Withdraw
+                    <text x="410" y="122" className="hintT">
+                      Withdraw (Approved)
                     </text>
-                    <text x="340" y="145" className="hintV">
-                      {money(323)}
+                    <text x="410" y="145" className="hintV">
+                      {loading ? "…" : money(hintWithdraw)}
                     </text>
                   </g>
 
                   <g className="xlab">
-                    <text x="70" y="268">
-                      Apr 23
-                    </text>
-                    <text x="185" y="268">
-                      Apr 10
-                    </text>
-                    <text x="300" y="268">
-                      Apr 12
-                    </text>
-                    <text x="410" y="268">
-                      Apr 14
-                    </text>
-                    <text x="520" y="268">
-                      Apr 24
-                    </text>
+                    <text x="70" y="268">P1</text>
+                    <text x="185" y="268">P2</text>
+                    <text x="300" y="268">P3</text>
+                    <text x="410" y="268">P4</text>
+                    <text x="520" y="268">P5</text>
                   </g>
                 </svg>
               </div>
@@ -260,7 +321,7 @@ export default function DashboardMain() {
             <article className="panel panelTx">
               <div className="pHead">
                 <div className="pTitle">Recent Transactions</div>
-                <button className="linkBtn" type="button">
+                <button className="linkBtn" type="button" onClick={() => nav("/wallet-ledger")}>
                   View All
                 </button>
               </div>
@@ -273,13 +334,23 @@ export default function DashboardMain() {
                 </div>
 
                 <div className="txBody">
-                  {tx.map((t) => (
-                    <div className="txRow" key={t.id}>
-                      <span className="txId">{t.id}</span>
-                      <span className="txDate">{t.date}</span>
-                      <span className="txAmt txRight">{money(t.amount)}</span>
-                    </div>
-                  ))}
+                  {(loading ? Array.from({ length: 8 }).map((_, i) => ({ id: `…${i}` })) : recent).map(
+                    (t, idx) => (
+                      <div className="txRow" key={t.id ?? idx}>
+                        <span className="txId">
+                          {loading
+                            ? "…"
+                            : `${String(t.type || "").toUpperCase()}-${t.id} (${t.member_short_id || "-"})`}
+                        </span>
+                        <span className="txDate">{loading ? "…" : fmtDate(t.created_at)}</span>
+                        <span className="txAmt txRight">
+                          {loading
+                            ? "…"
+                            : `${t.direction === "debit" ? "-" : "+"}${money(t.amount)}`}
+                        </span>
+                      </div>
+                    )
+                  )}
                 </div>
               </div>
             </article>
@@ -296,40 +367,33 @@ export default function DashboardMain() {
                 <div className="pieLegend">
                   <div className="leg">
                     <i className="dot dotGreen" /> Deposits
-                    <span className="legVal">{money(5265)}</span>
+                    <span className="legVal">{loading ? "…" : money(dep)}</span>
                   </div>
                   <div className="leg">
                     <i className="dot dotRed" /> Withdraw
-                    <span className="legVal">{money(2323)}</span>
+                    <span className="legVal">{loading ? "…" : money(wdr)}</span>
                   </div>
                 </div>
 
                 <div className="pieWrap" aria-label="Pie chart" role="img">
                   <svg viewBox="0 0 120 120" className="pie">
                     <circle className="pieBase" cx="60" cy="60" r="44" />
-                    <circle
-                      className="pieGreen"
-                      cx="60"
-                      cy="60"
-                      r="44"
-                      strokeDasharray={`${2.764 * 44 * 0.68} ${2.764 * 44}`}
-                      strokeDashoffset="0"
-                    />
+                    <circle className="pieGreen" cx="60" cy="60" r="44" strokeDasharray={depDash} />
                     <circle
                       className="pieRed"
                       cx="60"
                       cy="60"
                       r="44"
-                      strokeDasharray={`${2.764 * 44 * 0.32} ${2.764 * 44}`}
-                      strokeDashoffset={`${-(2.764 * 44 * 0.68)}`}
+                      strokeDasharray={wdrDash}
+                      strokeDashoffset={String(wdrOffset)}
                     />
                     <circle className="pieHole" cx="60" cy="60" r="28" />
 
                     <text x="38" y="52" className="pieTxtRed">
-                      32%
+                      {loading ? "…" : `${Math.round(wdrPct * 100)}%`}
                     </text>
                     <text x="66" y="76" className="pieTxtGreen">
-                      68%
+                      {loading ? "…" : `${Math.round(depPct * 100)}%`}
                     </text>
                   </svg>
                 </div>
