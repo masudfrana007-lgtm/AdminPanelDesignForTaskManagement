@@ -66,28 +66,16 @@ router.post("/", auth, allowRoles("owner"), upload.single("image"), async (req, 
 // ------------------
 // Get Tasks
 // ------------------
+// ------------------
+// Get Tasks (ALL users: owner + agent can see ALL tasks)
+// ------------------
 router.get("/", auth, allowRoles("owner", "agent"), async (req, res) => {
   try {
-    if (req.user.role === "owner") {
-      const r = await pool.query(
-        "SELECT * FROM tasks WHERE created_by = $1 ORDER BY id DESC",
-        [req.user.id]
-      );
-      return res.json(r.rows);
-    }
-
-    const u = await pool.query("SELECT created_by FROM users WHERE id = $1", [req.user.id]);
-    const ownerId = u.rows[0]?.created_by;
-    if (!ownerId) return res.json([]);
-
-    const r = await pool.query(
-      "SELECT * FROM tasks WHERE created_by = $1 ORDER BY id DESC",
-      [ownerId]
-    );
-    res.json(r.rows);
+    const r = await pool.query("SELECT * FROM tasks ORDER BY id DESC");
+    return res.json(r.rows);
   } catch (e) {
     console.error(e);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 });
 
