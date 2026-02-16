@@ -650,6 +650,11 @@ export default function Sets() {
                           <div className="sx-metricLabel">Total Profit</div>
                           <div className="sx-metricValue">{money(setSummary.totalProfit)}</div>
                         </div>
+
+                        <div className="sx-metric">
+                          <div className="sx-metricLabel">Combo Deposit Amount</div>
+                          <div className="sx-metricValue">{money(setSummary.comboDepositAmount)}</div>
+                        </div>
                       </div>
                     </div>
 
