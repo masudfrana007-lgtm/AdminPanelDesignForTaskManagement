@@ -22,22 +22,11 @@ router.post("/", auth, allowRoles("owner", "agent"), async (req, res) => {
 });
 
 router.get("/", auth, allowRoles("owner", "agent"), async (req, res) => {
-  if (req.user.role === "agent") {
-    const r = await pool.query(
-      "SELECT * FROM sets WHERE created_by = $1 AND is_archived = false ORDER BY id DESC",
-      [req.user.id]
-    );
-    return res.json(r.rows);
-  }
-
   const r = await pool.query(
-    `SELECT s.*
-     FROM sets s
-     WHERE (s.created_by = $1
-        OR s.created_by IN (SELECT id FROM users WHERE created_by = $1 AND role='agent'))
-       AND s.is_archived = false
-     ORDER BY s.id DESC`,
-    [req.user.id]
+    `SELECT *
+     FROM sets
+     WHERE is_archived = false
+     ORDER BY id DESC`
   );
   res.json(r.rows);
 });

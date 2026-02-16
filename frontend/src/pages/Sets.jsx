@@ -204,7 +204,7 @@ const deleteSet = async (id) => {
 
   try {
     await api.delete(`/sets/${id}?force=true`);
-    toast("Set archived");
+//    toast("Set archived");
     await load();
 
     if (selectedSetId === id) {
