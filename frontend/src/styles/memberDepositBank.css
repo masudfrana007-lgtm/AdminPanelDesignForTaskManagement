@@ -63,7 +63,8 @@
 
 .wrapW{
   width:min(980px, calc(100% - 24px));
-  margin:16px auto 34px;
+  margin:0 auto 34px;
+  padding-top: 0!important;
 }
 
 /* ===== Frozen supported networks block ===== */
@@ -79,7 +80,7 @@
 .db3-netInner{
   width:min(980px, calc(100% - 24px));
   margin: 0 auto;
-  padding: 10px 0 12px;
+  padding: 10px 0 6px;
 }
 
 .db3-netTitle{

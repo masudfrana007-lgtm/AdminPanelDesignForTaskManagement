@@ -85,6 +85,8 @@ import ProfileEdit from "./pages/ProfileEdit";
 
 import CustomerService from "./pages/CustomerService";
 
+import MemberSetHistory from "./pages/MemberSetHistory";
+
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
   
@@ -556,6 +558,15 @@ export const router = createBrowserRouter([
     <ProtectedRoute roles={["owner", "admin"]}>
       <VipWalletAddresses />
     </ProtectedRoute>
+  ),
+},
+
+{
+  path: "/member/set-history",
+  element: (
+    <MemberProtectedRoute>
+      <MemberSetHistory />
+    </MemberProtectedRoute>
   ),
 },
 

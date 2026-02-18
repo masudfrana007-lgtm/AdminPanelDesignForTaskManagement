@@ -22,18 +22,11 @@ router.post("/", auth, allowRoles("owner", "agent"), async (req, res) => {
 });
 
 router.get("/", auth, allowRoles("owner", "agent"), async (req, res) => {
-  if (req.user.role === "agent") {
-    const r = await pool.query("SELECT * FROM sets WHERE created_by = $1 ORDER BY id DESC", [req.user.id]);
-    return res.json(r.rows);
-  }
-
   const r = await pool.query(
-    `SELECT s.*
-     FROM sets s
-     WHERE s.created_by = $1
-        OR s.created_by IN (SELECT id FROM users WHERE created_by = $1 AND role='agent')
-     ORDER BY s.id DESC`,
-    [req.user.id]
+    `SELECT *
+     FROM sets
+     WHERE is_archived = false
+     ORDER BY id DESC`
   );
   res.json(r.rows);
 });
@@ -264,22 +257,63 @@ router.delete("/:setId/tasks/:taskId", auth, allowRoles("owner", "agent"), async
   }
 });
 
-router.delete("/:id", auth, allowRoles("owner", "agent"), async (req, res) => {
+router.get("/:id/delete-preview", auth, allowRoles("owner", "agent"), async (req, res) => {
   const setId = Number(req.params.id);
-  if (!Number.isFinite(setId)) {
-    return res.status(400).json({ message: "Invalid set id" });
-  }
+  if (!Number.isFinite(setId)) return res.status(400).json({ message: "Invalid set id" });
 
-  // 🚫 Block deletion if set is assigned
-  const assignedR = await pool.query(
-    "SELECT 1 FROM member_sets WHERE set_id = $1 LIMIT 1",
+  const whereSql =
+    req.user.role === "agent"
+      ? "s.id = $1 AND s.created_by = $2"
+      : "s.id = $1";
+  const params = req.user.role === "agent" ? [setId, req.user.id] : [setId];
+
+  const setR = await pool.query(`SELECT s.id, s.name, s.max_tasks, s.is_archived FROM sets s WHERE ${whereSql}`, params);
+  const set = setR.rows[0];
+  if (!set) return res.status(404).json({ message: "Set not found or not allowed" });
+
+  const r = await pool.query(
+    `
+    SELECT
+      ms.id AS member_set_id,
+      ms.member_id,
+      m.short_id,
+      m.nickname,
+      ms.status,
+      ms.current_task_index,
+      ms.updated_at
+    FROM member_sets ms
+    JOIN members m ON m.id = ms.member_id
+    WHERE ms.set_id = $1
+    ORDER BY ms.updated_at DESC, ms.id DESC
+    `,
     [setId]
   );
 
-  if (assignedR.rowCount > 0) {
-    return res.status(400).json({
-      message: "Set is assigned to members and cannot be deleted",
-    });
+  const assigned = r.rows;
+  const active = assigned.filter(x => String(x.status).toLowerCase() === "active");
+
+  res.json({
+    set,
+    assigned_count: assigned.length,
+    active_count: active.length,
+    active_members: active.map(x => ({
+      member_id: x.member_id,
+      short_id: x.short_id,
+      nickname: x.nickname,
+      member_set_id: x.member_set_id,
+      current_task_index: x.current_task_index,
+      status: x.status,
+    })),
+  });
+});
+
+
+router.delete("/:id", auth, allowRoles("owner", "agent"), async (req, res) => {
+  const setId = Number(req.params.id);
+  const force = String(req.query.force || "").toLowerCase() === "true";
+
+  if (!Number.isFinite(setId)) {
+    return res.status(400).json({ message: "Invalid set id" });
   }
 
   const whereSql =
@@ -290,16 +324,81 @@ router.delete("/:id", auth, allowRoles("owner", "agent"), async (req, res) => {
   const params =
     req.user.role === "agent" ? [setId, req.user.id] : [setId];
 
-  const del = await pool.query(
-    `DELETE FROM sets WHERE ${whereSql} RETURNING id`,
-    params
+  const setR = await pool.query(`SELECT id, is_archived FROM sets WHERE ${whereSql}`, params);
+  const set = setR.rows[0];
+  if (!set) return res.status(404).json({ message: "Set not found or not allowed" });
+  if (set.is_archived) return res.json({ ok: true, already_archived: true });
+
+  // check usage
+  const assignedR = await pool.query(
+    `
+    SELECT ms.id AS member_set_id, ms.member_id, m.short_id, m.nickname, ms.status, ms.current_task_index
+    FROM member_sets ms
+    JOIN members m ON m.id = ms.member_id
+    WHERE ms.set_id = $1
+    ORDER BY ms.updated_at DESC, ms.id DESC
+    `,
+    [setId]
   );
 
-  if (!del.rowCount) {
-    return res.status(404).json({ message: "Set not found or not allowed" });
+  const assigned = assignedR.rows;
+  const active = assigned.filter(x => String(x.status).toLowerCase() === "active");
+
+  // ✅ never used -> HARD DELETE
+  if (assigned.length === 0) {
+    const del = await pool.query(`DELETE FROM sets WHERE ${whereSql} RETURNING id`, params);
+    if (!del.rowCount) return res.status(404).json({ message: "Set not found or not allowed" });
+    return res.json({ ok: true, deleted: true });
   }
 
-  res.json({ ok: true });
+  // ✅ used -> require confirmation first
+  if (!force) {
+    return res.status(400).json({
+      message: "This set has been used. It will be archived (not deleted). Confirm?",
+      assigned_count: assigned.length,
+      active_count: active.length,
+      active_members: active.map(x => ({
+        member_id: x.member_id,
+        short_id: x.short_id,
+        nickname: x.nickname,
+        member_set_id: x.member_set_id,
+        current_task_index: x.current_task_index,
+        status: x.status,
+      })),
+    });
+  }
+
+  // ✅ force=true -> ARCHIVE (and optionally stop active)
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // optional: stop currently running assignments so nobody continues after archive
+    await client.query(
+      `UPDATE member_sets
+       SET status = 'stopped', updated_at = now()
+       WHERE set_id = $1 AND status = 'active'`,
+      [setId]
+    );
+
+    await client.query(
+      `UPDATE sets
+       SET is_archived = true,
+           archived_at = now(),
+           archived_by = $2
+       WHERE id = $1`,
+      [setId, req.user.id]
+    );
+
+    await client.query("COMMIT");
+    res.json({ ok: true, archived: true, assigned_count: assigned.length, active_count: active.length });
+  } catch (e) {
+    try { await client.query("ROLLBACK"); } catch {}
+    console.error("ARCHIVE SET ERROR:", e);
+    res.status(500).json({ message: "Server error" });
+  } finally {
+    client.release();
+  }
 });
 
 export default router;

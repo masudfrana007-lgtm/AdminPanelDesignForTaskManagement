@@ -761,3 +761,21 @@
 }
 
 
+/* FORCE 2-column grid for Performance Overview on mobile */
+.vipWhite .metricGrid2{
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+/* Prevent overflow issues */
+.vipWhite .metricGrid2 > .metricItemW{
+  min-width: 0;
+}
+
+/* Ultra-small phones fallback */
+@media (max-width: 360px){
+  .vipWhite .metricGrid2{
+    grid-template-columns: 1fr !important;
+  }
+}

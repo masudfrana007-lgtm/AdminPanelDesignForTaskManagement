@@ -441,3 +441,53 @@
 .input{
   width: 100%;
 }
+
+/* ---- Set Details summary metrics ---- */
+.sx-metrics{
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: 10px;
+  max-width: 520px;
+}
+
+.sx-metric{
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.sx-metricLabel{
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.sx-metricValue{
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+/* responsive */
+@media (max-width: 900px){
+  .sx-metrics{
+    grid-template-columns: 1fr;
+    max-width: 100%;
+  }
+}
+
+/* Combo row highlight */
+.sx-rowCombo {
+  background: #eaf4ff; /* light blue */
+}
+
+.sx-rowCombo:hover {
+  background: #dff0ff; /* slightly stronger on hover */
+}
+
+/* keep buttons/input looking normal */
+.sx-rowCombo td {
+  background: transparent;
+}

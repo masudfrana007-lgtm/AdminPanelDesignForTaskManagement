@@ -345,7 +345,6 @@ export default function WithdrawBankV3() {
             </div>
           </div>
 
-          <div className="wb3-netNote">Processing is handled via trusted networks. Provider list is display-only (demo).</div>
         </div>
       </section>
 

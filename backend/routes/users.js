@@ -58,22 +58,162 @@ router.post("/", auth, async (req, res) => {
   }
 });
 
-router.get("/", auth, allowRoles("admin", "owner"), async (req, res) => {
-  if (req.user.role === "admin") {
-    const r = await pool.query(
-      "SELECT id, short_id, name, email, role, created_by, created_at FROM users ORDER BY id DESC"
-    );
-    return res.json(r.rows);
-  }
-
+router.get("/", auth, async (req, res) => {
   const r = await pool.query(
-    `SELECT id, short_id, name, email, role, created_by, created_at
-     FROM users
-     WHERE id = $1 OR created_by = $1
-     ORDER BY id DESC`,
-    [req.user.id]
+    "SELECT id, short_id, name, email, role, created_by, created_at FROM users ORDER BY id DESC"
   );
-  res.json(r.rows);
+  return res.json(r.rows);
+});
+
+// DASHBOARD SUMMARY (GLOBAL for admin/owner/agent)
+router.get("/dashboard/summary", auth, async (req, res) => {
+  try {
+    const [
+      usersTotal,
+      usersByRole,
+      tasksTotal,
+      setsTotal,
+      membersTotal,
+
+      depositsAgg,
+      withdrawalsAgg,
+
+      supportAgg,
+      comboSetsAgg,
+    ] = await Promise.all([
+      pool.query(`SELECT COUNT(*)::int AS c FROM users`),
+      pool.query(`SELECT role, COUNT(*)::int AS c FROM users GROUP BY role ORDER BY role`),
+
+      pool.query(`SELECT COUNT(*)::int AS c FROM tasks`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM sets`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM members`),
+
+      pool.query(`
+        SELECT
+          COUNT(*)::int AS total,
+          COUNT(*) FILTER (WHERE status='pending')::int AS pending,
+          COUNT(*) FILTER (WHERE status='approved')::int AS approved,
+          COALESCE(SUM(amount) FILTER (WHERE status='approved'), 0)::numeric(12,2) AS approved_amount,
+          COALESCE(SUM(amount) FILTER (WHERE status='pending'), 0)::numeric(12,2) AS pending_amount
+        FROM deposits
+      `),
+
+      pool.query(`
+        SELECT
+          COUNT(*)::int AS total,
+          COUNT(*) FILTER (WHERE status='pending')::int AS pending,
+          COUNT(*) FILTER (WHERE status='approved')::int AS approved,
+          COALESCE(SUM(amount) FILTER (WHERE status='approved'), 0)::numeric(12,2) AS approved_amount,
+          COALESCE(SUM(amount) FILTER (WHERE status='pending'), 0)::numeric(12,2) AS pending_amount
+        FROM withdrawals
+      `),
+
+      pool.query(`
+        SELECT
+          COUNT(*) FILTER (WHERE status='open')::int AS open,
+          COUNT(*) FILTER (WHERE status='pending')::int AS pending,
+          COUNT(*) FILTER (WHERE status='closed')::int AS closed
+        FROM support_conversations
+      `),
+
+      pool.query(`
+        SELECT COUNT(*)::int AS c
+        FROM (
+          SELECT st.set_id
+          FROM set_tasks st
+          JOIN tasks t ON t.id = st.task_id
+          WHERE t.task_type='combo'
+          GROUP BY st.set_id
+        ) x
+      `),
+    ]);
+
+    const byRole = {};
+    for (const r of usersByRole.rows) byRole[r.role] = r.c;
+
+    res.json({
+      users: { total: usersTotal.rows[0].c, byRole },
+      tasks: { total: tasksTotal.rows[0].c },
+      sets: { total: setsTotal.rows[0].c, combo_sets: comboSetsAgg.rows[0].c },
+      members: { total: membersTotal.rows[0].c },
+      deposits: depositsAgg.rows[0],
+      withdrawals: withdrawalsAgg.rows[0],
+      support: supportAgg.rows[0],
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Failed to load dashboard summary" });
+  }
+});
+
+// RECENT TRANSACTIONS (GLOBAL)
+router.get("/dashboard/recent", auth, async (req, res) => {
+  try {
+    const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 50);
+
+    const r = await pool.query(
+      `
+      SELECT * FROM (
+        -- 1) ledger (commission/deposit/withdraw if you insert them)
+        SELECT
+          wl.id::text                AS id,
+          wl.type                    AS type,
+          wl.direction               AS direction,
+          wl.amount                  AS amount,
+          wl.ref_type                AS ref_type,
+          wl.ref_id                  AS ref_id,
+          wl.note                    AS note,
+          wl.created_at              AS created_at,
+          m.nickname                 AS member_nickname,
+          m.short_id                 AS member_short_id
+        FROM wallet_ledger wl
+        JOIN members m ON m.id = wl.member_id
+
+        UNION ALL
+
+        -- 2) deposits (fallback)
+        SELECT
+          ('D' || d.id)::text        AS id,
+          'deposit'                  AS type,
+          'credit'                   AS direction,
+          d.amount                   AS amount,
+          'deposit'                  AS ref_type,
+          d.id                       AS ref_id,
+          d.status                   AS note,
+          d.created_at               AS created_at,
+          m.nickname                 AS member_nickname,
+          m.short_id                 AS member_short_id
+        FROM deposits d
+        JOIN members m ON m.id = d.member_id
+
+        UNION ALL
+
+        -- 3) withdrawals (fallback)
+        SELECT
+          ('W' || w.id)::text        AS id,
+          'withdraw'                 AS type,
+          'debit'                    AS direction,
+          w.amount                   AS amount,
+          'withdrawal'               AS ref_type,
+          w.id                       AS ref_id,
+          w.status                   AS note,
+          w.created_at               AS created_at,
+          m.nickname                 AS member_nickname,
+          m.short_id                 AS member_short_id
+        FROM withdrawals w
+        JOIN members m ON m.id = w.member_id
+      ) x
+      ORDER BY created_at DESC
+      LIMIT $1
+      `,
+      [limit]
+    );
+
+    res.json(r.rows);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Failed to load recent transactions" });
+  }
 });
 
 export default router;

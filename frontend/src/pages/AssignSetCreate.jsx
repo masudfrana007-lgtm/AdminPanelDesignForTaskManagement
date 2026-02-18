@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Select from "react-select";
 import api from "../services/api";
 import AppLayout from "../components/AppLayout";
 import "../styles/app.css";
@@ -10,7 +11,7 @@ export default function AssignSetCreate() {
   const [members, setMembers] = useState([]);
   const [sets, setSets] = useState([]);
 
-  const [form, setForm] = useState({ member_id: "", set_id: "" });
+  const [form, setForm] = useState({ member_id: null, set_id: "" });
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
 
@@ -28,6 +29,26 @@ export default function AssignSetCreate() {
   useEffect(() => {
     load();
   }, []);
+
+  // ✅ options for react-select
+  const memberOptions = useMemo(() => {
+    return members.map((m) => {
+      const idText = m.short_id || m.id;
+      return {
+        value: m.id,
+        label: `${m.nickname} — ${m.phone} (ID: ${idText})`,
+        // extra searchable fields:
+        searchText: `${m.nickname || ""} ${m.phone || ""} ${idText || ""}`.toLowerCase(),
+      };
+    });
+  }, [members]);
+
+  // ✅ custom filter: search by name/phone/id
+  const filterOption = (candidate, input) => {
+    const q = String(input || "").trim().toLowerCase();
+    if (!q) return true;
+    return candidate.data.searchText.includes(q);
+  };
 
   const assign = async (e) => {
     e.preventDefault();
@@ -65,19 +86,26 @@ export default function AssignSetCreate() {
           <div className="hr" />
 
           <form onSubmit={assign} style={{ display: "grid", gap: 12 }}>
+            {/* ✅ SEARCHABLE DROPDOWN */}
             <div>
               <div className="small">Member</div>
-              <select
-                value={form.member_id}
-                onChange={(e) => setForm((p) => ({ ...p, member_id: e.target.value }))}
-              >
-                <option value="">-- Select Member --</option>
-                {members.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.nickname} — {m.phone} (ID: {m.short_id || m.id})
-                  </option>
-                ))}
-              </select>
+
+              <Select
+                options={memberOptions}
+                isClearable
+                placeholder="Search by name / phone / ID..."
+                filterOption={filterOption}
+                onChange={(opt) =>
+                  setForm((p) => ({ ...p, member_id: opt ? opt.value : null }))
+                }
+                value={memberOptions.find((o) => o.value === form.member_id) || null}
+                // keep it matching your UI sizing
+                styles={{
+                  control: (base) => ({ ...base, minHeight: 42 }),
+                  menu: (base) => ({ ...base, zIndex: 50 }),
+                }}
+              />
+
               <div className="small">
                 Agent sees only their members. Owner sees own + agent members.
               </div>
@@ -110,9 +138,7 @@ export default function AssignSetCreate() {
               </button>
             </div>
 
-            <div className="small">
-              Note: Only ONE active set at a time (backend enforces).
-            </div>
+            <div className="small">Note: Only ONE active set at a time (backend enforces).</div>
           </form>
         </div>
       </div>

@@ -6,6 +6,7 @@ import withdrawBg from "../assets/bg/withdraw.png";
 import usdtIcon from "../assets/icons/usdt.png";
 import MemberBottomNav from "../components/MemberBottomNav";
 import memberApi from "../services/memberApi";
+import usdtIcon from "../assets/icons/usdt.png";
 
 const API_HOST = "http://159.198.40.145:5010";
 
@@ -106,7 +107,7 @@ export default function WithdrawalMethod() {
             </div>
           </div>
 
-          <div className="balanceRightW balanceRightAx">
+          <div className="wd-balanceBox balanceRightAx">
             <div className="wd-balLabel">Available Balance</div>
             <div className="wd-balValue">
               <span className="wd-balUnit">USDT</span>
@@ -122,7 +123,7 @@ export default function WithdrawalMethod() {
             <div className="wd-cardHead">
               <div className="dm-icon crypto usdt-badge">
                 <img src={usdtIcon} alt="USDT" className="dm-icon-img" width="35" />
-              </div>
+              </div>              
               <div className="wd-cardText">
                 <div className="wd-cardTitle">Withdraw by Crypto</div>
                 <div className="wd-cardDesc">Send USDT to your external wallet securely</div>

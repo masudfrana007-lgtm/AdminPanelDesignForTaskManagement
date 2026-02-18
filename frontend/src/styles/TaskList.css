@@ -518,3 +518,138 @@
 .tl-balanceGold .tl-mini{
   border-color: rgba(255,215,120,.35);
 }
+
+/* =========================
+   Mobile-only Task List rearrange
+   Task (top)
+   Photo | Status | Reward (middle row)
+   Open (bottom centered)
+   ========================= */
+@media (max-width: 640px) {
+
+  /* Hide the table header row on mobile */
+  .tl-rowHead{
+    display: none !important;
+  }
+
+  /* Each task row becomes a 3-row grid */
+  .tl-row:not(.tl-rowHead){
+    display: grid !important;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-areas:
+      "task   task   task"
+      "photo  status reward"
+      "open   open   open";
+    align-items: center;
+    justify-items: center; /* ✅ center everything */
+    gap: 10px;
+    padding: 14px 14px;
+  }
+
+  /* 1) Task on top */
+  .tl-row:not(.tl-rowHead) .tl-taskCell{
+    grid-area: task;
+    width: 100%;
+    justify-self: stretch;
+    align-items: center;
+    text-align: center;
+  }
+  .tl-row:not(.tl-rowHead) .tl-mutedSmall{
+    text-align: center;
+  }
+
+  /* 2) Middle row: photo | status | reward */
+  .tl-row:not(.tl-rowHead) .tl-photoCell{
+    grid-area: photo;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .tl-row:not(.tl-rowHead) .tl-status{
+    grid-area: status;
+    justify-self: center;
+    align-self: center;
+  }
+
+  .tl-row:not(.tl-rowHead) .tl-reward{
+    grid-area: reward;
+    justify-self: center;
+    align-self: center;
+    text-align: center;
+  }
+
+  /* 3) Open button bottom centered */
+  .tl-row:not(.tl-rowHead) .tl-open{
+    grid-area: open;
+    width: 100%;
+    display: flex;
+    justify-content: center; /* ✅ centered */
+    align-items: center;
+  }
+
+  /* Hide Level + Created on mobile (since new layout doesn't use them) */
+  .tl-row:not(.tl-rowHead) .tl-level,
+  .tl-row:not(.tl-rowHead) .tl-created{
+    display: none !important;
+  }
+
+  /* Optional: slightly smaller image on small screens */
+  .tl-row:not(.tl-rowHead) .tl-photoCell img{
+    width: 64px !important;
+    height: 64px !important;
+  }
+}
+
+/* =========================
+   Hide all Pending tasks globally
+   ========================= */
+.tl-row:not(.tl-rowHead):has(.tl-status.is-pending){
+  display: none !important;
+}
+
+/* ===== Set Completed Summary ===== */
+.td-summaryCard{
+  background:
+    radial-gradient(900px 260px at 10% 0%, rgba(34,197,94,.18), transparent 60%),
+    radial-gradient(700px 220px at 100% 0%, rgba(37,99,235,.16), transparent 55%),
+    #fff;
+}
+
+.td-summaryGrid{
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.td-summaryBox{
+  border: 1px solid var(--line2);
+  border-radius: 16px;
+  padding: 12px;
+  background: rgba(15,23,42,.02);
+}
+
+.td-summaryBox.isProfit{
+  border-color: rgba(22,163,74,.22);
+  background: rgba(22,163,74,.10);
+}
+
+.td-summaryLabel{
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 900;
+}
+
+.td-summaryValue{
+  margin-top: 6px;
+  font-size: 18px;
+  font-weight: 1000;
+}
+
+@media (min-width: 720px){
+  .td-summaryGrid{
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}

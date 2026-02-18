@@ -7,6 +7,16 @@ import "../styles/memberDepositCrypto.css";
 import memberApi from "../services/memberApi";
 import MemberBottomNav from "../components/MemberBottomNav";
 
+const API_HOST = "http://159.198.40.145:5010";
+
+function toAbsUrl(p) {
+  const s = String(p || "").trim();
+  if (!s) return "";
+  if (s.startsWith("http://") || s.startsWith("https://")) return s;
+  if (s.startsWith("/")) return API_HOST + s;
+  return API_HOST + "/" + s;
+}
+
 const coins = [
   { code: "USDT", name: "Tether", icon: "/coins/usdt.png", networks: ["TRC20", "ERC20", "BEP20"] },
   { code: "BTC", name: "Bitcoin", icon: "/coins/btc.png", networks: ["BTC"] },
@@ -51,7 +61,7 @@ export default function MemberDepositCrypto() {
   // ✅ REAL balance (from /member/me)
   const [balance, setBalance] = useState(0);
 
-  // optional: show counts on page (like your other new UI)
+  // optional: show counts on page
   const [pendingCount, setPendingCount] = useState(0);
   const [creditedCount, setCreditedCount] = useState(0);
 
@@ -60,23 +70,17 @@ export default function MemberDepositCrypto() {
   const [loadingDeposits, setLoadingDeposits] = useState(false);
 
   // UI inputs
-  const minDeposit = 5; // keep your UI constant
-  const confirmationsRequired = 12; // keep your UI constant
+  const minDeposit = 5;
+  const confirmationsRequired = 12;
 
   const [coin, setCoin] = useState(coins[0]);
   const [network, setNetwork] = useState(coins[0].networks[0]);
 
-  // deposit address book (LOCAL UI book)
-  const [addresses, setAddresses] = useState([
-    {
-      id: 1,
-      label: "Main Deposit Address",
-      network: "TRC20",
-      address: "TQwZ9GxkWw3e9bqGQqZk9k9k9k9k9k9k9k",
-      isDefault: true,
-    },
-  ]);
-  const [activeAddr, setActiveAddr] = useState(addresses[0]);
+  // ✅ VIP deposit slot from backend (rank-based)
+  // { vip_rank, asset, network, wallet_address, photo_url }
+  const [vipSlot, setVipSlot] = useState(null);
+  const vipAddress = vipSlot?.wallet_address || "";
+  const vipPhotoUrl = toAbsUrl(vipSlot?.photo_url);
 
   // optional amount
   const [amount, setAmount] = useState("");
@@ -87,18 +91,7 @@ export default function MemberDepositCrypto() {
 
   // UI states
   const [copied, setCopied] = useState(false);
-
-  const [showAdd, setShowAdd] = useState(false);
-  const [newAddr, setNewAddr] = useState({
-    label: "",
-    network: coins[0].networks[0],
-    address: "",
-    isDefault: false,
-  });
-
   const [showQR, setShowQR] = useState(false);
-
-  const canSaveAddr = newAddr.label.trim() && newAddr.address.trim();
 
   // ✅ load balance
   const loadMe = async () => {
@@ -133,41 +126,51 @@ export default function MemberDepositCrypto() {
     }
   };
 
+  // ✅ load VIP address + photo for current coin/network
+  const loadVipAddress = async (assetCode, net) => {
+    try {
+      const { data } = await memberApi.get("/vip-deposit-addresses/me", {
+        params: { asset: assetCode, network: net },
+      });
+      setVipSlot(data || null);
+    } catch {
+      setVipSlot(null);
+    }
+  };
+
   const refreshTop = async () => {
     await Promise.all([loadMe(), loadDeposits()]);
   };
 
   useEffect(() => {
     refreshTop();
+    loadVipAddress(coins[0].code, coins[0].networks[0]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function onSelectCoin(c) {
     setCoin(c);
-    setNetwork(c.networks[0]);
-    // reset active address to first matching network if possible
-    const match = addresses.find((a) => a.network === c.networks[0]) || addresses[0];
-    setActiveAddr(match || null);
+    const net = c.networks[0];
+    setNetwork(net);
     setCopied(false);
+    loadVipAddress(c.code, net);
   }
 
   function onNetworkChange(n) {
     setNetwork(n);
-    const match = addresses.find((a) => a.network === n) || null;
-    setActiveAddr(match);
     setCopied(false);
+    loadVipAddress(coin.code, n);
   }
 
   async function copyAddress() {
-    if (!activeAddr?.address) return;
+    if (!vipAddress) return;
     try {
-      await navigator.clipboard.writeText(activeAddr.address);
+      await navigator.clipboard.writeText(vipAddress);
       setCopied(true);
       setTimeout(() => setCopied(false), 1200);
     } catch {
-      // fallback
       const ta = document.createElement("textarea");
-      ta.value = activeAddr.address;
+      ta.value = vipAddress;
       document.body.appendChild(ta);
       ta.select();
       document.execCommand("copy");
@@ -177,23 +180,6 @@ export default function MemberDepositCrypto() {
     }
   }
 
-  function saveAddress() {
-    const item = { ...newAddr, id: Date.now() };
-    setAddresses((prev) => {
-      let next = [...prev, item];
-      if (item.isDefault) {
-        next = next.map((x) => ({ ...x, isDefault: x.id === item.id }));
-      }
-      return next;
-    });
-
-    // set as active if network matches current network
-    if (item.network === network) setActiveAddr(item);
-
-    setShowAdd(false);
-    setNewAddr({ label: "", network: coin.networks[0], address: "", isDefault: false });
-  }
-
   const depositHint = useMemo(() => {
     if (coin.code === "USDT") return "Send only USDT to this address.";
     return `Send only ${coin.code} to this address.`;
@@ -201,14 +187,14 @@ export default function MemberDepositCrypto() {
 
   const amountOk = amountNum === 0 || amountNum >= minDeposit;
 
-  // ✅ REAL: create deposit request in DB (same backend you use elsewhere)
+  // ✅ REAL: create deposit request in DB
   const submitDeposit = async () => {
-    // amount optional in UI, but backend needs a number
     const n = Number(amount || 0);
     if (!n || Number.isNaN(n) || n <= 0) return alert("Please enter amount.");
     if (n < minDeposit) return alert(`Minimum suggested deposit is ${minDeposit}.`);
     if (!coin?.code) return alert("Select coin.");
     if (!network) return alert("Select network.");
+    if (!vipAddress) return alert("No VIP deposit address found for your package.");
 
     try {
       await memberApi.post("/member/deposits", {
@@ -223,7 +209,6 @@ export default function MemberDepositCrypto() {
       alert("Deposit submitted. Awaiting approval ✅");
       setAmount("");
       await refreshTop();
-      // keep your old history route
       nav("/member/deposit/records");
     } catch (e) {
       alert(e?.response?.data?.message || "Failed to submit deposit");
@@ -253,7 +238,6 @@ export default function MemberDepositCrypto() {
             Min {minDeposit} • {confirmationsRequired} confirmations • Secure deposit
           </div>
 
-          {/* ✅ extra backend data (counts) - safe to keep, remove if you don't want */}
           <div className="dcBalanceMeta" style={{ marginTop: 8 }}>
             Pending: {pendingCount} • Credited: {creditedCount}{" "}
             <button type="button" onClick={refreshTop} style={{ marginLeft: 10 }}>
@@ -287,43 +271,28 @@ export default function MemberDepositCrypto() {
           <div className="dcHelper">Tip: choose coin first, then select the correct network to avoid loss.</div>
         </section>
 
-        {/* Deposit Address book */}
+        {/* ✅ VIP Deposit Address (rank based) */}
         <section className="dcWallet">
           <div className="dcWalletHead">
-            <div className="dcWalletTitle">Deposit Address</div>
+            <div className="dcWalletTitle">
+              Deposit Address{" "}
+              <span className="dcTag" style={{ marginLeft: 8 }}>
+                {vipSlot?.vip_rank ? `VIP ${vipSlot.vip_rank.slice(1)}` : "VIP"}
+              </span>
+            </div>
+
             <button
               className="dcAddWallet"
-              onClick={() => {
-                setNewAddr({ label: "", network: coin.networks[0], address: "", isDefault: false });
-                setShowAdd(true);
-              }}
               type="button"
+              onClick={() => loadVipAddress(coin.code, network)}
+              style={{ opacity: 0.9 }}
             >
-              + Add New
+              Refresh
             </button>
           </div>
 
-          <div className="dcWalletList">
-            {addresses.map((a) => (
-              <button
-                key={a.id}
-                className={`dcSavedWallet ${activeAddr?.id === a.id ? "active" : ""}`}
-                onClick={() => {
-                  setActiveAddr(a);
-                  setNetwork(a.network);
-                  setCopied(false);
-                }}
-                type="button"
-              >
-                <div className="dcWalletLeft">
-                  <div className="dcWalletLabel">
-                    {a.label} {a.isDefault ? <span className="dcTag">Default</span> : null}
-                  </div>
-                  <div className="dcWalletAddr">{maskAddr(a.address)}</div>
-                </div>
-                <div className="dcWalletNet">{a.network}</div>
-              </button>
-            ))}
+          <div className="dcHint" style={{ marginTop: 6 }}>
+            This address is assigned automatically based on your VIP package (VIP 1/2/3).
           </div>
         </section>
 
@@ -370,14 +339,14 @@ export default function MemberDepositCrypto() {
 
             <div className="dcAddressBox">
               <div className="dcAddressText">
-                {activeAddr?.address ? activeAddr.address : "No address found for this network."}
+                {vipAddress ? vipAddress : "No address found for your VIP rank / asset / network."}
               </div>
 
               <div className="dcAddressActions">
-                <button className="dcMiniBtn" type="button" onClick={() => setShowQR(true)} disabled={!activeAddr?.address}>
+                <button className="dcMiniBtn" type="button" onClick={() => setShowQR(true)} disabled={!vipAddress}>
                   QR
                 </button>
-                <button className="dcMiniBtn" type="button" onClick={copyAddress} disabled={!activeAddr?.address}>
+                <button className="dcMiniBtn" type="button" onClick={copyAddress} disabled={!vipAddress}>
                   {copied ? "Copied" : "Copy"}
                 </button>
               </div>
@@ -388,7 +357,7 @@ export default function MemberDepositCrypto() {
             </div>
           </div>
 
-          <button className="dcSubmit" onClick={submitDeposit} disabled={!activeAddr?.address}>
+          <button className="dcSubmit" onClick={submitDeposit} disabled={!vipAddress}>
             I have sent the payment
           </button>
 
@@ -404,7 +373,7 @@ export default function MemberDepositCrypto() {
           </div>
         </section>
 
-        {/* ✅ Optional: show backend crypto deposit list on this page */}
+        {/* Optional: show backend crypto deposit list on this page */}
         <section className="dcCard" style={{ marginTop: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div style={{ fontWeight: 700 }}>Recent Crypto Deposits</div>
@@ -449,67 +418,7 @@ export default function MemberDepositCrypto() {
         </section>
       </div>
 
-      {/* Add Address Modal */}
-      {showAdd && (
-        <div className="dcModalOverlay" onClick={() => setShowAdd(false)}>
-          <div className="dcModal" onClick={(e) => e.stopPropagation()}>
-            <div className="dcModalHead">
-              <div className="dcModalTitle">Add New Deposit Address</div>
-              <button className="dcModalClose" onClick={() => setShowAdd(false)} type="button">
-                ✕
-              </button>
-            </div>
-
-            <div className="dcModalBody">
-              <label className="dcModalLabel">Label</label>
-              <input
-                className="dcModalInput"
-                placeholder="e.g. My TRC20 deposit address"
-                value={newAddr.label}
-                onChange={(e) => setNewAddr((p) => ({ ...p, label: e.target.value }))}
-              />
-
-              <label className="dcModalLabel">Network</label>
-              <select
-                className="dcModalInput"
-                value={newAddr.network}
-                onChange={(e) => setNewAddr((p) => ({ ...p, network: e.target.value }))}
-              >
-                {coin.networks.map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-
-              <label className="dcModalLabel">Address</label>
-              <input
-                className="dcModalInput"
-                placeholder="Paste deposit address"
-                value={newAddr.address}
-                onChange={(e) => setNewAddr((p) => ({ ...p, address: e.target.value }))}
-              />
-
-              <label className="dcCheckRow">
-                <input
-                  type="checkbox"
-                  checked={newAddr.isDefault}
-                  onChange={(e) => setNewAddr((p) => ({ ...p, isDefault: e.target.checked }))}
-                />
-                <span>Set as default</span>
-              </label>
-
-              <button className="dcModalSave" disabled={!canSaveAddr} onClick={saveAddress} type="button">
-                Save Address
-              </button>
-
-              <div className="dcModalTip">Make sure the address matches the selected network.</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* QR Modal (simple) */}
+      {/* ✅ QR Modal (shows ADMIN-UPLOADED photo_url) */}
       {showQR && (
         <div className="dcModalOverlay" onClick={() => setShowQR(false)}>
           <div className="dcModal" onClick={(e) => e.stopPropagation()}>
@@ -522,11 +431,20 @@ export default function MemberDepositCrypto() {
 
             <div className="dcModalBody">
               <div className="dcQrBox">
-                <div className="dcQrPlaceholder">QR</div>
-                <div className="dcQrText">{maskAddr(activeAddr?.address || "")}</div>
+                {vipPhotoUrl ? (
+                  <img
+                    src={vipPhotoUrl}
+                    alt="VIP QR"
+                    style={{ width: "100%", maxWidth: 260, borderRadius: 16, display: "block", margin: "0 auto" }}
+                  />
+                ) : (
+                  <div className="dcQrPlaceholder">No QR photo uploaded</div>
+                )}
+
+                <div className="dcQrText">{maskAddr(vipAddress || "")}</div>
               </div>
 
-              <button className="dcModalSave" onClick={copyAddress} disabled={!activeAddr?.address} type="button">
+              <button className="dcModalSave" onClick={copyAddress} disabled={!vipAddress} type="button">
                 {copied ? "Copied" : "Copy Address"}
               </button>
 
@@ -536,7 +454,7 @@ export default function MemberDepositCrypto() {
         </div>
       )}
 
-      {/* ✅ Bottom nav (same pattern you use everywhere) */}
+      {/* ✅ Bottom nav */}
       <div className="memberBottomNavFixed">
         <MemberBottomNav active="mine" />
       </div>
