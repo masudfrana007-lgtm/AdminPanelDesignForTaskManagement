@@ -1,11 +1,13 @@
 import { useState } from "react";
 import AppLayout from "../components/AppLayout";
 import api from "../services/api";
+import { getUser } from "../auth"; // <-- get logged-in user
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import "./ForgotPassword.css";
 
 export default function ForgotPassword() {
-  const [email, setEmail] = useState("");
+  const user = getUser(); // { email, role, name, ... }
+  const [email] = useState(user?.email || ""); // fixed, not editable
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [msg, setMsg] = useState("");
@@ -26,11 +28,10 @@ export default function ForgotPassword() {
     try {
       setLoading(true);
       await api.post("/users/forgot-password", {
-        email,
+        email, // use fixed email
         newPassword: password,
       });
       setMsg("Password updated successfully");
-      setEmail("");
       setPassword("");
       setConfirm("");
     } catch (e) {
@@ -53,10 +54,11 @@ export default function ForgotPassword() {
             {err && <div className="fpErr">{err}</div>}
             {msg && <div className="fpOk">{msg}</div>}
 
-			<div className="fpEmailDisplay">
-			  <label>Email</label>
-			  <span>{email}</span>
-			</div>
+            {/* Display fixed email */}
+            <div className="fpEmailDisplay">
+              <label>Email</label>
+              <span>{email}</span>
+            </div>
 
             <div className="fpPassWrap">
               <input
@@ -94,7 +96,9 @@ export default function ForgotPassword() {
               <div
                 className={`fpMatch ${passwordsMatch ? "match" : "unmatch"}`}
               >
-                {passwordsMatch ? "Passwords match ✅" : "Passwords do not match ❌"}
+                {passwordsMatch
+                  ? "Passwords match ✅"
+                  : "Passwords do not match ❌"}
               </div>
             )}
 
