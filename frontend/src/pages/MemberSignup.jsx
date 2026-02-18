@@ -96,7 +96,15 @@ export default function MemberSignup() {
         </div>
 
         {/* Icon */}
-        <div className="auth-icon">+</div>
+        {/* <div className="auth-icon">+</div> */}
+
+        <div className="eoLogoRow">
+          <div className="eoMark" aria-hidden="true">
+            <span className="eoMarkInner">e</span>
+          </div>
+          <div className="eoBrand">eorder<span>.io</span>
+          </div>
+        </div>
 
         {/* Title */}
         <div className="auth-title">Sign Up</div>

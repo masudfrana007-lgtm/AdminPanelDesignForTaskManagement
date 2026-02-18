@@ -249,14 +249,29 @@ export default function MemberMenu() {
         <div className="vipHeaderRow">
           <div className="vipBrand">
             <div>
-              <div className="vipBrandTitle">Eorder.io</div>
-              <div className="vipBrandSub">
-                Welcome, <b>{meLS?.nickname || "Member"}</b>
+              {/* <div className="vipBrandTitle">Eorder.io</div> */}
+              <div className="eoLogoRow">
+                <div className="eoMark" aria-hidden="true">
+                  <span className="eoMarkInner">e</span>
+                </div>
+                <div className="eoBrand">eorder<span>.io</span>
+                </div>
               </div>
-
-              <div className="vipBrandSub">
-                Rank: <b>{rankDisplay}</b>
+              <div className="vipUserBottom">
+                <div className="vipBrandSub">
+                  Welcome, <b>{meLS?.nickname || "Member"}</b>
+                </div>
+                <div className="mine-vip">
+                  <span className="mine-vip-pill">{rankDisplay}</span>
+                </div>
               </div>
+              {/* <div className="userIDText">
+                User ID: <b>{meLS?.short_id || "-"}</b>
+              </div> */}
+              
+              {/* <div className="vipBrandSub">
+                <b>{rankDisplay}</b>
+              </div> */}
             </div>
           </div>
 
@@ -264,6 +279,42 @@ export default function MemberMenu() {
             Logout
           </button>
         </div>
+
+        {/* Available Balance Card */}
+        <section className="balanceCardGold">
+          <div className="balanceLeft">
+            <div className="balanceLabelW">Available Balance</div>
+
+            <div className="balanceValueW">
+              {balance.toFixed(2)} <span className="unitW">USDT</span>
+            </div>
+
+            {/* <div className="metaRowW">
+              <span className="pillW">{rankDisplay}</span>
+              <span className="pillW">
+                {eligibleTier ? VIP_RULES[eligibleTier]?.min : "0"}–
+                {eligibleTier && VIP_RULES[eligibleTier]?.max !== Infinity 
+                  ? VIP_RULES[eligibleTier]?.max 
+                  : "∞"} USDT
+              </span>
+            </div> */}
+          </div>
+
+          <div className="balanceRightW">
+            <div className="miniInfo">
+              <div className="miniLabel">Status</div>
+              <div className="miniValue">
+                {data?.assignment?.status || "Inactive"}
+              </div>
+            </div>
+
+            <div className="miniInfo">
+              <div className="miniLabel">User ID</div>
+              <div className="miniValue">{meLS?.short_id || "-"}</div>
+            </div>
+          </div>
+        </section>
+        
 
         {data?.assignment?.status && (
           <div className="vipHint">

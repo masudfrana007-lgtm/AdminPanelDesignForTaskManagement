@@ -39,7 +39,14 @@ export default function MemberLogin() {
           <a className="small" onClick={() => nav("/")}>← Back to Home</a>
         </div>
 
-        <div className="auth-icon">→</div>
+        <div className="eoLogoRow">
+          <div className="eoMark" aria-hidden="true">
+            <span className="eoMarkInner">e</span>
+          </div>
+          <div className="eoBrand">eorder<span>.io</span>
+          </div>
+        </div>
+        {/* <div className="auth-icon">→</div> */}
 
         <div className="auth-title">Welcome Back</div>
         <div className="auth-sub">Sign in to your Eorder.io account</div>

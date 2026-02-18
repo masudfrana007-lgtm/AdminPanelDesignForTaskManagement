@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/memberDepositCrypto.css";
+import "../styles/memberDepositBank.css";
 
 // ✅ backend + bottom bar
 import memberApi from "../services/memberApi";
@@ -230,19 +231,47 @@ export default function MemberDepositCrypto() {
 
       <div className="dcContainer">
         {/* Balance */}
-        <section className="dcBalance">
-          <div className="dcBalanceLabel">Wallet Balance</div>
-          <div className="dcBalanceValue">{money(balance)} USDT</div>
+        <section className="balanceCardAx">
+          <div className="balanceLeft">
+            <div className="balanceLabelAx">Wallet Balance</div>
 
-          <div className="dcBalanceMeta">
-            Min {minDeposit} • {confirmationsRequired} confirmations • Secure deposit
+            <div className="balanceValueW">
+              {money(balance)} <span className="unitW">USDT</span>
+            </div>
+
+            <div className="metaRowW">
+              <span className="pillW pillAx">Min {minDeposit}</span>
+              <span className="pillW pillAx">{confirmationsRequired} confirmations</span>
+              <span className="pillW pillAx">Secure deposit</span>
+            </div>
           </div>
 
-          <div className="dcBalanceMeta" style={{ marginTop: 8 }}>
-            Pending: {pendingCount} • Credited: {creditedCount}{" "}
-            <button type="button" onClick={refreshTop} style={{ marginLeft: 10 }}>
-              Refresh
-            </button>
+          <div className="balanceRightW balanceRightAx">
+            <div className="miniInfo">
+              <div className="miniLabelAx">Pending</div>
+              <div className="miniValue">{pendingCount}</div>
+            </div>
+
+            <div className="miniInfo">
+              <div className="miniLabelAx">Credited</div>
+              <div className="miniValue">{creditedCount}</div>
+            </div>
+
+            <div className="miniInfo" style={{ gridColumn: '1 / -1' }}>
+              <button 
+                type="button" 
+                onClick={refreshTop}
+                className="pillW pillAx"
+                style={{ 
+                  width: '100%', 
+                  cursor: 'pointer',
+                  padding: '8px 12px',
+                  border: 'none'
+                }}
+              >
+                Refresh Balance
+              </button>
+            </div>
           </div>
         </section>
 
@@ -373,52 +402,68 @@ export default function MemberDepositCrypto() {
           </div>
         </section>
 
-        {/* Optional: show backend crypto deposit list on this page */}
-        <section className="dcCard" style={{ marginTop: 16 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div style={{ fontWeight: 700 }}>Recent Crypto Deposits</div>
-            <button type="button" onClick={loadDeposits} disabled={loadingDeposits}>
-              {loadingDeposits ? "Loading..." : "Reload"}
-            </button>
-          </div>
+       
+          <section className="dcCard" style={{ marginTop: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ fontWeight: 700 }}>Recent Crypto Deposits</div>
+              <button 
+                type="button" 
+                onClick={loadDeposits} 
+                disabled={loadingDeposits} 
+                style={{ 
+            cursor: loadingDeposits ? 'not-allowed' : 'pointer',
+            padding: '8px 16px',
+            backgroundColor: '#3b82f6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            fontWeight: '600',
+            fontSize: '14px',
+            opacity: loadingDeposits ? 0.6 : 1,
+            transition: 'all 0.3s ease'
+                }}
+              >
+                {loadingDeposits ? "Loading..." : "Reload"}
+              </button>
+            </div>
 
-          <div style={{ marginTop: 10 }}>
-            {loadingDeposits ? (
-              <div className="dcHint">Loading…</div>
-            ) : deposits.length ? (
-              <div style={{ display: "grid", gap: 10 }}>
-                {deposits.slice(0, 8).map((d) => (
-                  <div
-                    key={String(d?.id || d?.tx_ref || Math.random())}
-                    style={{
-                      padding: 12,
-                      borderRadius: 12,
-                      border: "1px solid rgba(148,163,184,.35)",
-                      display: "grid",
-                      gap: 6,
-                    }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                      <div style={{ fontWeight: 700 }}>
-                        {String(d?.asset || "").toUpperCase()} • {String(d?.network || "").toUpperCase()}
-                      </div>
-                      <div style={{ fontWeight: 700 }}>{uiStatus(d?.status)}</div>
-                    </div>
-                    <div className="dcHint">
-                      Amount: {money(d?.amount)} • Date: {fmtDate(d?.created_at)}
-                    </div>
-                    <div className="dcHint">Ref: {d?.tx_ref || `DP-${d?.id}`}</div>
+            <div style={{ marginTop: 10 }}>
+              {loadingDeposits ? (
+                <div className="dcHint">Loading…</div>
+              ) : deposits.length ? (
+                <div style={{ display: "grid", gap: 10 }}>
+            {deposits.slice(0, 8).map((d) => (
+              <div
+                key={String(d?.id || d?.tx_ref || Math.random())}
+                style={{
+                  padding: 12,
+                  borderRadius: 12,
+                  border: "1px solid rgba(148,163,184,.35)",
+                  display: "grid",
+                  gap: 6,
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+                  <div style={{ fontWeight: 700 }}>
+              {String(d?.asset || "").toUpperCase()} • {String(d?.network || "").toUpperCase()}
                   </div>
-                ))}
+                  <div style={{ fontWeight: 700 }}>{uiStatus(d?.status)}</div>
+                </div>
+                <div className="dcHint">
+                  Amount: {money(d?.amount)} • Date: {fmtDate(d?.created_at)}
+                </div>
+                <div className="dcHint">Ref: {d?.tx_ref || `DP-${d?.id}`}</div>
               </div>
-            ) : (
-              <div className="dcHint">No crypto deposit records found.</div>
-            )}
-          </div>
-        </section>
-      </div>
+            ))}
+                </div>
+              ) : (
+                <div className="dcHint">No crypto deposit records found.</div>
+              )}
+            </div>
+          </section>
+              </div>
 
-      {/* ✅ QR Modal (shows ADMIN-UPLOADED photo_url) */}
+              {/* ✅ QR Modal (shows ADMIN-UPLOADED photo_url) */}
       {showQR && (
         <div className="dcModalOverlay" onClick={() => setShowQR(false)}>
           <div className="dcModal" onClick={(e) => e.stopPropagation()}>

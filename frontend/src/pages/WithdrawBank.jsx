@@ -310,8 +310,8 @@ export default function WithdrawBankV3() {
   return (
     <div className="vipWhite wb3">
       {/* Top bar */}
-      <header className="topbarW">
-        <button className="backIcon" onClick={() => nav(-1)} aria-label="Back">
+      <header className="dcTop">
+        <button className="dcBack" onClick={() => nav(-1)} aria-label="Back">
           ←
         </button>
 
@@ -323,7 +323,7 @@ export default function WithdrawBankV3() {
           <div className="topSub">Withdraw securely to your personal bank account</div>
         </div>
 
-        <button className="homeBtn" onClick={() => nav("/member/withdraw/records")} aria-label="Home">
+        <button className="dcHistoryBtn" onClick={() => nav("/member/withdraw/records")}>
           History
         </button>
       </header>

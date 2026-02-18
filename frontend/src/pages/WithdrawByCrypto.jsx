@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import memberApi from "../services/memberApi";
 import "./WithdrawByCrypto.css";
+import "../styles/memberDepositBank.css";
 import MemberBottomNav from "../components/MemberBottomNav";
 
 const coins = [
@@ -186,66 +187,97 @@ export default function WithdrawCrypto() {
   return (
     <div className="wcPage">
       {/* Header */}
-      <header className="wcTop">
-        <button className="wcBack" onClick={() => nav(-1)}>
+      <header className="dcTop">
+        <button className="dcBack" onClick={() => nav(-1)} aria-label="Back">
           ←
         </button>
-        <div className="wcTitle">Withdraw Crypto</div>
-          <button
-            className="wcHistoryBtn"
-            type="button"
-            onClick={() => nav("/member/withdraw/records")}
-          >
-            History
-          </button>
-        <div style={{ width: 48 }} />
+        <div className="dcTitle">Withdraw Crypto</div>
+        <button className="dcHistoryBtn" onClick={() => nav("/member/withdraw/records")}>
+          History
+        </button>
       </header>
 
       <div className="wcContainer">
+        <main className="wrapW">
         {/* Balance */}
-        <section className="wcBalance">
-          <div className="wcBalanceLabel">Wallet Balance</div>
-          <div className="wcBalanceValue">{money(balance)} USDT</div>
-          <div className="wcBalanceMeta">
-            Min {MIN_WITHDRAW} • Fee {FEE}
+        <section className="balanceCardAx">
+          <div className="balanceLeft">
+            <div className="balanceLabelAx">Wallet Balance</div>
+
+            <div className="balanceValueW">
+              {money(balance)} <span className="unitW">USDT</span>
+            </div>
+
+            <div className="metaRowW">
+              <span className="pillW pillAx">Min {MIN_WITHDRAW} USDT</span>
+              <span className="pillW pillAx">Fee {FEE} USDT</span>
+              <span className="pillW pillAx">Instant Processing</span>
+            </div>
+          </div>
+
+          <div className="balanceRightW balanceRightAx">
+            <div className="miniInfo">
+              <div className="miniLabelAx">Fee</div>
+              <div className="miniValue">{FEE} USDT</div>
+            </div>
+
+            <div className="miniInfo">
+              <div className="miniLabelAx">Minimum</div>
+              <div className="miniValue">{MIN_WITHDRAW} USDT</div>
+            </div>
           </div>
         </section>
 
-        {/* Coins (disabled by requirement) */}
-        <section className="wcCoins">
-          <div className="wcCoinsTitle">Select Asset</div>
-          <div className="wcCoinRow">
-            {coins.map((c) => (
-              <button
-                key={c.code}
-                className={`wcCoin ${coin.code === c.code ? "active" : ""}`}
-                disabled={disableFilledInputs}
-                onClick={() => {}}
-                style={disableFilledInputs ? { opacity: 0.6, cursor: "not-allowed" } : undefined}
-                type="button"
-              >
-                <img className="wcCoinIcon" src={c.icon} alt={c.code} />
-                <div>
-                  <div className="wcCoinCode">{c.code}</div>
-                  <div className="wcCoinName">{c.name}</div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {/* Wallets -> Beneficiary dropdown */}
-        <section className="wcWallet">
-          <div className="wcWalletHead">
-            <div className="wcWalletTitle">Bind Wallet</div>
-            <button className="wcAddWallet" onClick={goAddBeneficiary} type="button">
-              + Add New
-            </button>
+        {/* Withdrawal Request */}
+        <section className="cardW wc3-requestCard" id="withdraw-request">
+          <div className="wc3-cardHead">
+            <h2 className="h2W">Withdrawal Request</h2>
+            <span className="smallMutedW">Verify crypto details carefully</span>
           </div>
 
-          <div className="wcCard" style={{ marginTop: 12 }}>
-            <div className="wcField">
-              <label>Beneficiary</label>
+          {err && <div className="wc3-error wc3-banner">{err}</div>}
+          {ok && <div className="wc3-success wc3-banner">{ok}</div>}
+
+          <div className="wc3-grid">
+            {/* Asset Selection */}
+            <div className="wc3-field" style={{ gridColumn: "1 / -1" }}>
+              <label>Select Asset</label>
+              <div className="wc3-coinGrid">
+                {coins.map((c) => (
+                  <button
+                    key={c.code}
+                    className={`wc3-coinCard ${coin.code === c.code ? "active" : ""}`}
+                    disabled={disableFilledInputs}
+                    onClick={() => {}}
+                    type="button"
+                  >
+                    <img className="wc3-coinIcon" src={c.icon} alt={c.code} />
+                    <div className="wc3-coinInfo">
+                      <div className="wc3-coinCode">{c.code}</div>
+                      <div className="wc3-coinName">{c.name}</div>
+                    </div>
+                    {coin.code === c.code && <span className="wc3-checkmark">✓</span>}
+                  </button>
+                ))}
+              </div>
+              {disableFilledInputs && (
+                <div className="wc3-help">Asset is auto-filled from beneficiary.</div>
+              )}
+            </div>
+
+            {/* Beneficiary Selection */}
+            <div className="wc3-field" style={{ gridColumn: "1 / -1" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                <label style={{ margin: 0 }}>Saved Wallet</label>
+                <button
+                  type="button"
+                  className="wc3-addBtn"
+                  onClick={goAddBeneficiary}
+                >
+                  Add New
+                </button>
+              </div>
+
               <select
                 value={selectedId}
                 onChange={(e) => setSelectedId(e.target.value)}
@@ -266,57 +298,104 @@ export default function WithdrawCrypto() {
               </select>
 
               {!beneficiaries.length && !loadingBf ? (
-                <div className="wcCalc" style={{ marginTop: 8 }}>
-                  No saved wallets. Tap <b>+ Add New</b> to create a beneficiary.
+                <div className="wc3-help">
+                  No saved wallets found. Click <b>+ Add New</b> to create a beneficiary.
                 </div>
-              ) : null}
+              ) : (
+                <div className="wc3-help">
+                  Select a saved wallet. Network and address are auto-filled for security.
+                </div>
+              )}
+            </div>
+
+            {/* Network (disabled) */}
+            <div className="wc3-field">
+              <label>Network</label>
+              <select value={network} onChange={() => {}} disabled={disableFilledInputs}>
+                {coin.networks.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+              <div className="wc3-help">Network is locked for security.</div>
+            </div>
+
+            {/* Amount */}
+            <div className="wc3-field">
+              <label>Withdrawal Amount</label>
+              <input
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder={`Min ${MIN_WITHDRAW}`}
+                inputMode="decimal"
+              />
+              <div className="wc3-calc">
+                Fee {FEE} {coin.code} • You'll receive <b>{money(receive)} {coin.code}</b>
+              </div>
+            </div>
+
+            {/* Wallet Address (disabled) */}
+            <div className="wc3-field" style={{ gridColumn: "1 / -1" }}>
+              <label>Wallet Address</label>
+              <input
+                value={address}
+                onChange={() => {}}
+                disabled={disableFilledInputs}
+                placeholder={`${coin.code} address`}
+              />
+              <div className="wc3-help">Address is locked from beneficiary for security.</div>
             </div>
           </div>
-        </section>
 
-        {/* Form */}
-        <section className="wcCard">
-          {err && <div className="wcError">{err}</div>}
-          {ok && <div className="wcSuccess">{ok}</div>}
-
-          <div className="wcField">
-            <label>Network</label>
-            <select value={network} onChange={() => {}} disabled={disableFilledInputs}>
-              {coin.networks.map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="wcField">
-            <label>Amount</label>
-            <input
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder={`Min ${MIN_WITHDRAW}`}
-              inputMode="decimal"
-            />
-            <div className="wcCalc">
-              Fee {FEE} • Receive {money(receive)} {coin.code}
+          {/* Summary */}
+          <div className="wc3-summary">
+            <div>
+              <span>Amount</span>
+              <span>{money(amountNum)} {coin.code}</span>
+            </div>
+            <div>
+              <span>Fee</span>
+              <span>{FEE} {coin.code}</span>
+            </div>
+            <div className="strong">
+              <span>You'll Receive</span>
+              <span>{money(receive)} {coin.code}</span>
             </div>
           </div>
 
-          <div className="wcField">
-            <label>Wallet Address</label>
-            <input
-              value={address}
-              onChange={() => {}}
-              disabled={disableFilledInputs}
-              placeholder={`Enter ${coin.code} address`}
-            />
-          </div>
-
-          <button className="wcSubmit" disabled={!canSubmit} onClick={submit} type="button">
-            {submitting ? "Submitting..." : "Submit Withdrawal"}
+          {/* Desktop button */}
+          <button
+            className="wc3-primaryBtn wc3-desktopOnly"
+            onClick={submit}
+            type="button"
+            disabled={!canSubmit}
+          >
+            {submitting ? "Processing..." : "Confirm Withdrawal"}
           </button>
+
+          <p className="wc3-note">
+            Withdrawals are processed within 24 hours. Ensure wallet address is correct before confirming.
+          </p>
         </section>
+        </main>
+      </div>
+
+      {/* Sticky mobile confirm bar */}
+      <div className="wc3-stickyBar" role="region" aria-label="Withdrawal action bar">
+        <div className="wc3-stickyMeta">
+          <div className="wc3-stickyLabel">Receive</div>
+          <div className="wc3-stickyValue">{money(receive)} {coin.code}</div>
+        </div>
+
+        <button
+          className="wc3-stickyBtn"
+          type="button"
+          onClick={submit}
+          disabled={!canSubmit}
+        >
+          {submitting ? "Processing..." : "Confirm"}
+        </button>
       </div>
 
       <MemberBottomNav active="mine" />

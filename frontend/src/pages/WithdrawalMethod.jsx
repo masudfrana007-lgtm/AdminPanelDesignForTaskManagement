@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/WithdrawalMethod.css";
 import withdrawBg from "../assets/bg/withdraw.png";
-import usdtIcon from "../assets/icons/usdt.png";
+// import usdtIcon from "../assets/icons/usdt.png";
 import MemberBottomNav from "../components/MemberBottomNav";
 import memberApi from "../services/memberApi";
 import usdtIcon from "../assets/icons/usdt.png";

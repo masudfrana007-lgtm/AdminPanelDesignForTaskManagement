@@ -33,7 +33,7 @@
   height:40px;
   border-radius:12px;
   border:1px solid var(--line);
-  background:#f9fafb;
+  background:#5493d3;
   font-weight:900;
   cursor:pointer;
 }
@@ -688,4 +688,14 @@
 
 @media (max-width: 720px){
   .db3-desktopOnly{ display:block !important; }
+}
+
+@media (max-width: 720px){
+  .pillW,.pillAx{
+   display: none !important;
+  }
+  .balanceRightW{
+    display: none !important;
+  }
+
 }

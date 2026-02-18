@@ -7,6 +7,7 @@ import TeamJoinPopup from "../components/TeamJoinPopup";
 import InviteFriendsPopup from "../components/InviteFriendsPopup";
 import "../styles/memberMine.css";
 
+
 import memberApi from "../services/memberApi";
 
 /* ✅ icons (adjust path if your structure is different) */
@@ -90,7 +91,7 @@ export default function MemberMine() {
   const vip = rankLabel(me?.ranking);
   const balance = Number(me?.balance || 0);
 
-  // "Reference code" shown in UI:
+  // "User ID" shown in UI:
   // best available is member.short_id (you already return it)
   const referenceCode = me?.sponsor_short_id || "-";
 
@@ -132,7 +133,7 @@ export default function MemberMine() {
                   </div>
 
                   <div className="mine-ref">
-                    <span className="mine-ref-label">Reference code:</span>
+                    <span className="mine-ref-label">User ID:</span>
                     <span className="mine-ref-code">{referenceCode}</span>
                   </div>
                 </div>

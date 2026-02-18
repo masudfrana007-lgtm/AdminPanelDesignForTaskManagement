@@ -76,6 +76,10 @@ import SecurityAccountSafety from "./pages/SecurityAccountSafety";
 // Platform Rules Guide
 import PlatformRulesGuide from "./pages/PlatformRulesGuide";
 
+// Security and Settings
+import Security from "./pages/Security";
+import Settings from "./pages/Settings";
+
 import SupportInbox from "./pages/SupportInbox";
 import SupportChat from "./pages/SupportChat";
 
@@ -245,6 +249,24 @@ export const router = createBrowserRouter([
     element: (
       <MemberProtectedRoute>
         <MemberMine />
+      </MemberProtectedRoute>
+    ),
+  },
+
+  {
+    path: "/security",
+    element: (
+      <MemberProtectedRoute>
+        <Security />
+      </MemberProtectedRoute>
+    ),
+  },
+
+  {
+    path: "/setting",
+    element: (
+      <MemberProtectedRoute>
+        <Settings />
       </MemberProtectedRoute>
     ),
   },

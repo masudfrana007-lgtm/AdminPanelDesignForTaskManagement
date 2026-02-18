@@ -1,0 +1,514 @@
+/* Security Page Styles */
+
+:root {
+  --sec-primary: #16a34a;
+  --sec-primary-light: #22c55e;
+  --sec-danger: #ef4444;
+  --sec-warning: #f59e0b;
+  --sec-info: #3b82f6;
+  --sec-bg: #f6f8fb;
+  --sec-card: #ffffff;
+  --sec-text: #0f172a;
+  --sec-muted: #64748b;
+  --sec-border: #e5e7eb;
+}
+
+.securityPage {
+  min-height: 100vh;
+  background: var(--sec-bg);
+  padding-bottom: 80px;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Header */
+.secHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: #fff;
+  border-bottom: 1px solid var(--sec-border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.secBack {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 2px solid var(--sec-border);
+  background: #fff;
+  color: var(--sec-text);
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.secBack:hover {
+  border-color: var(--sec-primary);
+  background: rgba(22, 163, 74, 0.05);
+}
+
+.secTitle {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--sec-text);
+  letter-spacing: 0.3px;
+}
+
+/* Container */
+.secContainer {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 20px 16px;
+}
+
+/* Security Score Card */
+.secScoreCard {
+  background: linear-gradient(135deg, var(--sec-primary) 0%, var(--sec-primary-light) 100%);
+  border-radius: 24px;
+  padding: 28px;
+  margin-bottom: 24px;
+  box-shadow: 0 12px 32px rgba(22, 163, 74, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.secScoreCard::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.15), transparent);
+  border-radius: 50%;
+}
+
+.secScoreHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: #fff;
+  margin-bottom: 24px;
+}
+
+.secScoreIcon {
+  font-size: 32px;
+}
+
+.secScoreTitle {
+  font-size: 20px;
+  font-weight: 950;
+  margin-bottom: 4px;
+}
+
+.secScoreSubtitle {
+  font-size: 13px;
+  opacity: 0.9;
+  font-weight: 600;
+}
+
+.secScoreCircle {
+  position: relative;
+  width: 120px;
+  margin: 0 auto;
+}
+
+.secScoreValue {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 32px;
+  font-weight: 950;
+  color: #fff;
+}
+
+/* Section */
+.secSection {
+  margin-bottom: 28px;
+}
+
+.secSectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--sec-text);
+  margin-bottom: 14px;
+  letter-spacing: 0.3px;
+}
+
+.secSectionTitle svg {
+  color: var(--sec-primary);
+}
+
+/* Card */
+.secCard {
+  background: var(--sec-card);
+  border-radius: 20px;
+  border: 2px solid var(--sec-border);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+}
+
+/* Feature Item */
+.secFeature {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--sec-border);
+}
+
+.secFeature:last-child {
+  border-bottom: none;
+}
+
+.secFeatureLeft {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+}
+
+.secFeatureIcon {
+  font-size: 24px;
+  color: var(--sec-muted);
+}
+
+.secFeatureIcon.enabled {
+  color: var(--sec-primary);
+}
+
+.secFeatureInfo {
+  flex: 1;
+}
+
+.secFeatureTitle {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--sec-text);
+  margin-bottom: 4px;
+}
+
+.secFeatureDesc {
+  font-size: 12px;
+  color: var(--sec-muted);
+  font-weight: 600;
+}
+
+/* Toggle Switch */
+.secToggle {
+  position: relative;
+  display: inline-block;
+  width: 56px;
+  height: 30px;
+}
+
+.secToggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.secToggleSlider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: 0.3s;
+  border-radius: 30px;
+}
+
+.secToggleSlider:before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.secToggle input:checked + .secToggleSlider {
+  background: linear-gradient(135deg, var(--sec-primary), var(--sec-primary-light));
+}
+
+.secToggle input:checked + .secToggleSlider:before {
+  transform: translateX(26px);
+}
+
+/* Action Item */
+.secActionItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 18px 20px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-bottom: 1px solid var(--sec-border);
+  transition: background 0.2s ease;
+}
+
+.secActionItem:last-child {
+  border-bottom: none;
+}
+
+.secActionItem:hover {
+  background: rgba(22, 163, 74, 0.03);
+}
+
+.secActionLeft {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+}
+
+.secActionIcon {
+  font-size: 20px;
+  color: var(--sec-primary);
+}
+
+.secActionTitle {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--sec-text);
+  margin-bottom: 4px;
+}
+
+.secActionDesc {
+  font-size: 12px;
+  color: var(--sec-muted);
+  font-weight: 600;
+}
+
+.secActionArrow {
+  font-size: 24px;
+  color: var(--sec-muted);
+  font-weight: 300;
+}
+
+/* Device Item */
+.secDevice {
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--sec-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.secDevice:last-child {
+  border-bottom: none;
+}
+
+.secDevice.current {
+  background: linear-gradient(135deg, rgba(22, 163, 74, 0.08), rgba(34, 197, 94, 0.04));
+}
+
+.secDeviceInfo {
+  flex: 1;
+}
+
+.secDeviceHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.secDeviceName {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--sec-text);
+}
+
+.secDeviceBadge {
+  background: var(--sec-primary);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.secDeviceMeta {
+  font-size: 12px;
+  color: var(--sec-muted);
+  font-weight: 600;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.secDeviceRemove {
+  padding: 8px 16px;
+  border: 2px solid var(--sec-danger);
+  background: transparent;
+  color: var(--sec-danger);
+  font-size: 13px;
+  font-weight: 800;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.secDeviceRemove:hover {
+  background: var(--sec-danger);
+  color: #fff;
+}
+
+/* Security Log */
+.secLog {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--sec-border);
+}
+
+.secLog:last-child {
+  border-bottom: none;
+}
+
+.secLogIcon {
+  font-size: 24px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.secLogIcon .success {
+  color: var(--sec-primary);
+}
+
+.secLogIcon .verified {
+  color: var(--sec-info);
+}
+
+.secLogIcon .blocked {
+  color: var(--sec-danger);
+}
+
+.secLogInfo {
+  flex: 1;
+}
+
+.secLogAction {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--sec-text);
+  margin-bottom: 6px;
+}
+
+.secLogDetails {
+  font-size: 12px;
+  color: var(--sec-muted);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.secLogTime {
+  font-size: 11px;
+  color: var(--sec-muted);
+  font-weight: 700;
+}
+
+/* Security Tips */
+.secTips {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(37, 99, 235, 0.05));
+  border: 2px solid rgba(59, 130, 246, 0.2);
+  border-left: 4px solid var(--sec-info);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  gap: 16px;
+}
+
+.secTipIcon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.secTipContent {
+  flex: 1;
+}
+
+.secTipTitle {
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--sec-text);
+  margin-bottom: 12px;
+}
+
+.secTipList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.secTipList li {
+  font-size: 13px;
+  color: var(--sec-text);
+  font-weight: 600;
+  padding: 8px 0;
+  padding-left: 24px;
+  position: relative;
+  line-height: 1.6;
+}
+
+.secTipList li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--sec-primary);
+  font-weight: 900;
+  font-size: 14px;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .secContainer {
+    padding: 16px 12px;
+  }
+
+  .secScoreCard {
+    padding: 20px;
+  }
+
+  .secFeature,
+  .secActionItem,
+  .secDevice {
+    padding: 14px 16px;
+  }
+
+  .secTips {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .secDeviceRemove {
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+}

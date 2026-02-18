@@ -156,9 +156,10 @@
   font-size: 18px;
 }
 .welcomeName{
-  font-size: 36px;
+  font-size: 25px;
   font-weight: 950;
   letter-spacing: -0.2px;
+  display: flex;
 }
 .welcomeBalance{
   margin-top: 6px;
@@ -175,6 +176,7 @@
   background: rgb(236, 232, 232);
   color: rgba(14,22,34,0.85);
   font-weight: 900;
+  
 }
 .welcomeMeta{
   margin-top: 2px;
@@ -435,4 +437,19 @@
   letter-spacing: -0.15px;
   color: white;
   
+}
+
+.mine-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.mine-vip-pill {
+  display: inline-block;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ffbf5a, #ff7b19);
+  color: #fff;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.22);
 }

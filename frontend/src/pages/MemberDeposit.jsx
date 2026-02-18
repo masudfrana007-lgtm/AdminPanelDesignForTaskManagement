@@ -122,7 +122,7 @@ export default function DepositMethod() {
 
             <div className="metaRowW">
               <span className="pillW pillAx">{demo.vipLevel}</span>
-              <span className="pillW pillAx">{demo.commissionRate}% Commission</span>
+              {/* <span className="pillW pillAx">{demo.commissionRate}% Commission</span> */}
               <span className="pillW pillAx">
                 {demo.availableMin}–{demo.availableMax} USDT
               </span>
