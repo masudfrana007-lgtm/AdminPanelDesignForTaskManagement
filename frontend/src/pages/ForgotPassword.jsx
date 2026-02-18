@@ -53,13 +53,10 @@ export default function ForgotPassword() {
             {err && <div className="fpErr">{err}</div>}
             {msg && <div className="fpOk">{msg}</div>}
 
-            <input
-              type="email"
-              placeholder="User email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+			<div className="fpEmailDisplay">
+			  <label>Email</label>
+			  <span>{email}</span>
+			</div>
 
             <div className="fpPassWrap">
               <input
