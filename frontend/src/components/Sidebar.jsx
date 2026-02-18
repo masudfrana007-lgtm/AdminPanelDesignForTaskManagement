@@ -9,6 +9,7 @@ import {
   FaBoxOpen,
   FaClipboardList, // ✅ add
   FaWallet,  
+  FaCog,
 } from "react-icons/fa";
 
 export default function Sidebar({ collapsed, onItemClick }) {
@@ -119,6 +120,18 @@ export default function Sidebar({ collapsed, onItemClick }) {
     </NavLink>
   </>
 )}
+
+          {/* --- NEW Settings Section --- */}
+    <div className="sidebar-section">Settings</div>
+    <NavLink
+      to="/settings"
+      className={linkClass}
+      title="Settings"
+      onClick={onItemClick}
+    >
+      <FaCog />
+      {label("Settings")}
+    </NavLink>
 
     </div>
   );

@@ -85,7 +85,11 @@ router.get("/dashboard/summary", auth, async (req, res) => {
       pool.query(`SELECT role, COUNT(*)::int AS c FROM users GROUP BY role ORDER BY role`),
 
       pool.query(`SELECT COUNT(*)::int AS c FROM tasks`),
-      pool.query(`SELECT COUNT(*)::int AS c FROM sets`),
+      pool.query(`
+        SELECT COUNT(*)::int AS c
+        FROM sets
+        WHERE is_archived = false
+      `),      
       pool.query(`SELECT COUNT(*)::int AS c FROM members`),
 
       pool.query(`
@@ -214,6 +218,31 @@ router.get("/dashboard/recent", auth, async (req, res) => {
     console.error(e);
     res.status(500).json({ message: "Failed to load recent transactions" });
   }
+});
+
+router.post("/forgot-password", async (req, res) => {
+  const { email, newPassword } = req.body;
+
+  if (!email || !newPassword)
+    return res.status(400).json({ message: "Email and password required" });
+
+  const hash = await bcrypt.hash(newPassword, 10);
+
+  const r = await pool.query(
+    `
+    UPDATE users
+    SET password=$1
+    WHERE email=$2
+      AND role IN ('owner','agent')
+    RETURNING id
+    `,
+    [hash, email]
+  );
+
+  if (!r.rowCount)
+    return res.status(404).json({ message: "User not found" });
+
+  res.json({ message: "Password updated" });
 });
 
 export default router;

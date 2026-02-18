@@ -305,7 +305,7 @@ export default function Members() {
               <tbody>
                 {filtered.map((m) => (
                   <tr key={m.short_id || m.id}>
-                    <td>{m.id}</td>
+                    <td>{m.short_id}</td>
                     <td>{m.nickname}</td>
                     <td>{m.phone}</td>
 

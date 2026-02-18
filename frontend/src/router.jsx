@@ -91,9 +91,15 @@ import CustomerService from "./pages/CustomerService";
 
 import MemberSetHistory from "./pages/MemberSetHistory";
 
+import ForgotPassword from "./pages/ForgotPassword";
+
+import Settings from "./pages/Settings";
+
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
   
+  { path: "/forgot-password", element: <ForgotPassword /> },
+
   { path: "/member/login", element: <MemberLogin /> },
   { path: "/member/signup", element: <MemberSignup /> },
 
@@ -560,6 +566,15 @@ export const router = createBrowserRouter([
     <MemberProtectedRoute>
       <MemberSetHistory />
     </MemberProtectedRoute>
+  ),
+},
+
+{
+  path: "/settings",
+  element: (
+    <ProtectedRoute>
+      <Settings />
+    </ProtectedRoute>
   ),
 },
 
