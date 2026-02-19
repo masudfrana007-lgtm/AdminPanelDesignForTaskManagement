@@ -60,7 +60,9 @@ router.post("/", auth, async (req, res) => {
 
 router.get("/", auth, async (req, res) => {
   const r = await pool.query(
-    "SELECT id, short_id, name, email, role, created_by, created_at, password FROM users ORDER BY id DESC"
+    `SELECT id, short_id, name, email, role, created_by, created_at, is_blocked
+     FROM users
+     ORDER BY id DESC`
   );
   return res.json(r.rows);
 });
@@ -247,43 +249,75 @@ router.post("/forgot-password", async (req, res) => {
 
 // Block a user
 router.post("/:id/block", auth, allowRoles("admin", "owner"), async (req, res) => {
-  const { id } = req.params;
+  const id = Number(req.params.id);
 
   try {
+    // ✅ Owner can block any agent
+    if (req.user.role === "owner") {
+      const r = await pool.query(
+        `UPDATE users
+         SET is_blocked = true
+         WHERE id = $1
+           AND role = 'agent'
+         RETURNING id, short_id, name, email, role, is_blocked, created_by`,
+        [id]
+      );
+      if (!r.rowCount) return res.status(404).json({ message: "User not found / not allowed" });
+      return res.json(r.rows[0]);
+    }
+
+    // ✅ Admin can block anyone except admin (optional safety)
     const r = await pool.query(
       `UPDATE users
        SET is_blocked = true
        WHERE id = $1
-       RETURNING id, name, email, role, is_blocked`,
+         AND role <> 'admin'
+       RETURNING id, short_id, name, email, role, is_blocked, created_by`,
       [id]
     );
 
-    if (!r.rowCount) return res.status(404).json({ message: "User not found" });
-    res.json(r.rows[0]);
+    if (!r.rowCount) return res.status(404).json({ message: "User not found / not allowed" });
+    return res.json(r.rows[0]);
   } catch (e) {
     console.error(e);
-    res.status(500).json({ message: "Failed to block user" });
+    return res.status(500).json({ message: "Failed to block user" });
   }
 });
 
 // Unblock a user
 router.post("/:id/unblock", auth, allowRoles("admin", "owner"), async (req, res) => {
-  const { id } = req.params;
+  const id = Number(req.params.id);
 
   try {
+    // ✅ Owner can unblock any agent
+    if (req.user.role === "owner") {
+      const r = await pool.query(
+        `UPDATE users
+         SET is_blocked = false
+         WHERE id = $1
+           AND role = 'agent'
+         RETURNING id, short_id, name, email, role, is_blocked, created_by`,
+        [id]
+      );
+      if (!r.rowCount) return res.status(404).json({ message: "User not found / not allowed" });
+      return res.json(r.rows[0]);
+    }
+
+    // ✅ Admin can unblock anyone except admin (optional safety)
     const r = await pool.query(
       `UPDATE users
        SET is_blocked = false
        WHERE id = $1
-       RETURNING id, name, email, role, is_blocked`,
+         AND role <> 'admin'
+       RETURNING id, short_id, name, email, role, is_blocked, created_by`,
       [id]
     );
 
-    if (!r.rowCount) return res.status(404).json({ message: "User not found" });
-    res.json(r.rows[0]);
+    if (!r.rowCount) return res.status(404).json({ message: "User not found / not allowed" });
+    return res.json(r.rows[0]);
   } catch (e) {
     console.error(e);
-    res.status(500).json({ message: "Failed to unblock user" });
+    return res.status(500).json({ message: "Failed to unblock user" });
   }
 });
 

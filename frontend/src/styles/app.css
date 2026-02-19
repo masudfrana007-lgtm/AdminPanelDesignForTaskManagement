@@ -491,3 +491,30 @@
 .sx-rowCombo td {
   background: transparent;
 }
+
+/* ✅ colored action buttons - ALWAYS solid */
+.users-page .btnMini{
+  width:auto;
+  padding:8px 12px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  font-weight:900;
+  color:#fff;
+}
+
+/* 🔴 Block button */
+.users-page .btnBlock{
+  background:#ef4444 !important;
+}
+
+/* 🟢 Unblock button */
+.users-page .btnUnblock{
+  background:#22c55e !important;
+}
+
+/* disabled */
+.users-page .btnMini:disabled{
+  opacity:.55;
+  cursor:not-allowed;
+}

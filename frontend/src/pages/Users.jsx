@@ -6,10 +6,12 @@ import AppLayout from "../components/AppLayout";
 
 export default function Users() {
   const me = getUser();
+
   const [list, setList] = useState([]);
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [busyId, setBusyId] = useState(null); // ✅ per-row loading for block/unblock
 
   const [form, setForm] = useState({
     name: "",
@@ -19,12 +21,8 @@ export default function Users() {
   });
 
   const load = async () => {
-    try {
-      const { data } = await api.get("/users");
-      setList(data);
-    } catch (e) {
-      console.error(e);
-    }
+    const { data } = await api.get("/users");
+    setList(Array.isArray(data) ? data : []);
   };
 
   useEffect(() => {
@@ -56,33 +54,63 @@ export default function Users() {
       setTimeout(() => setOk(""), 1500);
     } catch (e2) {
       const data = e2?.response?.data;
-
-      if (data?.fieldErrors) {
-        setFieldErrors(data.fieldErrors);
-      } else {
-        setErr(data?.message || "Failed");
-      }
+      if (data?.fieldErrors) setFieldErrors(data.fieldErrors);
+      else setErr(data?.message || "Failed");
     }
   };
 
-  const toggleBlock = async (user) => {
+  // ✅ admin can manage everyone except admins (optional)
+  // ✅ owner can manage ANY agent (his or not)
+  const canManage = (u) => {
+    if (!u) return false;
+    if (me?.role === "admin") return u.role !== "admin";
+    if (me?.role === "owner") return u.role === "agent";
+    return false;
+  };
+
+  const toggleBlock = async (u) => {
+    setErr("");
+    setOk("");
+
+    if (!canManage(u)) {
+      setErr("Not allowed.");
+      return;
+    }
+
+    const willBlock = !Boolean(u.is_blocked);
+    const confirmMsg = willBlock
+      ? `Block ${u.name} (${u.short_id})?`
+      : `Unblock ${u.name} (${u.short_id})?`;
+
+    if (!window.confirm(confirmMsg)) return;
+
+    // ✅ optimistic UI update
+    setBusyId(u.id);
+    setList((prev) =>
+      prev.map((x) => (x.id === u.id ? { ...x, is_blocked: willBlock } : x))
+    );
+
     try {
-      if (user.is_blocked) {
-        await api.post(`/users/${user.id}/unblock`);
-      } else {
-        await api.post(`/users/${user.id}/block`);
-      }
-      await load();
-    } catch (e) {
-      console.error(e);
-      setErr("Failed to update status");
-      setTimeout(() => setErr(""), 2000);
+      await api.post(`/users/${u.id}/${willBlock ? "block" : "unblock"}`);
+      setOk(willBlock ? "User blocked" : "User unblocked");
+      setTimeout(() => setOk(""), 1200);
+    } catch (e2) {
+      // rollback if failed
+      setList((prev) =>
+        prev.map((x) => (x.id === u.id ? { ...x, is_blocked: !willBlock } : x))
+      );
+      const data = e2?.response?.data;
+      setErr(data?.message || "Failed");
+    } finally {
+      setBusyId(null);
     }
   };
 
   return (
     <AppLayout>
+      {/* ✅ Page-scoped wrapper so NOTHING leaks to other pages */}
       <div className="users-page">
+        {/* ✅ Page-only CSS fixes: mobile overflow + table scroll + two cols stack */}
         <style>{`
           .users-page{
             min-width: 0;
@@ -92,6 +120,8 @@ export default function Users() {
           @supports not (overflow-x: clip) {
             .users-page{ overflow-x: hidden; }
           }
+
+          /* let flex/grid children shrink instead of expanding the page */
           .users-page .container,
           .users-page .row,
           .users-page .col,
@@ -100,9 +130,11 @@ export default function Users() {
             max-width: 100%;
             box-sizing: border-box;
           }
+
+          /* ✅ MOBILE: force 2 columns (Create + List) to stack vertically */
           @media (max-width: 900px){
             .users-page .row{
-              display: block !important;
+              display: block !important;   /* overrides flex rows from app.css */
               width: 100%;
             }
             .users-page .col{
@@ -110,12 +142,16 @@ export default function Users() {
               max-width: 100% !important;
             }
           }
+
+          /* ✅ make form controls never overflow on small screens */
           .users-page input,
           .users-page button{
             width: 100%;
             max-width: 100%;
             box-sizing: border-box;
           }
+
+          /* ✅ Table: scroll inside card, never push page width */
           .users-page .table-scroll{
             width: 100%;
             max-width: 100%;
@@ -123,23 +159,52 @@ export default function Users() {
             overflow-y: hidden;
             -webkit-overflow-scrolling: touch;
           }
+
+          /* key: table can be wider, wrapper will scroll */
           .users-page .table-scroll table{
             width: 100% !important;
-            min-width: 900px;
+            min-width: 980px;             /* a bit wider because we add status+action */
             max-width: none !important;
             table-layout: auto;
             border-collapse: collapse;
           }
+
           .users-page .table-scroll th,
           .users-page .table-scroll td{
             white-space: nowrap;
           }
+
           @media (max-width: 520px){
-            .users-page .table-scroll table{ min-width: 760px; }
+            .users-page .table-scroll table{ min-width: 860px; }
           }
-          .badge.red{ background: #e74c3c; color: white; }
-          .badge.green{ background: #2ecc71; color: white; }
-          .btn-sm { padding: 4px 8px; font-size: 0.8rem; margin-left: 4px; }
+
+          /* ✅ small inline pill for Active/Blocked */
+          .users-page .pill{
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+            padding:4px 10px;
+            border-radius:999px;
+            border:1px solid var(--line);
+            font-weight:800;
+            font-size:12px;
+            background:#f9fafb;
+          }
+
+          /* ✅ small action button for table */
+          .users-page .btnMini{
+            width:auto;                 /* override page button{width:100%} */
+            padding:8px 10px;
+            border-radius:10px;
+            border:1px solid var(--line);
+            background:#fff;
+            cursor:pointer;
+            font-weight:900;
+          }
+          .users-page .btnMini:disabled{
+            opacity:.55;
+            cursor:not-allowed;
+          }
         `}</style>
 
         <div className="container">
@@ -153,7 +218,6 @@ export default function Users() {
           </div>
 
           <div style={{ display: "grid", gap: 16 }}>
-            {/* Create User Form */}
             <div className="card">
               <h3>Create {me.role === "admin" ? "Owner" : "Agent"}</h3>
               <div className="small">
@@ -212,11 +276,10 @@ export default function Users() {
               </form>
             </div>
 
-            {/* Users List */}
             <div className="card">
               <h3>List</h3>
               <div className="small">
-                Admin sees all. Owner sees self + agents created by owner.
+                Admin sees all. Owner sees self + agents created by owner. (But owner can block/unblock any agent)
               </div>
               <div className="hr" />
 
@@ -228,38 +291,51 @@ export default function Users() {
                       <th>Name</th>
                       <th>Email</th>
                       <th>Role</th>
-                      <th>Status</th>
                       <th>Created By</th>
+                      <th>Status</th>
                       <th>Action</th>
                     </tr>
                   </thead>
+
                   <tbody>
-                    {list.map((u) => (
-                      <tr key={u.short_id}>
-                        <td>{u.short_id}</td>
-                        <td>{u.name}</td>
-                        <td>{u.email}</td>
-                        <td>
-                          <span className="badge">{u.role}</span>
-                        </td>
-                        <td>
-                          <span className={`badge ${u.is_blocked ? "red" : "green"}`}>
-                            {u.is_blocked ? "Blocked" : "Active"}
-                          </span>
-                        </td>
-                        <td>{u.created_by ?? "-"}</td>
-                        <td>
-                          {u.role !== "admin" && (
+                    {list.map((u) => {
+                      const allowed = canManage(u);
+                      const isBusy = busyId === u.id;
+
+                      return (
+                        <tr key={u.short_id}>
+                          <td>{u.short_id}</td>
+                          <td>{u.name}</td>
+                          <td>{u.email}</td>
+                          <td>
+                            <span className="badge">{u.role}</span>
+                          </td>
+                          <td>{u.created_by ?? "-"}</td>
+
+                          <td>
+                            {u.is_blocked ? (
+                              <span className="pill">Blocked</span>
+                            ) : (
+                              <span className="pill">Active</span>
+                            )}
+                          </td>
+
+                          <td>
                             <button
-                              className="btn btn-sm"
+                              className={`btnMini ${u.is_blocked ? "btnUnblock" : "btnBlock"}`}
+                              disabled={!allowed || isBusy}
                               onClick={() => toggleBlock(u)}
                             >
-                              {u.is_blocked ? "Unblock" : "Block"}
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                              {isBusy
+                                ? "..."
+                                : u.is_blocked
+                                ? "Unblock"
+                                : "Block"}
+                            </button>                            
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
