@@ -45,6 +45,8 @@ app.use("/uploads", express.static(uploadsDir));
 // ---------------------------
 
 app.get("/", (req, res) => res.json({ ok: true, service: "admin-owner-agent-backend" }));
+app.set("trust proxy", true);
+
 
 app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
