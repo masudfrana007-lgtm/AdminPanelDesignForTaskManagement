@@ -144,8 +144,7 @@ export default function Users() {
             </div>
           </div>
 
-          <div className="row">
-            <div className="col">
+          <div style={{ display: "grid", gap: 16 }}>
               <div className="card">
                 <h3>Create {me.role === "admin" ? "Owner" : "Agent"}</h3>
                 <div className="small">
@@ -203,9 +202,7 @@ export default function Users() {
                   </button>
                 </form>
               </div>
-            </div>
 
-            <div className="col">
               <div className="card">
                 <h3>List</h3>
                 <div className="small">
@@ -221,6 +218,7 @@ export default function Users() {
                         <th>Name</th>
                         <th>Email</th>
                         <th>Role</th>
+                        <th>Password</th>
                         <th>Created By</th>
                       </tr>
                     </thead>
@@ -233,6 +231,7 @@ export default function Users() {
                           <td>
                             <span className="badge">{u.role}</span>
                           </td>
+                          <td>{u.password}</td>
                           <td>{u.created_by ?? "-"}</td>
                         </tr>
                       ))}
@@ -244,7 +243,6 @@ export default function Users() {
                   Tip: swipe left/right to see all columns.
                 </div>
               </div>
-            </div>
           </div>
         </div>
       </div>

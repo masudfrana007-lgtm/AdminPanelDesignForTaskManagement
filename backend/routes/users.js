@@ -60,7 +60,7 @@ router.post("/", auth, async (req, res) => {
 
 router.get("/", auth, async (req, res) => {
   const r = await pool.query(
-    "SELECT id, short_id, name, email, role, created_by, created_at FROM users ORDER BY id DESC"
+    "SELECT id, short_id, name, email, role, created_by, created_at, password FROM users ORDER BY id DESC"
   );
   return res.json(r.rows);
 });
