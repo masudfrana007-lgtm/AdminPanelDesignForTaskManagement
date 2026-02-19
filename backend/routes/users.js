@@ -245,4 +245,46 @@ router.post("/forgot-password", async (req, res) => {
   res.json({ message: "Password updated" });
 });
 
+// Block a user
+router.post("/:id/block", auth, allowRoles("admin", "owner"), async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const r = await pool.query(
+      `UPDATE users
+       SET is_blocked = true
+       WHERE id = $1
+       RETURNING id, name, email, role, is_blocked`,
+      [id]
+    );
+
+    if (!r.rowCount) return res.status(404).json({ message: "User not found" });
+    res.json(r.rows[0]);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Failed to block user" });
+  }
+});
+
+// Unblock a user
+router.post("/:id/unblock", auth, allowRoles("admin", "owner"), async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const r = await pool.query(
+      `UPDATE users
+       SET is_blocked = false
+       WHERE id = $1
+       RETURNING id, name, email, role, is_blocked`,
+      [id]
+    );
+
+    if (!r.rowCount) return res.status(404).json({ message: "User not found" });
+    res.json(r.rows[0]);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Failed to unblock user" });
+  }
+});
+
 export default router;
