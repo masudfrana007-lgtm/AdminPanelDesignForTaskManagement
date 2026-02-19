@@ -7,7 +7,7 @@ const router = express.Router();
 
 /**
  * POST /member-auth/login
- * body: { email, security_pin }
+ * body: { identifier, password }
  */
 router.post("/login", async (req, res) => {
   try {
@@ -38,9 +38,22 @@ router.post("/login", async (req, res) => {
     const ok = await bcrypt.compare(password, m.password);
     if (!ok) return res.status(401).json({ message: "Invalid credentials" });
 
+    // ✅ capture IP (works with Cloudflare / proxy too)
+    const ip =
+      req.headers["cf-connecting-ip"] ||
+      (req.headers["x-forwarded-for"]
+        ? String(req.headers["x-forwarded-for"]).split(",")[0].trim()
+        : null) ||
+      req.ip ||
+      null;
+
+    // ✅ save last login + ip
     await pool.query(
-      `UPDATE members SET last_login = now() WHERE id = $1`,
-      [m.id]
+      `UPDATE members
+       SET last_login = now(),
+           last_login_ip = $1
+       WHERE id = $2`,
+      [ip, m.id]
     );
 
     const token = jwt.sign(
