@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import "./EorderLanding.css";
 
 export default function EorderLanding() {
@@ -38,7 +38,6 @@ export default function EorderLanding() {
       <div className="eoVignette" aria-hidden="true" />
       <div className="eoParticles" aria-hidden="true" />
 
-      {/* ✅ Positioning wrapper (centers everything properly) */}
       <div className="eoStage">
         <main className="eoWrap">
           <header className="eoHeader">
@@ -54,31 +53,31 @@ export default function EorderLanding() {
             <h1 className="eoTitle">
               Welcome to <span>eorder.io</span>
             </h1>
+
             <p className="eoSub">Complete Tasks. Earn. Withdraw.</p>
 
-<div className="eoCtas">
-  <button
-    className="eoBtn eoBtnGold"
-    onClick={() => window.location.href = "/member/login"}
-  >
-    Log in
-  </button>
+            {/* ✅ SPA navigation */}
+            <div className="eoCtas">
+              <button
+                className="eoBtn eoBtnGold"
+                onClick={() => nav("/member/login")}
+              >
+                Log in
+              </button>
 
-  <button
-    className="eoBtn eoBtnBlue"
-    onClick={() => window.location.href = "/member/signup"}
-  >
-    Sign Up
-  </button>
-</div>
-
+              <button
+                className="eoBtn eoBtnBlue"
+                onClick={() => nav("/member/signup")}
+              >
+                Sign Up
+              </button>
+            </div>
           </header>
 
           <section className="eoSupport" role="region" aria-label="Customer support">
             <div className="eoSupportLeft">
-              <div className="eoBubble" aria-hidden="true">
-                💬
-              </div>
+              <div className="eoBubble" aria-hidden="true">💬</div>
+
               <div className="eoSupportTxt">
                 <div className="eoSupportTitle">24/7 Customer Support</div>
                 <div className="eoSupportSub">
@@ -87,24 +86,25 @@ export default function EorderLanding() {
               </div>
             </div>
 
+            {/* external link → keep <a> */}
             <a
               className="eoChatBtn"
               href="https://t.me/MarketWaySupport"
               target="_blank"
               rel="noreferrer"
             >
-              Chat Now <span className="eoArrow" aria-hidden="true">➜</span>
+              Chat Now <span className="eoArrow">➜</span>
             </a>
           </section>
 
           <section className="eoSection">
             <div className="eoSectionHead">
-              <span className="eoSectionLine" aria-hidden="true" />
+              <span className="eoSectionLine" />
               <div className="eoSectionTitle">Trusted Payment Partners</div>
-              <span className="eoSectionLine" aria-hidden="true" />
+              <span className="eoSectionLine" />
             </div>
 
-            <div className="eoMarquee" aria-label="Payment partners marquee">
+            <div className="eoMarquee">
               <div className="eoMarqueeTrack">
                 {[...payment, ...payment].map((p, i) => (
                   <div className="eoLogoTile" key={p.label + i}>
@@ -116,7 +116,7 @@ export default function EorderLanding() {
           </section>
 
           <section className="eoSection eoSectionTight">
-            <div className="eoBrands" aria-label="Brands marquee">
+            <div className="eoBrands">
               <div className="eoBrandsTrack">
                 {[...brands, ...brands].map((b, i) => (
                   <div className="eoLogoTile eoLogoTileSm" key={b.label + i}>
@@ -127,13 +127,14 @@ export default function EorderLanding() {
             </div>
           </section>
 
+          {/* ✅ internal routing uses Link */}
           <footer className="eoFooter">
-  <a href="/privacy" className="eoFootLink">Privacy Policy</a>
-  <span className="eoSep" aria-hidden="true">|</span>
-  <a href="/terms" className="eoFootLink">Terms of Service</a>
-  <span className="eoSep" aria-hidden="true">|</span>
-  <a href="/contact" className="eoFootLink">Contact Us</a>
-</footer>
+            <Link to="/privacy" className="eoFootLink">Privacy Policy</Link>
+            <span className="eoSep">|</span>
+            <Link to="/terms" className="eoFootLink">Terms of Service</Link>
+            <span className="eoSep">|</span>
+            <Link to="/contact" className="eoFootLink">Contact Us</Link>
+          </footer>
         </main>
       </div>
     </div>
