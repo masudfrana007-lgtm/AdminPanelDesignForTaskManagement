@@ -51,7 +51,7 @@ body{
 }
 
 .bf-title{ flex:1; min-width:0; }
-.bf-h1{ font-size: 18px; font-weight: 800; }
+.bf-h1{ font-size: 18px; font-weight: 800; color: black; }
 .bf-sub{ font-size: 13px; color: var(--muted); margin-top: 2px; }
 
 .bf-actionsTop{ display:flex; gap:8px; }
@@ -91,12 +91,12 @@ body{
   background: #fff;
   font-weight: 800;
   cursor: pointer;
-  color: var(--muted);
+  color: black;
 }
 .bf-tab.is-active{
   background: var(--brandSoft);
   border-color: rgba(37,99,235,.20);
-  color: var(--text);
+  color: black;
 }
 
 /* Toolbar */

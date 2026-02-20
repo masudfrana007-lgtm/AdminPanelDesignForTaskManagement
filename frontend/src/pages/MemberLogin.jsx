@@ -36,10 +36,17 @@ export default function MemberLogin() {
     <div className="auth-page">
       <div className="card auth-card">
         <div style={{ textAlign: "left", marginBottom: 12 }}>
-          <a className="small" onClick={() => nav("/member/dashboard")}>← Back to Home</a>
+          <a className="small" onClick={() => nav("/")}>← Back to Home</a>
         </div>
 
-        <div className="auth-icon">→</div>
+        <div className="eoLogoRow">
+          <div className="eoMark" aria-hidden="true">
+            <span className="eoMarkInner">e</span>
+          </div>
+          <div className="eoBrand">eorder<span>.io</span>
+          </div>
+        </div>
+        {/* <div className="auth-icon">→</div> */}
 
         <div className="auth-title">Welcome Back</div>
         <div className="auth-sub">Sign in to your Eorder.io account</div>

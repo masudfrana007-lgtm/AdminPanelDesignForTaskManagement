@@ -206,7 +206,7 @@ const load = async () => {
           <div className="tl-card tl-rules">
             <div className="tl-cardTitle">Rules & Guidelines</div>
             <ul className="tl-list">
-              <li>Each assigned task must be completed within <b>24 hours</b>.</li>
+              <li>Each assigned task must be completed within <b>72 hours</b>.</li>
               <li>Always verify the <b>Order ID</b>, <b>Ref</b>, and required steps before submitting.</li>
               <li>Do not submit fake proof. Accounts may be restricted for violations.</li>
               <li>For issues, use <b>Customer Service</b> and provide screenshots if needed.</li>

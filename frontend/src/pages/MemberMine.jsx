@@ -7,6 +7,7 @@ import TeamJoinPopup from "../components/TeamJoinPopup";
 import InviteFriendsPopup from "../components/InviteFriendsPopup";
 import "../styles/memberMine.css";
 
+
 import memberApi from "../services/memberApi";
 
 /* ✅ icons (adjust path if your structure is different) */
@@ -14,11 +15,11 @@ import teamIcon from "../assets/icons/team.png";
 import depositIcon from "../assets/icons/deposit-new.png";
 import withdrawalIcon from "../assets/icons/withdrawal-new.png";
 
-import profileIcon from "../assets/icons/profile.png";
-import securityIcon from "../assets/icons/Security.png";
-import settingsIcon from "../assets/icons/settings.png";
-import depositRec1Icon from "../assets/icons/DepositR.png";
-import depositRec2Icon from "../assets/icons/DepositRR.png";
+import profileIcon from "../assets/icons/profile.PNG";
+import securityIcon from "../assets/icons/Security.PNG";
+import settingsIcon from "../assets/icons/settings.PNG";
+import depositRec1Icon from "../assets/icons/DepositR.PNG";
+import depositRec2Icon from "../assets/icons/DepositRR.PNG";
 
 /* ---------------- CONFIG ---------------- */
 const API_HOST = "http://159.198.40.145:5010";
@@ -90,7 +91,7 @@ export default function MemberMine() {
   const vip = rankLabel(me?.ranking);
   const balance = Number(me?.balance || 0);
 
-  // "Reference code" shown in UI:
+  // "User ID" shown in UI:
   // best available is member.short_id (you already return it)
   const referenceCode = me?.sponsor_short_id || "-";
 
@@ -132,7 +133,7 @@ export default function MemberMine() {
                   </div>
 
                   <div className="mine-ref">
-                    <span className="mine-ref-label">Reference code:</span>
+                    <span className="mine-ref-label">User ID:</span>
                     <span className="mine-ref-code">{referenceCode}</span>
                   </div>
                 </div>

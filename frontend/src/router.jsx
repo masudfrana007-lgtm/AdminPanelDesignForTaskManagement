@@ -95,6 +95,8 @@ import ForgotPassword from "./pages/ForgotPassword";
 
 import Settings from "./pages/Settings";
 
+import Security from "./pages/Security";
+
 // landing pages (PUBLIC)
 import EorderLanding from "./pages/landing/EorderLanding";
 import PrivacyPolicy from "./pages/landing/PrivacyPolicy";
@@ -587,6 +589,15 @@ export const router = createBrowserRouter([
     <ProtectedRoute>
       <Settings />
     </ProtectedRoute>
+  ),
+},
+
+{
+  path: "/security",
+  element: (
+    <MemberProtectedRoute>
+      <Security />
+    </MemberProtectedRoute>
   ),
 },
 

@@ -208,10 +208,13 @@ const hasAvatar = !!avatarUrl;
             <div className="welcomeText">
               <div className="welcomeBalance">Welcome back</div>
               <div className="welcomeName">
-                {profile?.nickname || profile?.name || "—"}
-                <span className="vip">{rankText}</span>
+                {profile?.nickname || profile?.name || "—"} &nbsp;
+                <div className="mine-vip">
+                  <span className="mine-vip-pill">{rankText}</span>
+                </div>
+                {/* <span className="vip">{rankText}</span> */}
               </div>
-              <div className="welcomeBalance">ID: {profile?.short_id || me?.short_id || "-"}</div>
+              <div className="welcomeBalance">User ID: {profile?.short_id || me?.short_id || "-"}</div>
               {/* need to add balance here */}
               <div className="welcomeBalance">                
                 <span className="balanceAmount">

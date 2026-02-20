@@ -305,7 +305,7 @@ export default function MemberHistory() {
           paginatedData.map((item, i) => (
             <div key={item.id} className="historyCard">
               <div className="historyTop">
-                <div className="historyIndex">#{startIndex + i + 1}</div>
+                <div className="historyIndex">{startIndex + i + 1}</div>
                 <div className={`historyBadge ${item.type}`}>
                   {item.type === "deposit" && "💰 DEPOSIT"}
                   {item.type === "withdrawal" && "💸 WITHDRAWAL"}

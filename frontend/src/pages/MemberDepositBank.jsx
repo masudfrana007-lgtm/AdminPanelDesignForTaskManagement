@@ -249,8 +249,8 @@ export default function DepositBank() {
   return (
     <div className="vipWhite db3">
       {/* Top bar */}
-      <header className="topbarW">
-        <button className="backIcon" onClick={() => nav(-1)} aria-label="Back">
+      <header className="dcTop">
+        <button className="dcBack" onClick={() => nav(-1)} aria-label="Back">
           ←
         </button>
 
@@ -262,7 +262,7 @@ export default function DepositBank() {
           <div className="topSub">Submit your deposit details for faster verification</div>
         </div>
 
-        <button className="homeBtn" onClick={() => nav("/member/deposit/records")} aria-label="Home">
+        <button className="dcHistoryBtn" onClick={() => nav("/member/deposit/records")}>
           History
         </button>
       </header>

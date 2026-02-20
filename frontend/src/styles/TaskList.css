@@ -92,7 +92,13 @@
 
 /* Balance card */
 .tl-card.tl-balance{
-  background: linear-gradient(180deg, #0f172a 0%, #020617 100%);
+  /* background: linear-gradient(180deg, #0f172a 0%, #020617 100%); */
+  /* background: linear-gradient(
+      135deg,
+      rgba(255,193,7,.22),
+      rgba(255,152,0,.14),
+      rgba(0,0,0,.22)
+    ); */
   border: 1px solid rgba(37, 99, 235, .55);
   color: #ffffff;
 }
