@@ -198,7 +198,7 @@ export default function MemberMine() {
             <ListItem
               icon={<img src={settingsIcon} alt="Setting" className="list-icon-img" />}
               label="Setting"
-              onClick={() => nav("/setting")}
+              onClick={() => nav("/member/settings")}
             />
           </div>
 

@@ -27,7 +27,7 @@ import {
 import MemberBottomNav from "../components/MemberBottomNav";
 import "../styles/memberSettings.css";
 
-export default function Settings() {
+export default function MemberSettings() {
   const nav = useNavigate();
 
   // Settings states
