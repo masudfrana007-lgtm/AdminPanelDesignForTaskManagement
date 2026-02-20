@@ -6,15 +6,20 @@ import MemberBottomNav from "../components/MemberBottomNav";
 import memberApi from "../services/memberApi";
 
 /* ---------- CONFIG ---------- */
-const API_HOST = "http://159.198.40.145:5010";
+const API_HOST = import.meta.env.VITE_API_HOST || "";
 
 // convert DB path like "/uploads/avatars/xx.jpg" into full URL
 function toAbsUrl(p) {
   const s = String(p || "").trim();
   if (!s) return "";
+
+  // already absolute
   if (s.startsWith("http://") || s.startsWith("https://")) return s;
-  if (s.startsWith("/")) return API_HOST + s;
-  return API_HOST + "/" + s;
+
+  // backend serves /uploads directly
+  if (s.startsWith("/uploads/")) return s;
+
+  return (API_HOST ? API_HOST : "") + s;
 }
 
 /* ---------- helpers ---------- */
