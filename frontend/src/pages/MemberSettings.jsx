@@ -19,6 +19,8 @@ import {
   FaEdit,
   FaStar,
   FaCheckCircle,
+  FaWallet,        // ✅ make sure this is here
+  FaExchangeAlt,   // ✅ make sure this is here
   FaHeadset
 } from "react-icons/fa";
 import MemberBottomNav from "../components/MemberBottomNav";
