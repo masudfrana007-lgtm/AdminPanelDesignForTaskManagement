@@ -97,8 +97,6 @@ import Settings from "./pages/Settings";
 
 import Security from "./pages/Security";
 
-import Settings from "./pages/Settings";
-
 import MemberSettings from "./pages/MemberSettings";
 
 // landing pages (PUBLIC)
