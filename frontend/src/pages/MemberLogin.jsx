@@ -36,7 +36,7 @@ export default function MemberLogin() {
     <div className="auth-page">
       <div className="card auth-card">
         <div style={{ textAlign: "left", marginBottom: 12 }}>
-          <a className="small" onClick={() => nav("/")}>← Back to Home</a>
+          <a className="small" onClick={() => nav("/member/dashboard")}>← Back to Home</a>
         </div>
 
         <div className="auth-icon">→</div>
