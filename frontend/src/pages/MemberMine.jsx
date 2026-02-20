@@ -15,11 +15,11 @@ import teamIcon from "../assets/icons/team.png";
 import depositIcon from "../assets/icons/deposit-new.png";
 import withdrawalIcon from "../assets/icons/withdrawal-new.png";
 
-import profileIcon from "../assets/icons/profile.PNG";
-import securityIcon from "../assets/icons/Security.PNG";
-import settingsIcon from "../assets/icons/settings.PNG";
-import depositRec1Icon from "../assets/icons/DepositR.PNG";
-import depositRec2Icon from "../assets/icons/DepositRR.PNG";
+import profileIcon from "../assets/icons/profile.png";
+import securityIcon from "../assets/icons/Security.png";
+import settingsIcon from "../assets/icons/settings.png";
+import depositRec1Icon from "../assets/icons/DepositR.png";
+import depositRec2Icon from "../assets/icons/DepositRR.png";
 
 /* ---------------- CONFIG ---------------- */
 const API_HOST = "http://159.198.40.145:5010";
