@@ -1,5 +1,5 @@
 // src/pages/MemberSettings.jsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FaBell,
@@ -17,9 +17,6 @@ import {
   FaLock,
   FaLanguage,
   FaEdit,
-  FaChartLine,
-  FaWallet,
-  FaExchangeAlt,
   FaStar,
   FaCheckCircle,
   FaHeadset
@@ -27,22 +24,74 @@ import {
 import MemberBottomNav from "../components/MemberBottomNav";
 import "../styles/memberSettings.css";
 
+import memberApi from "../services/memberApi";
+
+// Helper functions
+const rankLabel = (r) => {
+  if (!r) return "Trial";
+  if (r === "V1") return "VIP 1";
+  if (r === "V2") return "VIP 2";
+  if (r === "V3") return "VIP 3";
+  return "Trial";
+};
+
+const money = (n) => {
+  const num = Number(n || 0);
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(num);
+};
+
+const API_HOST = "http://159.198.40.145:5010";
+const toAbsUrl = (p) => {
+  const s = String(p || "").trim();
+  if (!s) return "";
+  if (s.startsWith("http://") || s.startsWith("https://")) return s;
+  if (s.startsWith("/")) return API_HOST + s;
+  return API_HOST + "/" + s;
+};
+
 export default function MemberSettings() {
   const nav = useNavigate();
 
-  // Settings states
-  const [pushNotifications, setPushNotifications] = useState(true);
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [transactionAlerts, setTransactionAlerts] = useState(true);
-  const [priceAlerts, setPriceAlerts] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
-  const [biometricLogin, setBiometricLogin] = useState(false);
-
-  const [selectedLanguage, setSelectedLanguage] = useState("English");
-  const [selectedCurrency, setSelectedCurrency] = useState("USD");
-
   const languages = ["English", "বাংলা", "中文", "Español", "Français", "日本語"];
   const currencies = ["USD", "EUR", "BDT", "GBP", "JPY", "CNY"];
+
+  const [member, setMember] = useState(null);
+  const [settings, setSettings] = useState({
+    pushNotifications: true,
+    emailNotifications: true,
+    transactionAlerts: true,
+    priceAlerts: false,
+    darkMode: false,
+    biometricLogin: false,
+    language: "English",
+    currency: "USD",
+  });
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    (async () => {
+      setErr("");
+      try {
+        const { data } = await memberApi.get("/member/me");
+        setMember(data);
+
+        setSettings((prev) => ({
+          ...prev,
+          pushNotifications: data.pushNotifications ?? true,
+          emailNotifications: data.emailNotifications ?? true,
+          transactionAlerts: data.transactionAlerts ?? true,
+          priceAlerts: data.priceAlerts ?? false,
+          darkMode: data.darkMode ?? false,
+          biometricLogin: data.biometricLogin ?? false,
+          language: data.language ?? "English",
+          currency: data.currency ?? "USD",
+        }));
+      } catch (e) {
+        setMember(null);
+        setErr(e?.response?.data?.message || "Failed to load profile");
+      }
+    })();
+  }, []);
 
   const handleLogout = () => {
     if (window.confirm("Are you sure you want to logout?")) {
@@ -50,6 +99,22 @@ export default function MemberSettings() {
       nav("/member/login");
     }
   };
+
+  // Prepare data for UI
+  const avatarUrl = toAbsUrl(
+    member?.avatar_url ||
+      member?.photo_url ||
+      member?.profile_photo_url ||
+      member?.profile_picture_url ||
+      member?.profile_photo ||
+      ""
+  );
+
+  const hasAvatar = !!avatarUrl;
+  const vip = rankLabel(member?.ranking);
+  const balance = Number(member?.balance || 0);
+  const transactions = member?.transactions || 0;
+  const tasksDone = member?.tasksDone || 0;
 
   return (
     <div className="settingsPage">
@@ -63,51 +128,63 @@ export default function MemberSettings() {
       </header>
 
       <div className="setContainer">
+        {err && <div className="mineAlert error">{err}</div>}
+
         {/* Profile Card */}
         <div className="setProfileCard">
           <div className="setProfileHeader">
             <div className="setAvatarWrapper">
               <div className="setAvatar">
-                <FaUserCircle />
+                {hasAvatar ? (
+                  <img
+                    src={avatarUrl}
+                    alt="Avatar"
+                    className="setAvatarImg"
+                    onError={(e) => (e.currentTarget.src = "/user.png")}
+                  />
+                ) : (
+                  <FaUserCircle />
+                )}
               </div>
               <button className="setAvatarEdit" onClick={() => nav("/profile")}>
                 <FaEdit />
               </button>
             </div>
             <div className="setProfileInfo">
-              <div className="setProfileName">John Doe</div>
-              <div className="setProfileEmail">member@example.com</div>
+              <div className="setProfileName">{member?.name || "Guest"}</div>
+              <div className="setProfileEmail">{member?.email || "-"}</div>
               <div className="setProfileBadge">
-                <FaStar /> VIP Level 3
+                <FaStar /> {vip}
               </div>
             </div>
           </div>
-          
+
           <div className="setStatsGrid">
             <div className="setStatCard">
               <div className="setStatIcon wallet">
                 <FaWallet />
               </div>
-              <div className="setStatValue">$12,450</div>
+              <div className="setStatValue">${money(balance)}</div>
               <div className="setStatLabel">Total Balance</div>
             </div>
             <div className="setStatCard">
               <div className="setStatIcon transactions">
                 <FaExchangeAlt />
               </div>
-              <div className="setStatValue">248</div>
+              <div className="setStatValue">{transactions}</div>
               <div className="setStatLabel">Transactions</div>
             </div>
             <div className="setStatCard">
               <div className="setStatIcon tasks">
                 <FaCheckCircle />
               </div>
-              <div className="setStatValue">156</div>
+              <div className="setStatValue">{tasksDone}</div>
               <div className="setStatLabel">Tasks Done</div>
             </div>
           </div>
         </div>
-        {/* Profile Section */}
+
+        {/* Account Section */}
         <section className="setSection">
           <h2 className="setSectionTitle">
             <FaUserCircle /> Account
@@ -153,101 +230,62 @@ export default function MemberSettings() {
           </div>
         </section>
 
-        {/* Notifications */}
+        {/* Notifications Section */}
         <section className="setSection">
           <h2 className="setSectionTitle">
             <FaBell /> Notifications
           </h2>
 
           <div className="setCard">
-            <div className="setToggleItem">
-              <div className="setToggleLeft">
-                <div className="setToggleIconWrapper push">
-                  <FaMobileAlt className="setToggleIcon" />
+            {["pushNotifications", "emailNotifications", "transactionAlerts", "priceAlerts"].map((key) => {
+              const iconMap = {
+                pushNotifications: <FaMobileAlt />,
+                emailNotifications: <FaEnvelope />,
+                transactionAlerts: <FaDollarSign />,
+                priceAlerts: <FaBell />,
+              };
+              const titleMap = {
+                pushNotifications: "Push Notifications",
+                emailNotifications: "Email Notifications",
+                transactionAlerts: "Transaction Alerts",
+                priceAlerts: "Price Alerts",
+              };
+              const descMap = {
+                pushNotifications: "Receive app notifications",
+                emailNotifications: "Receive email updates",
+                transactionAlerts: "Notify on deposits & withdrawals",
+                priceAlerts: "Crypto price change notifications",
+              };
+              return (
+                <div className="setToggleItem" key={key}>
+                  <div className="setToggleLeft">
+                    <div className="setToggleIconWrapper">
+                      {iconMap[key]}
+                    </div>
+                    <div>
+                      <div className="setToggleTitle">{titleMap[key]}</div>
+                      <div className="setToggleDesc">{descMap[key]}</div>
+                    </div>
+                  </div>
+                  <label className="setToggle">
+                    <input
+                      type="checkbox"
+                      checked={settings[key]}
+                      onChange={(e) => setSettings({ ...settings, [key]: e.target.checked })}
+                    />
+                    <span className="setToggleSlider"></span>
+                  </label>
                 </div>
-                <div>
-                  <div className="setToggleTitle">Push Notifications</div>
-                  <div className="setToggleDesc">Receive app notifications</div>
-                </div>
-              </div>
-              <label className="setToggle">
-                <input
-                  type="checkbox"
-                  checked={pushNotifications}
-                  onChange={(e) => setPushNotifications(e.target.checked)}
-                />
-                <span className="setToggleSlider"></span>
-              </label>
-            </div>
-
-            <div className="setToggleItem">
-              <div className="setToggleLeft">
-                <div className="setToggleIconWrapper email">
-                  <FaEnvelope className="setToggleIcon" />
-                </div>
-                <div>
-                  <div className="setToggleTitle">Email Notifications</div>
-                  <div className="setToggleDesc">Receive email updates</div>
-                </div>
-              </div>
-              <label className="setToggle">
-                <input
-                  type="checkbox"
-                  checked={emailNotifications}
-                  onChange={(e) => setEmailNotifications(e.target.checked)}
-                />
-                <span className="setToggleSlider"></span>
-              </label>
-            </div>
-
-            <div className="setToggleItem">
-              <div className="setToggleLeft">
-                <div className="setToggleIconWrapper transaction">
-                  <FaDollarSign className="setToggleIcon" />
-                </div>
-                <div>
-                  <div className="setToggleTitle">Transaction Alerts</div>
-                  <div className="setToggleDesc">Notify on deposits & withdrawals</div>
-                </div>
-              </div>
-              <label className="setToggle">
-                <input
-                  type="checkbox"
-                  checked={transactionAlerts}
-                  onChange={(e) => setTransactionAlerts(e.target.checked)}
-                />
-                <span className="setToggleSlider"></span>
-              </label>
-            </div>
-
-            <div className="setToggleItem">
-              <div className="setToggleLeft">
-                <div className="setToggleIconWrapper price">
-                  <FaBell className="setToggleIcon" />
-                </div>
-                <div>
-                  <div className="setToggleTitle">Price Alerts</div>
-                  <div className="setToggleDesc">Crypto price change notifications</div>
-                </div>
-              </div>
-              <label className="setToggle">
-                <input
-                  type="checkbox"
-                  checked={priceAlerts}
-                  onChange={(e) => setPriceAlerts(e.target.checked)}
-                />
-                <span className="setToggleSlider"></span>
-              </label>
-            </div>
+              );
+            })}
           </div>
         </section>
 
-        {/* Preferences */}
+        {/* Preferences Section */}
         <section className="setSection">
           <h2 className="setSectionTitle">
             <FaGlobe /> Preferences
           </h2>
-
           <div className="setCard">
             <div className="setSelectItem">
               <div className="setSelectTop">
@@ -261,13 +299,11 @@ export default function MemberSettings() {
               </div>
               <select
                 className="setSelect"
-                value={selectedLanguage}
-                onChange={(e) => setSelectedLanguage(e.target.value)}
+                value={settings.language}
+                onChange={(e) => setSettings({ ...settings, language: e.target.value })}
               >
                 {languages.map((lang) => (
-                  <option key={lang} value={lang}>
-                    {lang}
-                  </option>
+                  <option key={lang} value={lang}>{lang}</option>
                 ))}
               </select>
             </div>
@@ -284,13 +320,11 @@ export default function MemberSettings() {
               </div>
               <select
                 className="setSelect"
-                value={selectedCurrency}
-                onChange={(e) => setSelectedCurrency(e.target.value)}
+                value={settings.currency}
+                onChange={(e) => setSettings({ ...settings, currency: e.target.value })}
               >
                 {currencies.map((curr) => (
-                  <option key={curr} value={curr}>
-                    {curr}
-                  </option>
+                  <option key={curr} value={curr}>{curr}</option>
                 ))}
               </select>
             </div>
@@ -308,8 +342,8 @@ export default function MemberSettings() {
               <label className="setToggle">
                 <input
                   type="checkbox"
-                  checked={darkMode}
-                  onChange={(e) => setDarkMode(e.target.checked)}
+                  checked={settings.darkMode}
+                  onChange={(e) => setSettings({ ...settings, darkMode: e.target.checked })}
                   disabled
                 />
                 <span className="setToggleSlider"></span>
@@ -323,7 +357,6 @@ export default function MemberSettings() {
           <h2 className="setSectionTitle">
             <FaLock /> Privacy & Security
           </h2>
-
           <div className="setCard">
             <div className="setToggleItem">
               <div className="setToggleLeft">
@@ -354,8 +387,8 @@ export default function MemberSettings() {
               <label className="setToggle">
                 <input
                   type="checkbox"
-                  checked={biometricLogin}
-                  onChange={(e) => setBiometricLogin(e.target.checked)}
+                  checked={settings.biometricLogin}
+                  onChange={(e) => setSettings({ ...settings, biometricLogin: e.target.checked })}
                 />
                 <span className="setToggleSlider"></span>
               </label>
@@ -379,7 +412,6 @@ export default function MemberSettings() {
           <h2 className="setSectionTitle">
             <FaInfoCircle /> About & Legal
           </h2>
-
           <div className="setCard">
             <button className="setItem" onClick={() => alert("Version 1.0.0")}>
               <div className="setItemLeft">
@@ -442,16 +474,6 @@ export default function MemberSettings() {
             <span>Logout Account</span>
           </button>
         </section>
-
-        {/* Footer Info */}
-        {/* <div className="setFooter">
-          <div className="setFooterTop">
-            <div className="setFooterLogo">💰</div>
-            <div className="setFooterBrand">Crypto Task Platform</div>
-          </div>
-          <div className="setFooterText">© 2026 All rights reserved.</div>
-          <div className="setFooterTagline">Secure. Reliable. Professional.</div>
-        </div> */}
       </div>
 
       <MemberBottomNav active="mine" />
