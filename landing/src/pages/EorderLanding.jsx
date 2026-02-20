@@ -59,14 +59,14 @@ export default function EorderLanding() {
 <div className="eoCtas">
   <button
     className="eoBtn eoBtnGold"
-    onClick={() => window.location.href = "http://159.198.40.145:5175/member/login"}
+    onClick={() => window.location.href = "http://72.62.71.222:3000//member/login"}
   >
     Log in
   </button>
 
   <button
     className="eoBtn eoBtnBlue"
-    onClick={() => window.location.href = "http://159.198.40.145:5175/member/signup"}
+    onClick={() => window.location.href = "http://72.62.71.222:3000/member/signup"}
   >
     Sign Up
   </button>
