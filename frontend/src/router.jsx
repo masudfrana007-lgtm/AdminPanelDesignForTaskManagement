@@ -95,7 +95,19 @@ import ForgotPassword from "./pages/ForgotPassword";
 
 import Settings from "./pages/Settings";
 
+// landing pages (PUBLIC)
+import EorderLanding from "./pages/landing/EorderLanding";
+import PrivacyPolicy from "./pages/landing/PrivacyPolicy";
+import TermsOfService from "./pages/landing/TermsOfService";
+import ContactUs from "./pages/landing/ContactUs";
+
 export const router = createBrowserRouter([
+
+  { path: "/", element: <EorderLanding /> },
+  { path: "/privacy", element: <PrivacyPolicy /> },
+  { path: "/terms", element: <TermsOfService /> },
+  { path: "/contact", element: <ContactUs /> },
+
   { path: "/login", element: <Login /> },
   
   { path: "/forgot-password", element: <ForgotPassword /> },
@@ -108,7 +120,7 @@ export const router = createBrowserRouter([
     element: <CsLogin />,
   },
 
-  { path: "/", element: <ProtectedRoute><DashboardMain /></ProtectedRoute> },
+  { path: "/admin", element: <ProtectedRoute><DashboardMain /></ProtectedRoute> },
 
   /* ✅ PUBLIC / TEST ROUTE */
   {
