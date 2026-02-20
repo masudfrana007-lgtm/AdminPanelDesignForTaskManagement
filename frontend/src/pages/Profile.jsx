@@ -7,14 +7,18 @@ import { memberLogout } from "../memberAuth";
 import { useNavigate } from "react-router-dom";
 
 /* ---------------- CONFIG ---------------- */
-const API_HOST = "http://159.198.40.145:5010";
+const API_HOST = import.meta.env.VITE_API_HOST || "";
 
 function toAbsUrl(p) {
   const s = String(p || "").trim();
   if (!s) return "";
   if (s.startsWith("http://") || s.startsWith("https://")) return s;
-  if (s.startsWith("/")) return API_HOST + s;
-  return API_HOST + "/" + s;
+
+  // If the path already starts with /uploads, just return it
+  if (s.startsWith("/uploads/")) return s;
+
+  // Otherwise prefix with API_HOST if defined
+  return (API_HOST ? API_HOST : "") + s;
 }
 
 /* ---------------- helpers ---------------- */
