@@ -402,3 +402,20 @@
 
   .eoLogoImg{ height: 28px; } /* extra small on mobile */
 }
+
+/* ===== Footer links (landing page only) ===== */
+.eoLanding .eoFootLink{
+  color: #ffffff !important;
+  opacity: 1;
+  text-decoration: none;
+}
+
+.eoLanding .eoFootLink:hover{
+  color: #ffffff !important;
+  text-decoration: underline;
+}
+
+.eoLanding .eoSep{
+  color: #ffffff;
+  opacity: .6;
+}
