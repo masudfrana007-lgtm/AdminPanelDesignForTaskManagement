@@ -82,17 +82,23 @@ export default function ProfileEdit() {
   }, [avatarPreview]);
 
   // ✅ server avatar must be absolute URL (5010)
-  const existingAvatar = useMemo(() => {
-    const u = user || {};
-    const raw =
-      u.avatar_url ||
-      u.photo_url ||
-      u.profile_photo_url ||
-      u.profile_picture_url ||
-      u.profile_photo ||
-      "";
-    return toAbsUrl(raw);
-  }, [user]);
+const existingAvatar = useMemo(() => {
+  const u = user || {};
+  const raw =
+    u.avatar_url ||
+    u.photo_url ||
+    u.profile_photo_url ||
+    u.profile_picture_url ||
+    u.profile_photo ||
+    "";
+
+  const abs = toAbsUrl(raw);
+
+  console.log("RAW avatar:", raw);
+  console.log("ABS avatar:", abs);
+
+  return abs;
+}, [user]);
 
   const shownAvatar = avatarPreview || existingAvatar;
 
