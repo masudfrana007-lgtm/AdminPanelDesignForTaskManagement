@@ -42,13 +42,16 @@ const money = (n) => {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(num);
 };
 
-const API_HOST = "http://159.198.40.145:5010";
+// ✅ safe HTTPS-relative avatar url (works with nginx /uploads)
 const toAbsUrl = (p) => {
   const s = String(p || "").trim();
   if (!s) return "";
-  if (s.startsWith("http://") || s.startsWith("https://")) return s;
-  if (s.startsWith("/")) return API_HOST + s;
-  return API_HOST + "/" + s;
+
+  // already absolute
+  if (/^(https?:)?\/\//i.test(s)) return s;
+
+  // just return relative path → https://eorder.vip/uploads/...
+  return s.startsWith("/") ? s : `/${s}`;
 };
 
 export default function MemberSettings() {
@@ -142,8 +145,9 @@ export default function MemberSettings() {
                     src={avatarUrl}
                     alt="Avatar"
                     className="setAvatarImg"
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     onError={(e) => (e.currentTarget.src = "/user.png")}
-                  />
+                  />                  
                 ) : (
                   <FaUserCircle />
                 )}
