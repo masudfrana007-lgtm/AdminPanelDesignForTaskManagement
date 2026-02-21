@@ -13,13 +13,10 @@ function toAbsUrl(p) {
   const s = String(p || "").trim();
   if (!s) return "";
 
-  // already absolute
-  if (s.startsWith("http://") || s.startsWith("https://")) return s;
+  if (s.startsWith("http")) return s;
 
-  // backend serves /uploads directly
-  if (s.startsWith("/uploads/")) return s;
-
-  return (API_HOST ? API_HOST : "") + s;
+  // ALWAYS prepend API host
+  return `${API_HOST}${s}`;
 }
 
 /* ---------- helpers ---------- */
