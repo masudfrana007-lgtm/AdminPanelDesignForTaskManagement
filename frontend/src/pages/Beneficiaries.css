@@ -52,7 +52,7 @@ body{
 
 .bf-title{ flex:1; min-width:0; }
 .bf-h1{ font-size: 18px; font-weight: 800; color: black; }
-.bf-sub{ font-size: 13px; color: var(--muted); margin-top: 2px; }
+.bf-sub{ font-size: 13px; color: dimgray; margin-top: 2px; }
 
 .bf-actionsTop{ display:flex; gap:8px; }
 .bf-btnGhost{
@@ -117,7 +117,7 @@ body{
   padding: 0 12px;
   outline: none;
   font-weight: 600;
-  color: var(--text);
+  color: black;
 }
 .bf-search::placeholder{ color: #94a3b8; font-weight:600; }
 
@@ -196,6 +196,7 @@ body{
 .bf-name{
   font-weight: 900;
   font-size: 15px;
+  color: black;
 }
 
 .bf-badge{
@@ -230,7 +231,7 @@ body{
   background: #fff;
   cursor: pointer;
   font-weight: 800;
-  color: var(--text);
+  color: darkgray;
 }
 .bf-mini.danger{
   border-color: rgba(239,68,68,.25);
@@ -255,14 +256,14 @@ body{
 }
 
 .bf-k{
-  color: var(--muted);
+  color: darkgray;
   font-size: 12px;
   font-weight: 800;
   min-width: 120px;
 }
 
 .bf-v{
-  color: var(--text);
+  color: darkgray;
   font-size: 13px;
   font-weight: 700;
   text-align: right;
@@ -310,8 +311,8 @@ body{
   gap: 10px;
   align-items: flex-start;
 }
-.bf-emptyTitle{ font-weight: 900; font-size: 15px; }
-.bf-emptySub{ color: var(--muted); font-size: 13px; }
+.bf-emptyTitle{ font-weight: 900; font-size: 15px; color: dimgray; }
+.bf-emptySub{ color: var(--muted); font-size: 13px; color: dimgray; }
 
 /* Tips */
 .bf-footerTips{
@@ -321,7 +322,7 @@ body{
   border: 1px solid var(--line);
   border-radius: var(--radius);
 }
-.bf-tipTitle{ font-weight: 900; font-size: 14px; }
+.bf-tipTitle{ font-weight: 900; font-size: 14px; color:dimgray; }
 .bf-tipList{
   margin: 8px 0 0;
   padding-left: 18px;
