@@ -22,15 +22,7 @@ import depositRec1Icon from "../assets/icons/DepositR.png";
 import depositRec2Icon from "../assets/icons/DepositRR.png";
 
 /* ---------------- CONFIG ---------------- */
-const API_HOST = "http://159.198.40.145:5010";
 
-function toAbsUrl(p) {
-  const s = String(p || "").trim();
-  if (!s) return "";
-  if (s.startsWith("http://") || s.startsWith("https://")) return s;
-  if (s.startsWith("/")) return API_HOST + s;
-  return API_HOST + "/" + s;
-}
 
 function money(n) {
   const num = Number(n || 0);
@@ -98,16 +90,15 @@ export default function MemberMine() {
   // stable avatar seed
   const avatarSeed = referenceCode === "-" ? "guest" : referenceCode;
 
-  const rawAvatar =
-    me?.avatar_url ||
-    me?.photo_url ||
-    me?.profile_photo_url ||
-    me?.profile_picture_url ||
-    me?.profile_photo ||
-    "";
+const avatarUrl =
+  me?.avatar_url ||
+  me?.photo_url ||
+  me?.profile_photo_url ||
+  me?.profile_picture_url ||
+  me?.profile_photo ||
+  "";
 
-  const avatarUrl = toAbsUrl(rawAvatar);
-  const hasAvatar = !!avatarUrl;
+const hasAvatar = !!avatarUrl;
 
   return (
     <div className="minePage">
@@ -125,7 +116,7 @@ export default function MemberMine() {
                     onError={(e) => {
                       e.currentTarget.src = "/user.png";
                     }}
-                  />
+                  />                  
                 </div>
                 <div className="mine-meta">
                   <div className="mine-vip">
