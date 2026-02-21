@@ -1,8 +1,8 @@
 :root{
   --bg:#f6f8fc;
   --panel:#ffffff;
-  --text:#0f172a;
-  --muted:#64748b;
+  --text:dimgray;
+  --muted:dimgray;
   --line:#e5eaf2;
 
   --brand:#1e3a8a;   /* indigo */
