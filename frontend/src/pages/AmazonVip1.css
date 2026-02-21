@@ -245,6 +245,7 @@
   border-radius:18px;
   background:#fff;
   box-shadow:0 10px 18px rgba(0,0,0,.06);
+  margin-top: 8vh;
 }
 
 .vipLogoMark{
@@ -1041,5 +1042,11 @@
 @media (max-width: 360px){
   .vipWhite .metricGrid2{
     grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 450px) {
+  .vipLogoCard {
+    margin-top: 10vh;
   }
 }

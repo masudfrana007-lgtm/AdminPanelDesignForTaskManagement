@@ -183,7 +183,7 @@ export default function AliexpressVip3() {
             <button
               className="supportBtn"
               type="button"
-              onClick={() => nav("/member/service")}
+              onClick={() => nav("/member/customerService")}
               aria-label="Customer Support"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none">

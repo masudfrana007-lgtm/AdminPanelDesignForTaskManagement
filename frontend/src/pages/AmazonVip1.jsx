@@ -238,7 +238,7 @@ export default function AmazonVip1() {
             <button
               className="supportBtn professional-support-btn"
               type="button"
-              onClick={() => nav("/member/service")}
+              onClick={() => nav("/member/customerService")}
               aria-label="Customer Support"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
