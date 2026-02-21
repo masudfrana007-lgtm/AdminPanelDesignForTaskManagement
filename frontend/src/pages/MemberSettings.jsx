@@ -73,30 +73,63 @@ export default function MemberSettings() {
   });
   const [err, setErr] = useState("");
 
-  useEffect(() => {
-    (async () => {
-      setErr("");
-      try {
-        const { data } = await memberApi.get("/member/me");
-        setMember(data);
+useEffect(() => {
+  let mounted = true;
 
-        setSettings((prev) => ({
-          ...prev,
-          pushNotifications: data.pushNotifications ?? true,
-          emailNotifications: data.emailNotifications ?? true,
-          transactionAlerts: data.transactionAlerts ?? true,
-          priceAlerts: data.priceAlerts ?? false,
-          darkMode: data.darkMode ?? false,
-          biometricLogin: data.biometricLogin ?? false,
-          language: data.language ?? "English",
-          currency: data.currency ?? "USD",
-        }));
-      } catch (e) {
-        setMember(null);
-        setErr(e?.response?.data?.message || "Failed to load profile");
-      }
-    })();
-  }, []);
+  (async () => {
+    setErr("");
+
+    try {
+      const [meRes, depRes, wdRes, sumRes] = await Promise.all([
+        memberApi.get("/member/me"),
+        memberApi.get("/member/deposits"),
+        memberApi.get("/member/withdrawals"),
+        memberApi.get("/member/history-summary"),
+      ]);
+
+      if (!mounted) return;
+
+      const me = meRes.data || {};
+      const deposits = Array.isArray(depRes.data) ? depRes.data : [];
+      const withdrawals = Array.isArray(wdRes.data) ? wdRes.data : [];
+      const summary = sumRes.data || {};
+
+      // ✅ compute real values (same logic as history page)
+      const transactionsCount = deposits.length + withdrawals.length;
+
+      const tasksCount =
+        summary.lifetime_tasks != null
+          ? Number(summary.lifetime_tasks)
+          : 0;
+
+      setMember({
+        ...me,
+        transactions: transactionsCount,
+        tasksDone: tasksCount,
+      });
+
+      setSettings((prev) => ({
+        ...prev,
+        pushNotifications: me.pushNotifications ?? true,
+        emailNotifications: me.emailNotifications ?? true,
+        transactionAlerts: me.transactionAlerts ?? true,
+        priceAlerts: me.priceAlerts ?? false,
+        darkMode: me.darkMode ?? false,
+        biometricLogin: me.biometricLogin ?? false,
+        language: me.language ?? "English",
+        currency: me.currency ?? "USD",
+      }));
+    } catch (e) {
+      if (!mounted) return;
+      setMember(null);
+      setErr(e?.response?.data?.message || "Failed to load profile");
+    }
+  })();
+
+  return () => {
+    mounted = false;
+  };
+}, []);
 
   const handleLogout = () => {
     if (window.confirm("Are you sure you want to logout?")) {
