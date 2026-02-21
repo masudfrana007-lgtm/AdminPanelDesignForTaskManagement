@@ -38,7 +38,7 @@
 .td-page{
   min-height: 100vh;
   background: var(--bg);
-  color: var(--text);
+  color: black;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
@@ -107,7 +107,7 @@
 .td-tab{
   border: 1px solid var(--line2);
   background: #fff;
-  color: var(--text);
+  color: #cfa547;
   padding: 10px 12px;
   border-radius: 12px;
   cursor: pointer;
@@ -280,7 +280,7 @@
 }
 
 .td-miniRow b{
-  color: var(--text);
+  color: #6b7280;
 }
 
 .td-profitText{
@@ -397,7 +397,7 @@
 .td-ciMeta{
   margin-top: 6px;
   font-size: 12px;
-  color: var(--muted);
+  color: #6b7280;
   display: flex;
   gap: 8px;
   align-items: center;
@@ -406,7 +406,7 @@
 
 .td-ciId{
   font-weight: 950;
-  color: var(--text);
+  color: #6b7280;
 }
 
 .td-ciDot{
@@ -451,7 +451,7 @@
 
 .td-progressTitle{
   font-size: 12px;
-  color: var(--muted);
+  color: #6b7280;
   font-weight: 900;
 }
 
@@ -469,8 +469,8 @@
   padding: 10px 12px;
   border-radius: 12px;
   border: 1px solid var(--line2);
-  background: #fff;
-  color: var(--text);
+  background: #dfdfff;
+  color: #000000;
   font-weight: 950;
   cursor: pointer;
 }
@@ -523,7 +523,7 @@
 .td-loadingText{
   text-align: center;
   font-weight: 950;
-  color: var(--text);
+  color: #6b7280;
   margin-bottom: 10px;
 }
 
@@ -559,12 +559,12 @@
 .td-successCard h2{
   font-size: 18px;
   font-weight: 950;
-  color: var(--text);
+  color: black;
 }
 
 .td-successCard p{
   margin-top: 8px;
-  color: var(--muted);
+  color: #6b7280;
   font-size: 13px;
   line-height: 1.5;
 }
@@ -578,14 +578,14 @@
 
 .td-smLabel{
   font-size: 12px;
-  color: var(--muted);
+  color: #6b7280;
   font-weight: 900;
 }
 
 .td-smValue{
   margin-top: 6px;
   font-weight: 950;
-  color: var(--text);
+  color: #22c55e;
 }
 
 .td-successBtns{
