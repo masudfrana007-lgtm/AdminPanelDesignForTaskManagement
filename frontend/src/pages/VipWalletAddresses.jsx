@@ -190,7 +190,7 @@ export default function VipWalletAddresses() {
             <div>
               <h3 style={{ margin: 0 }}>{SLOT.label}</h3>
               <div className="small" style={{ opacity: 0.8 }}>
-                Rank: <b>{vip}</b>
+                Rank: <b>{VIPS.find(v => v.key === vip)?.label || vip}</b>
               </div>
             </div>
 
