@@ -159,6 +159,7 @@
   font-size: 18px;
   font-weight: 900;
   letter-spacing: .2px;
+  color: black;
 }
 .sSub{
   margin-top: 2px;
@@ -220,6 +221,7 @@
   align-items:flex-start;
   justify-content:space-between;
   gap: 12px;
+  color: black;
 }
 
 .pTitle{
@@ -408,6 +410,7 @@
   border: 1px solid rgba(15,23,42,.06);
   background: rgba(15,23,42,.02);
   font-weight: 900;
+  color: black;
 }
 .legVal{
   font-weight: 950;
