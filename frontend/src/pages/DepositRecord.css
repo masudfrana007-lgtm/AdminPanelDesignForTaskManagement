@@ -274,7 +274,7 @@
 
 /* Make right-side values clearly visible if they are plain spans */
 .dpRow span:not(.dpLabel):not(.dpStatus){
-  color: dimgray; !important;
+  color: dimgray!important;
   font-weight: 600;
 }
 
