@@ -51,7 +51,7 @@ export default function EorderLanding() {
             </div>
 
             <h1 className="eoTitle">
-              Welcome to <span>eorder.io</span>
+              Welcome to <span>eorder.vip</span>
             </h1>
 
             <p className="eoSub">Complete Tasks. Earn. Withdraw.</p>

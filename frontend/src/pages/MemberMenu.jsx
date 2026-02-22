@@ -249,7 +249,7 @@ export default function MemberMenu() {
         <div className="vipHeaderRow">
           <div className="vipBrand">
             <div>
-              {/* <div className="vipBrandTitle">Eorder.io</div> */}
+              {/* <div className="vipBrandTitle">eorder.vip</div> */}
               <div className="eoLogoRow">
                 <div className="eoMark" aria-hidden="true">
                   <span className="eoMarkInner">e</span>

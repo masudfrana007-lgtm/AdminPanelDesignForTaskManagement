@@ -8,7 +8,7 @@ export default function TermsOfService() {
         <p className="legalMeta">Last updated: {new Date().toLocaleDateString()}</p>
 
         <p className="legalP">
-          These Terms of Service (“Terms”) govern your use of eorder.io (“we”, “us”, “our”). By accessing or
+          These Terms of Service (“Terms”) govern your use of eorder.vip (“we”, “us”, “our”). By accessing or
           using the platform, you agree to these Terms.
         </p>
 

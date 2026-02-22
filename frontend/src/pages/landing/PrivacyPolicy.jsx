@@ -8,7 +8,7 @@ export default function PrivacyPolicy() {
         <p className="legalMeta">Last updated: {new Date().toLocaleDateString()}</p>
 
         <p className="legalP">
-          This Privacy Policy explains how eorder.io (“we”, “us”, “our”) collects, uses, and protects your
+          This Privacy Policy explains how eorder.vip (“we”, “us”, “our”) collects, uses, and protects your
           information when you use our website and services.
         </p>
 
