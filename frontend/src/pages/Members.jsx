@@ -191,7 +191,10 @@ const renderLoginDetails = (m) => {
 
   return (
     <AppLayout>
-      <div className="container">
+      <div
+        className="container"
+        style={{ width: "80vw", margin: "0 auto" }}
+      >        
         <div className="topbar">
           <div>
             <h2>Members</h2>
