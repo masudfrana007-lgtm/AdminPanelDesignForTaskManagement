@@ -14,14 +14,11 @@ const VIPS = [
 const SLOT = { asset: "USDT", network: "TRC20", label: "USDT (TRC20)" };
 
 // ✅ backend host (image preview must use backend, not frontend 5175)
-const API_HOST = import.meta.env.VITE_API_HOST || "http://159.198.40.145:5010";
-
-function toAbsUrl(p) {
-  const s = String(p || "").trim();
-  if (!s) return "";
-  if (s.startsWith("http://") || s.startsWith("https://")) return s;
-  return `${API_HOST}${s.startsWith("/") ? "" : "/"}${s}`;
-}
+ const toAbsUrl = (p) => {
+   if (!p) return "";
+   if (/^(https?:)?\/\//i.test(p)) return p;
+   return p.startsWith("/") ? p : `/${p}`;
+ };
 
 function slotKey(vip_rank, asset, network) {
   return `${vip_rank}__${String(asset || "").toUpperCase()}__${String(
