@@ -225,7 +225,7 @@
   border-radius:12px;
   border:none;
   background:var(--brand);
-  color:#fff;
+  color:#fff!important;
   font-size:13px;
   cursor:pointer;
 }
@@ -255,6 +255,7 @@
 .dpPage *{
   opacity: 1 !important;
   filter: none !important;
+  color: dimgray;
 }
 
 /* Force correct text colors inside cards */
@@ -272,7 +273,7 @@
 
 /* Make right-side values clearly visible if they are plain spans */
 .dpRow span:not(.dpLabel):not(.dpStatus){
-  color: var(--text) !important;
+  color: dimgray; !important;
   font-weight: 600;
 }
 
