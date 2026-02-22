@@ -1,8 +1,8 @@
 :root{
   --bg:#f6f8fc;
   --panel:#ffffff;
-  --text:dimgray;
-  --muted:dimgray;
+  --text:#0f172a;
+  --muted:#64748b;
   --line:#e5eaf2;
 
   --brand:#1e3a8a;   /* indigo */
@@ -248,4 +248,36 @@
 @keyframes fadeUp{
   from { opacity: 0; transform: translate(-50%, 8px); }
   to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* --- HARD RESET for this page only (prevents global CSS from washing it out) --- */
+.dpPage,
+.dpPage *{
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+/* Force correct text colors inside cards */
+.dpCard{
+  color: var(--text) !important;
+}
+
+.dpRow{
+  color: var(--text) !important;
+}
+
+.dpLabel{
+  color: var(--muted) !important;
+}
+
+/* Make right-side values clearly visible if they are plain spans */
+.dpRow span:not(.dpLabel):not(.dpStatus){
+  color: var(--text) !important;
+  font-weight: 600;
+}
+
+/* Footer link should not look disabled */
+.dpFooter a{
+  color: var(--brand) !important;
+  font-weight: 600;
 }
