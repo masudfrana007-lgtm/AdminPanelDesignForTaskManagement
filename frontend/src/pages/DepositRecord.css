@@ -38,7 +38,7 @@
   border-radius:12px;
   border:1px solid rgba(255,255,255,.2);
   background:rgba(255,255,255,.12);
-  color:#fff;
+  color:#fff!important;
   cursor:pointer;
 }
 
@@ -46,6 +46,7 @@
   text-align:center;
   font-weight:600;
   font-size:15px;
+  color: white!important;
 }
 
 /* Filters */
