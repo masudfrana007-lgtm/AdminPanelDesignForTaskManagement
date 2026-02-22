@@ -8,14 +8,11 @@ import MemberBottomNav from "../components/MemberBottomNav";
 import memberApi from "../services/memberApi";
 import usdtIcon from "../assets/icons/usdt.png";
 
-const API_HOST = "http://159.198.40.145:5010";
-
+// ✅ same-domain safe, works with relative or absolute URLs
 function toAbsUrl(p) {
-  const s = String(p || "").trim();
-  if (!s) return "";
-  if (s.startsWith("http://") || s.startsWith("https://")) return s;
-  if (s.startsWith("/")) return API_HOST + s;
-  return API_HOST + "/" + s;
+  if (!p) return "";
+  if (/^(https?:)?\/\//i.test(p)) return p.replace(/^http:/i, "https:");
+  return p.startsWith("/") ? p : `/${p}`;
 }
 
 function money(n) {
@@ -55,14 +52,14 @@ export default function WithdrawalMethod() {
   const balance = Number(me?.balance || 0);
 
   // (optional) if you later want avatar image in the circle
-  const rawAvatar =
-    me?.avatar_url ||
-    me?.photo_url ||
-    me?.profile_photo_url ||
-    me?.profile_picture_url ||
-    me?.profile_photo ||
-    "";
-  const avatarUrl = toAbsUrl(rawAvatar);
+const rawAvatar =
+  me?.avatar_url ||
+  me?.photo_url ||
+  me?.profile_photo_url ||
+  me?.profile_picture_url ||
+  me?.profile_photo ||
+  "";
+const avatarUrl = toAbsUrl(rawAvatar);
 
   return (
     <div className="page wd-method" style={{ backgroundImage: `url(${withdrawBg})` }}>
@@ -90,9 +87,9 @@ export default function WithdrawalMethod() {
           <div className="wd-profLeft">
             {/* keep your existing avatar circle style.
                If you want the real photo, uncomment the <img> */}
-            <div className="wd-avatar" aria-hidden="true">
-              {/* {avatarUrl ? <img src={avatarUrl} alt="" /> : null} */}
-            </div>
+              <div className="wd-avatar">
+                {avatarUrl ? <img src={avatarUrl} alt="Profile" /> : null}
+              </div>
 
             <div className="wd-profMeta">
               <div className="wd-profRow">
