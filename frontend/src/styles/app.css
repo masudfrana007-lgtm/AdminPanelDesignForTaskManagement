@@ -197,6 +197,7 @@
   font-weight: 800;
   font-size: 20px;
   margin-top: 4px;
+  color: black;
 }
 
 .taskThumb{
@@ -456,14 +457,14 @@
 
 .sx-metricLabel{
   font-size: 12px;
-  color: var(--muted);
+  color: black;
   margin-bottom: 4px;
 }
 
 .sx-metricValue{
   font-size: 16px;
   font-weight: 800;
-  color: var(--text);
+  color: black;
 }
 
 /* responsive */

@@ -174,6 +174,7 @@ export default function AssignSets() {
 
               <button
                 className="btn secondary"
+                style={{ background: "#5b85d9" }}
                 onClick={() => {
                   setSetId("");
                   setMemberId("");
