@@ -1,0 +1,595 @@
+:root{
+  --bg: #f3f6fb;
+  --card: #ffffff;
+  --muted: #64748b;
+  --text: #0b1220;
+  --line: rgba(15,23,42,.10);
+  --shadow: 0 12px 26px rgba(20,24,40,.10);
+
+  --primary: #2563eb;
+  --primary2: #1d4ed8;
+
+  --pendingBg: rgba(245,158,11,.12);
+  --pendingBd: rgba(245,158,11,.22);
+  --pendingTx: #92400e;
+
+  --openBg: rgba(34,197,94,.10);
+  --openBd: rgba(34,197,94,.20);
+  --openTx: #166534;
+
+  --unreadBg: rgba(37,99,235,.08);
+  --unreadBd: rgba(37,99,235,.18);
+}
+
+*{ box-sizing: border-box; }
+
+.sxPage{
+  min-height: 100vh;
+  background: var(--bg);
+  padding: 16px;
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+}
+.sxContainer{ max-width: 1280px; margin: 0 auto; }
+
+/* Desktop typography (no unnecessary bold) */
+.sxTitle{ font-size: 18px; font-weight: 700; letter-spacing: .2px; }
+.sxSub{ margin-top: 4px; color: var(--muted); font-weight: 500; font-size: 12.5px; }
+
+.sxTop{
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 14px;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap: 12px;
+}
+.sxTopRight{ display:flex; gap: 10px; }
+
+.sxBtn{
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--text);
+  font-weight: 600;
+  cursor:pointer;
+}
+.sxBtn:hover{ background: #f8fafc; }
+.sxBtnPrimary{
+  background: linear-gradient(135deg, var(--primary), var(--primary2));
+  color: #fff;
+  border-color: rgba(37,99,235,.25);
+}
+
+/* Notification block */
+.sxNotif{
+  margin-top: 12px;
+  display:grid;
+  grid-template-columns: repeat(3, 1fr) 2fr;
+  gap: 12px;
+}
+.sxNotifItem{
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 12px;
+}
+.sxNotifWide{ display:flex; justify-content:space-between; align-items:center; gap: 10px; }
+.sxNotifK{ color: var(--muted); font-weight: 500; font-size: 12.5px; }
+.sxNotifV{ margin-top: 4px; font-weight: 650; font-size: 18px; }
+
+.sxMono{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+}
+
+/* Layout */
+.sxLayout{
+  margin-top: 12px;
+  display:grid;
+  grid-template-columns: 420px 1fr;
+  gap: 12px;
+}
+
+/* Left list */
+.sxLeft{
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  min-height: 72vh;
+}
+
+.sxTools{
+  padding: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.sxSearch{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid var(--line);
+}
+.sxInput{
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font-weight: 550;
+}
+.sxInput::placeholder{ color: #94a3b8; font-weight: 500; }
+
+.sxRow{
+  margin-top: 10px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap: 10px;
+}
+
+.sxSeg{
+  display:flex;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #f8fafc;
+}
+.sxSegBtn{
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 0;
+  background: transparent;
+  color: #334155;
+  font-weight: 600;
+  cursor:pointer;
+}
+.sxSegBtn.isActive{
+  background: rgba(37,99,235,.10);
+  color: #1d4ed8;
+}
+
+.sxCheck{
+  display:flex;
+  gap: 8px;
+  align-items:center;
+  font-weight: 600;
+  font-size: 13px;
+  color: #334155;
+}
+.sxCheck input{ accent-color: var(--primary); }
+
+.sxListHead{
+  padding: 10px 12px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border-bottom: 1px solid var(--line);
+}
+.sxListTitle{ font-weight: 650; }
+.sxListMeta{ color: var(--muted); font-weight: 550; font-size: 13px; }
+
+.sxList{ padding: 10px; overflow:auto; }
+
+.sxItem{
+  width: 100%;
+  display:grid;
+  grid-template-columns: 44px 1fr 120px;
+  gap: 10px;
+  align-items:center;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(15,23,42,.08);
+  background: #fff;
+  cursor:pointer;
+  text-align:left;
+  margin-bottom: 10px;
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+.sxItem:hover{ transform: translateY(-1px); box-shadow: 0 10px 18px rgba(20,24,40,.08); }
+.sxItem.isActive{ border-color: rgba(37,99,235,.35); background: rgba(37,99,235,.05); }
+.sxItem.isUnread{ border-color: var(--unreadBd); background: var(--unreadBg); }
+
+.sxAvatar{
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  display:grid;
+  place-items:center;
+  font-weight: 650;
+  color: #0b1220;
+  background: linear-gradient(135deg, rgba(37,99,235,.16), rgba(255,255,255,1));
+  border: 1px solid rgba(37,99,235,.22);
+}
+
+.sxItemTop{ display:flex; justify-content:space-between; gap: 10px; align-items:center; }
+.sxName{ font-weight: 650; }
+.sxTopBadges{ display:flex; gap: 8px; align-items:center; }
+
+.sxUnreadTag{
+  font-size: 11px;
+  font-weight: 650;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(37,99,235,.12);
+  border: 1px solid rgba(37,99,235,.22);
+  color: #1d4ed8;
+}
+
+.sxHint{ margin-top: 2px; font-size: 12px; color: var(--muted); font-weight: 500; }
+.sxLast{
+  margin-top: 6px;
+  font-size: 13px;
+  color: #334155;
+  font-weight: 550;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sxItemRight{ display:flex; flex-direction:column; align-items:flex-end; gap: 6px; }
+
+.sxUnreadCount{
+  min-width: 24px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  display:grid;
+  place-items:center;
+  font-weight: 650;
+  color: #1d4ed8;
+  background: rgba(37,99,235,.12);
+  border: 1px solid rgba(37,99,235,.22);
+}
+.sxUnreadEmpty{ height: 24px; }
+.sxTime{ font-size: 11px; color: #94a3b8; font-weight: 500; text-align:right; }
+
+.sxPill{
+  display:inline-flex;
+  align-items:center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 12px;
+  border: 1px solid var(--line);
+  background: #f8fafc;
+  color: #334155;
+}
+.sxPill.isPending{ background: var(--pendingBg); border-color: var(--pendingBd); color: var(--pendingTx); }
+.sxPill.isOpen{ background: var(--openBg); border-color: var(--openBd); color: var(--openTx); }
+
+.sxEmpty{ padding: 18px 12px; color: var(--muted); font-weight: 600; text-align:center; }
+
+/* Right */
+.sxRight{
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  min-height: 72vh;
+}
+
+.sxBlank{ height: 100%; padding: 24px; display:grid; place-items:center; text-align:center; }
+.sxBlankTitle{ font-weight: 650; font-size: 18px; }
+.sxBlankSub{ margin-top: 6px; color: var(--muted); font-weight: 500; }
+
+.sxChatHead{
+  padding: 12px;
+  border-bottom: 1px solid var(--line);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap: 12px;
+}
+
+.sxChatUser{ display:flex; align-items:center; gap: 10px; }
+.sxChatAvatar{
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display:grid;
+  place-items:center;
+  font-weight: 650;
+  background: #f1f5f9;
+  border: 1px solid rgba(15,23,42,.10);
+}
+.sxChatName{ font-weight: 650; }
+.sxChatPhone{ margin-top: 2px; font-size: 12px; color: var(--muted); font-weight: 500; }
+
+.sxChatActions{ display:flex; gap: 10px; align-items:center; }
+.sxBtnSmall{
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--text);
+  font-weight: 600;
+  cursor:pointer;
+}
+.sxBtnSmall:hover{ background: #f8fafc; }
+
+.sxChatGrid{
+  flex: 1;
+  display:grid;
+  grid-template-columns: 1fr 320px;
+  gap: 12px;
+  padding: 12px;
+  background: #f8fafc;
+}
+
+.sxChatBody{
+  border: 1px solid rgba(15,23,42,.08);
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px;
+  overflow:auto;
+}
+
+.sxMsgRow{ display:flex; margin-bottom: 10px; }
+.sxMsgRow.isCustomer{ justify-content:flex-start; }
+.sxMsgRow.isAgent{ justify-content:flex-end; }
+
+.sxBubble{
+  max-width: 72%;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(15,23,42,.08);
+  background: #fff;
+  box-shadow: 0 6px 14px rgba(20,24,40,.06);
+}
+.sxMsgRow.isAgent .sxBubble{
+  background: rgba(37,99,235,.08);
+  border-color: rgba(37,99,235,.18);
+}
+.sxMsgText{ font-weight: 550; line-height: 1.45; color: #0b1220; }
+.sxMsgAt{ margin-top: 6px; font-size: 11px; color: #94a3b8; font-weight: 500; }
+
+/* Profile */
+.sxProfile{
+  border: 1px solid rgba(15,23,42,.08);
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px;
+  height: fit-content;
+  position: sticky;
+  top: 12px;
+}
+.sxProfileTitle{ font-weight: 650; margin-bottom: 10px; color: #0b1220; }
+.sxField{ margin-bottom: 12px; }
+.sxLabel{ font-size: 12px; color: var(--muted); font-weight: 500; margin-bottom: 6px; }
+
+.sxFieldInput{
+  width: 100%;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(15,23,42,.10);
+  background: #f8fafc;
+  padding: 0 10px;
+  outline: none;
+  font-weight: 550;
+}
+.sxFieldStatic{
+  height: 40px;
+  display:flex;
+  align-items:center;
+  padding: 0 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(15,23,42,.10);
+  background: #f8fafc;
+  font-weight: 550;
+}
+.sxHelp{
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+.sxFieldArea{
+  width: 100%;
+  min-height: 90px;
+  resize: vertical;
+  border-radius: 12px;
+  border: 1px solid rgba(15,23,42,.10);
+  background: #f8fafc;
+  padding: 10px;
+  outline: none;
+  font-weight: 550;
+}
+.sxProfileActions{ display:flex; align-items:center; gap: 10px; }
+.sxToast{ font-size: 12px; color: #16a34a; font-weight: 600; }
+
+/* Composer */
+.sxComposer{
+  padding: 12px;
+  border-top: 1px solid var(--line);
+  display:grid;
+  grid-template-columns: 1fr 120px;
+  gap: 10px;
+  background: #fff;
+}
+.sxTextarea{
+  height: 52px;
+  resize: none;
+  border-radius: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(15,23,42,.10);
+  background: #f8fafc;
+  color: var(--text);
+  font-weight: 550;
+  outline: none;
+}
+.sxTextarea::placeholder{ color: #94a3b8; font-weight: 500; }
+
+.sxSend{
+  height: 52px;
+  border-radius: 12px;
+  border: 1px solid rgba(37,99,235,.25);
+  background: linear-gradient(135deg, var(--primary), var(--primary2));
+  color: #fff;
+  font-weight: 650;
+  cursor:pointer;
+}
+.sxSend:hover{ filter: brightness(1.04); }
+
+/* Back button hidden on desktop */
+.sxBack{ display:none; }
+
+/* ✅ Mobile ONLY */
+@media (max-width: 980px){
+  .sxPage{ padding: 12px; }
+
+  .sxNotif{ grid-template-columns: 1fr 1fr; }
+  .sxNotifWide{ grid-column: 1 / -1; }
+
+  .sxLayout{ grid-template-columns: 1fr; }
+
+  /* simplify list row on mobile */
+  .sxItem{ grid-template-columns: 44px 1fr; }
+  .sxItemRight{ display:none; }
+
+  /* Chat becomes single column */
+  .sxChatGrid{ grid-template-columns: 1fr; padding: 10px; }
+  .sxProfile{ position: static; top: auto; margin-top: 10px; }
+
+  /* sticky composer for easy typing */
+  .sxComposer{
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    grid-template-columns: 1fr 96px;
+    padding: 10px;
+  }
+
+  .sxBack{ display:inline-flex; }
+
+  /* full screen behavior */
+  .sxLayout.isChatOpen .sxLeft{ display:none; }
+  .sxLayout.isChatOpen .sxRight{ display:flex; min-height: calc(100vh - 170px); }
+  .sxLayout:not(.isChatOpen) .sxRight{ display:none; }
+}
+
+@media (max-width: 420px){
+  .sxTitle{ font-size: 16px; }
+  .sxNotifV{ font-size: 16px; }
+  .sxComposer{ grid-template-columns: 1fr 88px; }
+}
+/* =========================================
+   ✅ Mobile Chat UX Improvements (NO desktop changes)
+   ========================================= */
+
+@media (max-width: 980px){
+
+  /* When chat is open on mobile, hide big stat cards */
+  .sxContainer.isChatOpen .sxNotif{
+    display: none;
+  }
+
+  /* Make top bar more compact in chat mode */
+  .sxContainer.isChatOpen .sxTop{
+    padding: 10px 12px;
+    align-items: center;
+  }
+  .sxContainer.isChatOpen .sxSub{
+    display: none;
+  }
+
+  /* Chat panel should feel full-screen */
+  .sxLayout.isChatOpen .sxRight{
+    min-height: calc(100vh - 88px); /* room for top bar */
+  }
+
+  /* Reduce internal paddings to maximize space */
+  .sxChatHead{ padding: 10px 10px; }
+  .sxChatGrid{ padding: 8px; gap: 10px; }
+
+  /* Messages area should take most of the screen */
+  .sxChatBody{
+    padding: 12px;
+    border-radius: 14px;
+    min-height: calc(100vh - 260px); /* keeps room for header+composer+profile */
+  }
+
+  /* Bubbles look better on phone */
+  .sxBubble{
+    max-width: 88%;
+    border-radius: 14px;
+  }
+
+  /* Profile card spacing: lighter and tighter */
+  .sxProfile{
+    padding: 12px;
+    border-radius: 14px;
+  }
+  .sxProfileTitle{
+    margin-bottom: 8px;
+  }
+  .sxField{
+    margin-bottom: 10px;
+  }
+  .sxHelp{
+    display: none; /* optional: hides example text to save space */
+  }
+
+  /* Sticky composer: more app-like */
+  .sxComposer{
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    padding: 10px 12px;
+    background: rgba(255,255,255,.96);
+    backdrop-filter: blur(10px);
+  }
+
+  /* Give extra bottom space so last messages are not hidden under composer */
+  .sxRight{
+    padding-bottom: 76px;
+  }
+
+  /* Make input easier */
+  .sxTextarea{
+    height: 48px;
+    font-size: 14px;
+    line-height: 1.35;
+  }
+  .sxSend{
+    height: 48px;
+  }
+
+  /* Header buttons: better taps */
+  .sxBtnSmall{
+    height: 38px;
+    padding: 0 12px;
+    border-radius: 12px;
+  }
+}
+
+/* Extra small phones */
+@media (max-width: 420px){
+  .sxChatName{ font-size: 14px; }
+  .sxChatPhone{ font-size: 11px; }
+  .sxBubble{ max-width: 92%; }
+}
