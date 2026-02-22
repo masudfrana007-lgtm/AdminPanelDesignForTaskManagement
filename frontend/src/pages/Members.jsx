@@ -305,8 +305,20 @@ const renderLoginDetails = (m) => {
           {err && <div className="error">{err}</div>}
           {ok && <div className="ok">{ok}</div>}
 
-          <div className="tableWrap">
-            <table className="table tableNoCut">
+          <div
+            style={{
+              overflowX: "auto",        // horizontal scroll
+              width: "100%",             // full container width
+              WebkitOverflowScrolling: "touch", // smooth scroll on mobile
+            }}
+          >
+            <table
+              className="table tableNoCut"
+              style={{
+                minWidth: 1200,   // prevents squishing
+                borderCollapse: "collapse",
+              }}
+            >              
               <thead>
                 <tr>
                   <th>Member ID</th>
