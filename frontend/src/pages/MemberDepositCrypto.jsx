@@ -8,14 +8,11 @@ import "../styles/memberDepositBank.css";
 import memberApi from "../services/memberApi";
 import MemberBottomNav from "../components/MemberBottomNav";
 
-const API_HOST = "http://159.198.40.145:5010";
-
+// ✅ same-domain safe, works with relative or absolute URLs
 function toAbsUrl(p) {
-  const s = String(p || "").trim();
-  if (!s) return "";
-  if (s.startsWith("http://") || s.startsWith("https://")) return s;
-  if (s.startsWith("/")) return API_HOST + s;
-  return API_HOST + "/" + s;
+  if (!p) return "";
+  if (/^(https?:)?\/\//i.test(p)) return p.replace(/^http:/i, "https:");
+  return p.startsWith("/") ? p : `/${p}`;
 }
 
 const coins = [
