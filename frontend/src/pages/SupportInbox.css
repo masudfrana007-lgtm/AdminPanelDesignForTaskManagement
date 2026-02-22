@@ -311,7 +311,7 @@
   background: #f1f5f9;
   border: 1px solid rgba(15,23,42,.10);
 }
-.sxChatName{ font-weight: 650; }
+.sxChatName{ font-weight: 650; color:black; }
 .sxChatPhone{ margin-top: 2px; font-size: 12px; color: var(--muted); font-weight: 500; }
 
 .sxChatActions{ display:flex; gap: 10px; align-items:center; }
@@ -433,7 +433,7 @@
   padding: 10px 12px;
   border: 1px solid rgba(15,23,42,.10);
   background: #f8fafc;
-  color: var(--text);
+  color: black;
   font-weight: 550;
   outline: none;
 }
