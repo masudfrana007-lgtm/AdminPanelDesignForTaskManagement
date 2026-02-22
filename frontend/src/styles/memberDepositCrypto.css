@@ -583,3 +583,29 @@
   color:rgba(15,23,42,.70);
   font-weight:900;
 }
+
+.dcPage{
+  background:#f3f6fb !important;
+}
+
+.dcCard,
+.dcSavedWallet,
+.dcCoin,
+.dcAddressBox,
+.dcModal{
+  background:#ffffff !important;
+}
+
+.dcField input,
+.dcField select,
+.dcModalInput{
+  background:#ffffff !important;
+}
+
+.dcWalletAddr,
+.dcCoinName,
+.dcHelper,
+.dcHint,
+.dcRules{
+  color:#475569 !important;
+}
