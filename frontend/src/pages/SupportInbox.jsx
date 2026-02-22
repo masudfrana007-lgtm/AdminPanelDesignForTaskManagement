@@ -53,15 +53,13 @@ function authHeaders() {
 }
 
 // ✅ files are served by backend host
-const FILE_BASE = "http://159.198.40.145:5010";
-function joinUrl(base, p) {
-  const path = String(p || "").trim();
-  if (!path) return "";
-  if (/^https?:\/\//i.test(path)) return path;
-  const b = String(base || "").replace(/\/+$/, "");
-  const u = path.startsWith("/") ? path : `/${path}`;
-  return `${b}${u}`;
-}
+// ✅ same as Tasks (nginx proxy safe)
+const toAbsUrl = (p) => {
+  if (!p) return "";
+  const s = String(p).trim().replaceAll("\\", "/"); // ✅ fix windows backslashes
+  if (/^(https?:)?\/\//i.test(s)) return s;
+  return s.startsWith("/") ? s : `/${s}`;
+};
 
 // ✅ local profile storage (no DB changes)
 function profileKey(convoId) {
@@ -533,7 +531,7 @@ export default function SupportInbox() {
                               <div style={{ marginTop: 2 }}>
                                 <button
                                   type="button"
-                                  onClick={() => openImage(joinUrl(FILE_BASE, m.file_url), m.file_name || "photo")}
+                                  onClick={() => openImage(toAbsUrl(m.file_url), m.file_name || "photo")}
                                   style={{
                                     padding: 0,
                                     border: 0,
@@ -544,7 +542,7 @@ export default function SupportInbox() {
                                   aria-label="Open photo"
                                 >
                                   <img
-                                    src={joinUrl(FILE_BASE, m.file_url)}
+                                    src={toAbsUrl(m.file_url)}
                                     alt={m.file_name || "photo"}
                                     style={{
                                       width: 220,
