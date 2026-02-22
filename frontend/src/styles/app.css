@@ -107,10 +107,6 @@
 }
 
 /* ====== TASKS TABLE: FIT WIDTH (NO H-SCROLL) ====== */
-.tableWrap{
-  width: 100%;
-  overflow: hidden;          /* no horizontal scroll */
-}
 
 .table{
   width: 100%;
