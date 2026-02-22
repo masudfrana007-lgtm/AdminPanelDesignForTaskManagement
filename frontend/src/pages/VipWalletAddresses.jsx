@@ -211,7 +211,7 @@ export default function VipWalletAddresses() {
           <div className="row" style={{ gap: 12, marginTop: 12, flexWrap: "wrap" }}>
             <div style={{ flex: 1, minWidth: 260 }}>
               <div className="field">
-                <div className="label">Wallet address</div>
+                <div className="label" style={{ color: "#000" }}>Wallet address</div>
                 <input
                   className="input"
                   value={row.wallet_address || ""}
@@ -222,7 +222,7 @@ export default function VipWalletAddresses() {
               </div>
 
               <div className="field" style={{ marginTop: 10 }}>
-                <div className="label">QR / Photo</div>
+                <div className="label" style={{ color: "#000" }}>QR / Photo</div>
 
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                   <input
