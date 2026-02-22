@@ -243,7 +243,7 @@ export default function RulesAndInstructions() {
             </button>
             <button 
               className="rules-guide-support-btn"
-              onClick={() => navigate('/member/service')}
+              onClick={() => navigate('/member/customerService')}
             >
               <FaBook />
               Contact Support

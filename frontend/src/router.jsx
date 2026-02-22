@@ -17,7 +17,6 @@ import MemberProtectedRoute from "./components/MemberProtectedRoute";
 import MemberHistory from "./pages/MemberHistory";
 import MemberSignup from "./pages/MemberSignup";
 
-import MemberService from "./pages/MemberService";
 import MemberMenu from "./pages/MemberMenu";
 import MemberMine from "./pages/MemberMine";
 
@@ -237,15 +236,6 @@ export const router = createBrowserRouter([
         <MemberHistory />
       </MemberProtectedRoute>
     )
-  },
-
-  {
-    path: "/member/service",
-    element: (
-      <MemberProtectedRoute>
-        <MemberService />
-      </MemberProtectedRoute>
-    ),
   },
 
   {

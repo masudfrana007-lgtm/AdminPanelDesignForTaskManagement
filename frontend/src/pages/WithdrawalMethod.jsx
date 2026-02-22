@@ -77,7 +77,7 @@ export default function WithdrawalMethod() {
           <div className="wd-sub">Choose a withdrawal method that is safe and convenient</div>
         </div>
 
-        <button className="wd-help" onClick={() => nav("/member/service")} type="button">
+        <button className="wd-help" onClick={() => nav("/member/customerService")} type="button">
           Support
         </button>
       </div>

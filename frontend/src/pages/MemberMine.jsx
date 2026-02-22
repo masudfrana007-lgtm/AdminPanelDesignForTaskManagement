@@ -140,7 +140,7 @@ const hasAvatar = !!avatarUrl;
             </div>
 
             <div className="mine-support">
-              <button className="mine-support-btn" onClick={() => nav("/member/service")}>
+              <button className="mine-support-btn" onClick={() => nav("/member/customerService")}>
                 Contact Support
               </button>
             </div>

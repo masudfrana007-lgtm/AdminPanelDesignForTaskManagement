@@ -84,7 +84,7 @@ export default function DepositMethod() {
           <div className="dm-sub">Choose a deposit method that is convenient and secure</div>
         </div>
 
-        <button className="dm-help" onClick={() => nav("/member/service")} type="button">
+        <button className="dm-help" onClick={() => nav("/member/customerService")} type="button">
           Support
         </button>
       </div>

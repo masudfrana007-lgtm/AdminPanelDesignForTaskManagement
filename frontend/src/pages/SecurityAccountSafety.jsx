@@ -187,7 +187,7 @@ export default function SecurityAccountSafety() {
             </button>
             <button 
               className="security-guide-support-btn"
-              onClick={() => navigate('/member/service')}
+              onClick={() => navigate('/member/customerService')}
             >
               <FaShieldAlt />
               Contact Support
