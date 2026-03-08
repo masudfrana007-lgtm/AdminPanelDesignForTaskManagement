@@ -23,17 +23,6 @@ function isNearBottom(el, px = 140) {
   return el.scrollHeight - el.scrollTop - el.clientHeight < px;
 }
 
-// ✅ backend file base (same as old working)
-const FILE_BASE = "http://159.198.40.145:5010";
-function joinUrl(base, p) {
-  const path = String(p || "").trim();
-  if (!path) return "";
-  if (/^https?:\/\//i.test(path)) return path;
-  const b = String(base || "").replace(/\/+$/, "");
-  const u = path.startsWith("/") ? path : `/${path}`;
-  return `${b}${u}`;
-}
-
 /* ---------------- UI constants ---------------- */
 const DEMO_AGENT = {
   name: "Customer Service",
@@ -437,13 +426,13 @@ export default function CustomerService() {
                     {m.type === "image" ? (
                       <div className="imgWrap">
                         <img
-                          src={joinUrl(FILE_BASE, m.url)}
+                          src={m.url || "/user.png"}
                           alt={m.name || "upload"}
                           onClick={() =>
-                            openImage(joinUrl(FILE_BASE, m.url), m.name || "photo")
+                            openImage(m.url || "/user.png", m.name || "photo")
                           }
                           style={{ cursor: "zoom-in" }}
-                        />
+                        />                        
                       </div>
                     ) : (
                       <div className="bubbleText">{m.text}</div>

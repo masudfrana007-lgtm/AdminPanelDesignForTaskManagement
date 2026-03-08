@@ -9,6 +9,7 @@ import {
   FaBoxOpen,
   FaClipboardList, // ✅ add
   FaWallet,  
+  FaCog,
 } from "react-icons/fa";
 
 export default function Sidebar({ collapsed, onItemClick }) {
@@ -23,11 +24,11 @@ export default function Sidebar({ collapsed, onItemClick }) {
   return (
     <div className={`sidebar ${collapsed ? "collapsed" : ""}`}>
       <div className="sidebar-logo">
-        {collapsed ? "E" : "Eorder.io"}
+        {collapsed ? "E" : "eorder.vip"}
       </div>
 
       <div className="sidebar-section">Main</div>
-      <NavLink to="/" className={linkClass} title="Dashboard" onClick={onItemClick}>
+      <NavLink to="/admin" className={linkClass} title="Dashboard" onClick={onItemClick}>
         <FaTachometerAlt />
         {label("Dashboard")}
       </NavLink>
@@ -119,6 +120,18 @@ export default function Sidebar({ collapsed, onItemClick }) {
     </NavLink>
   </>
 )}
+
+          {/* --- NEW Settings Section --- */}
+    <div className="sidebar-section">Settings</div>
+    <NavLink
+      to="/settings"
+      className={linkClass}
+      title="Settings"
+      onClick={onItemClick}
+    >
+      <FaCog />
+      {label("Settings")}
+    </NavLink>
 
     </div>
   );

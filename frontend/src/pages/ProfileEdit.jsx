@@ -6,15 +6,17 @@ import MemberBottomNav from "../components/MemberBottomNav";
 import memberApi from "../services/memberApi";
 
 /* ---------- CONFIG ---------- */
-const API_HOST = "http://159.198.40.145:5010";
+const API_HOST = import.meta.env.VITE_API_HOST || "";
 
 // convert DB path like "/uploads/avatars/xx.jpg" into full URL
 function toAbsUrl(p) {
   const s = String(p || "").trim();
   if (!s) return "";
-  if (s.startsWith("http://") || s.startsWith("https://")) return s;
-  if (s.startsWith("/")) return API_HOST + s;
-  return API_HOST + "/" + s;
+
+  if (s.startsWith("http")) return s;
+
+  // ALWAYS prepend API host
+  return `${API_HOST}${s}`;
 }
 
 /* ---------- helpers ---------- */
@@ -80,17 +82,23 @@ export default function ProfileEdit() {
   }, [avatarPreview]);
 
   // ✅ server avatar must be absolute URL (5010)
-  const existingAvatar = useMemo(() => {
-    const u = user || {};
-    const raw =
-      u.avatar_url ||
-      u.photo_url ||
-      u.profile_photo_url ||
-      u.profile_picture_url ||
-      u.profile_photo ||
-      "";
-    return toAbsUrl(raw);
-  }, [user]);
+const existingAvatar = useMemo(() => {
+  const u = user || {};
+  const raw =
+    u.avatar_url ||
+    u.photo_url ||
+    u.profile_photo_url ||
+    u.profile_picture_url ||
+    u.profile_photo ||
+    "";
+
+  const abs = toAbsUrl(raw);
+
+  console.log("RAW avatar:", raw);
+  console.log("ABS avatar:", abs);
+
+  return abs;
+}, [user]);
 
   const shownAvatar = avatarPreview || existingAvatar;
 

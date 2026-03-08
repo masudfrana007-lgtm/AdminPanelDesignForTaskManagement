@@ -4,7 +4,12 @@ import api from "../services/api";
 import AppLayout from "../components/AppLayout";
 import "../styles/sets.css";
 
-const API_HOST = "http://159.198.40.145:5010";
+// ✅ always use current domain (nginx handles files)
+const toAbsUrl = (p) => {
+  if (!p) return "";
+  if (/^(https?:)?\/\//i.test(p)) return p;
+  return p.startsWith("/") ? p : `/${p}`;
+};
 
 export default function Sets() {
   const [sets, setSets] = useState([]);
@@ -414,7 +419,7 @@ export default function Sets() {
 
                   <td>
                     {t.image_url ? (
-                      <img className="sx-avatar" src={`${API_HOST}${t.image_url}`} alt="" />
+                      <img className="sx-avatar" src={toAbsUrl(t.image_url)} alt="" />
                     ) : (
                       <div className="sx-avatar sx-avatar--ph" />
                     )}

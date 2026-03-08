@@ -17,7 +17,6 @@ import MemberProtectedRoute from "./components/MemberProtectedRoute";
 import MemberHistory from "./pages/MemberHistory";
 import MemberSignup from "./pages/MemberSignup";
 
-import MemberService from "./pages/MemberService";
 import MemberMenu from "./pages/MemberMenu";
 import MemberMine from "./pages/MemberMine";
 import Teams from "./pages/Teams";
@@ -91,9 +90,31 @@ import CustomerService from "./pages/CustomerService";
 
 import MemberSetHistory from "./pages/MemberSetHistory";
 
+import ForgotPassword from "./pages/ForgotPassword";
+
+import Settings from "./pages/Settings";
+
+import Security from "./pages/Security";
+
+import MemberSettings from "./pages/MemberSettings";
+
+// landing pages (PUBLIC)
+import EorderLanding from "./pages/landing/EorderLanding";
+import PrivacyPolicy from "./pages/landing/PrivacyPolicy";
+import TermsOfService from "./pages/landing/TermsOfService";
+import ContactUs from "./pages/landing/ContactUs";
+
 export const router = createBrowserRouter([
+
+  { path: "/", element: <EorderLanding /> },
+  { path: "/privacy", element: <PrivacyPolicy /> },
+  { path: "/terms", element: <TermsOfService /> },
+  { path: "/contact", element: <ContactUs /> },
+
   { path: "/login", element: <Login /> },
   
+  { path: "/forgot-password", element: <ForgotPassword /> },
+
   { path: "/member/login", element: <MemberLogin /> },
   { path: "/member/signup", element: <MemberSignup /> },
 
@@ -102,7 +123,7 @@ export const router = createBrowserRouter([
     element: <CsLogin />,
   },
 
-  { path: "/", element: <ProtectedRoute><DashboardMain /></ProtectedRoute> },
+  { path: "/admin", element: <ProtectedRoute><DashboardMain /></ProtectedRoute> },
 
   /* ✅ PUBLIC / TEST ROUTE */
   {
@@ -215,15 +236,6 @@ export const router = createBrowserRouter([
         <MemberHistory />
       </MemberProtectedRoute>
     )
-  },
-
-  {
-    path: "/member/service",
-    element: (
-      <MemberProtectedRoute>
-        <MemberService />
-      </MemberProtectedRoute>
-    ),
   },
 
   {
@@ -588,6 +600,33 @@ export const router = createBrowserRouter([
   element: (
     <MemberProtectedRoute>
       <MemberSetHistory />
+    </MemberProtectedRoute>
+  ),
+},
+
+{
+  path: "/settings",
+  element: (
+    <ProtectedRoute>
+      <Settings />
+    </ProtectedRoute>
+  ),
+},
+
+{
+  path: "/security",
+  element: (
+    <MemberProtectedRoute>
+      <Security />
+    </MemberProtectedRoute>
+  ),
+},
+
+{
+  path: "/member/settings",
+  element: (
+    <MemberProtectedRoute>
+      <MemberSettings />
     </MemberProtectedRoute>
   ),
 },

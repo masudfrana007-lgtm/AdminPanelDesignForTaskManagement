@@ -102,12 +102,24 @@
   min-width: 260px;
 }
 
+/* Avatar wrapper */
 .wd-avatar {
-  width: 54px;
-  height: 54px;
-  border-radius: 999px;
-  background: radial-gradient(circle at 30% 30%, #ffdf8a, #ff9900);
-  box-shadow: 0 14px 26px rgba(0,0,0,0.25);
+  width: 60px;       /* adjust size */
+  height: 60px;
+  border-radius: 50%; /* make it circular */
+  overflow: hidden;   /* crop overflow */
+  background-color: #eee; /* optional placeholder color */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Avatar image */
+.wd-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;   /* ensures image covers circle without distortion */
+  display: block;
 }
 
 .wd-profRow {

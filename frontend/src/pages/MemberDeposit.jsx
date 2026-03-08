@@ -84,7 +84,7 @@ export default function DepositMethod() {
           <div className="dm-sub">Choose a deposit method that is convenient and secure</div>
         </div>
 
-        <button className="dm-help" onClick={() => nav("/member/service")} type="button">
+        <button className="dm-help" onClick={() => nav("/member/customerService")} type="button">
           Support
         </button>
       </div>
@@ -99,10 +99,14 @@ export default function DepositMethod() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '15px' }}>
               <div className="pf-avatar">
                 <img
-                  src={`https://i.pravatar.cc/150?u=${me?.short_id || user.referenceCode}`}
+                  src={
+                    me?.avatar_url
+                      ? me.avatar_url
+                      : `https://i.pravatar.cc/150?u=${me?.sponsor_short_id || user.referenceCode}`
+                  }
                   alt="User Avatar"
                   className="mine-avatar-img"
-                />
+                />                
               </div>
               
               {/* Balance and UID Info */}

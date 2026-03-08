@@ -110,6 +110,8 @@ router.get("/", auth, allowRoles("owner", "agent"), async (req, res) => {
            m.withdraw_privilege,
            m.approval_status,
            m.created_at,
+           m.last_login,
+           m.last_login_ip,
            COALESCE(w.balance, 0)::numeric(12,2) AS balance,
            COALESCE(w.locked_balance, 0)::numeric(12,2) AS locked_balance
          FROM members m
@@ -134,6 +136,8 @@ router.get("/", auth, allowRoles("owner", "agent"), async (req, res) => {
          m.withdraw_privilege,
          m.approval_status,
          m.created_at,
+         m.last_login,
+         m.last_login_ip,
          COALESCE(w.balance, 0)::numeric(12,2) AS balance,
          COALESCE(w.locked_balance, 0)::numeric(12,2) AS locked_balance
        FROM members m

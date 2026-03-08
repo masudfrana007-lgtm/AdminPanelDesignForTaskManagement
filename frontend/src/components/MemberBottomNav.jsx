@@ -20,7 +20,7 @@ export default function MemberBottomNav({ active = "home" }) {
         <button
           className={`mNavItem ${active === "service" ? "active" : ""}`}
 
-//          onClick={() => nav("/member/service")}
+//          onClick={() => nav("/member/customerService")}
           onClick={() => nav("/member/customerService")}
           type="button"
         >

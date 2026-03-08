@@ -779,3 +779,9 @@
     grid-template-columns: 1fr !important;
   }
 }
+
+@media (max-width: 460px) {
+  .vipLogoCard {
+    margin-top: 10vh;
+  }
+}

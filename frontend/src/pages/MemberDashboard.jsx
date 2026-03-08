@@ -19,14 +19,15 @@ function rankLabel(r) {
 }
 
 /* ---------------- CONFIG ---------------- */
-const API_HOST = "http://159.198.40.145:5010";
+/* ---------------- CONFIG ---------------- */
+const API_HOST = import.meta.env.VITE_API_URL || ""; // "" works in prod if /api proxy is set
 
 function toAbsUrl(p) {
   const s = String(p || "").trim();
   if (!s) return "";
   if (s.startsWith("http://") || s.startsWith("https://")) return s;
-  if (s.startsWith("/")) return API_HOST + s;
-  return API_HOST + "/" + s;
+  if (s.startsWith("/uploads/")) return s; // relative to domain, e.g. https://eorder.vip/uploads/...
+  return "/uploads/" + s;                 // fallback
 }
 
 export default function Home() {

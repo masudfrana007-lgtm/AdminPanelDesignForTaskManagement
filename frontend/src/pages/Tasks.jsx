@@ -3,7 +3,12 @@ import api from "../services/api";
 import "../styles/app.css";
 import AppLayout from "../components/AppLayout";
 
-const FILE_BASE = "http://159.198.40.145:5010";
+// ✅ always use same domain (nginx proxy safe)
+const toAbsUrl = (p) => {
+  if (!p) return "";
+  if (/^(https?:)?\/\//i.test(p)) return p;
+  return p.startsWith("/") ? p : `/${p}`;
+};
 
 export default function Tasks() {
   const [list, setList] = useState([]);
@@ -315,7 +320,7 @@ export default function Tasks() {
                       <td>
                         {t.image_url ? (
                           <img
-                            src={`${FILE_BASE}${t.image_url}`}
+                            src={toAbsUrl(t.image_url)}
                             alt=""
                             style={{
                               width: 56,
@@ -463,7 +468,7 @@ export default function Tasks() {
                 {/* show existing image if no new selected */}
                 {!edit.image && edit.existing_image_url && (
                   <img
-                    src={`${FILE_BASE}${edit.existing_image_url}`}
+                    src={toAbsUrl(edit.existing_image_url)}
                     alt=""
                     style={{
                       width: 160,

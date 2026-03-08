@@ -27,6 +27,14 @@ function toTs(x) {
   return Number.isFinite(t) ? t : 0;
 }
 
+// ✅ nice datetime for "Last Online"
+function fmtDT(x) {
+  if (!x) return "-";
+  const t = typeof x === "number" ? x : Date.parse(String(x));
+  if (!Number.isFinite(t)) return String(x);
+  return new Date(t).toLocaleString();
+}
+
 export default function Members() {
   const me = getUser();
   const nav = useNavigate();
@@ -115,7 +123,6 @@ export default function Members() {
 
   const filtered = useMemo(() => {
     const q = norm(filters.q).toLowerCase();
-
     let rows = [...list];
 
     // ranking
@@ -136,13 +143,7 @@ export default function Members() {
     // search text
     if (q) {
       rows = rows.filter((m) => {
-        const hay = [
-          m?.id,
-          m?.short_id,
-          m?.nickname,
-          m?.phone,
-          m?.sponsor_short_id,
-        ]
+        const hay = [m?.id, m?.short_id, m?.nickname, m?.phone, m?.sponsor_short_id]
           .map((x) => norm(x).toLowerCase())
           .join(" ");
         return hay.includes(q);
@@ -155,12 +156,10 @@ export default function Members() {
       const tb = toTs(b?.created_at ?? b?.createdAt);
 
       if (filters.sort === "created_asc") {
-        // oldest first; if missing, fallback to id
         if (ta !== tb) return ta - tb;
         return Number(a?.id || 0) - Number(b?.id || 0);
       }
 
-      // newest first (default)
       if (ta !== tb) return tb - ta;
       return Number(b?.id || 0) - Number(a?.id || 0);
     });
@@ -168,9 +167,34 @@ export default function Members() {
     return rows;
   }, [list, filters]);
 
+  // ✅ Login Details renderer
+  // Map these fields to whatever your backend returns.
+const renderLoginDetails = (m) => {
+  const username = m?.nickname || "-";
+  const ip = m?.last_login_ip || "-";
+  const lastOnline = fmtDT(m?.last_login);
+
+  return (
+    <div style={{ display: "grid", gap: 4 }}>
+      <div className="small">
+        <b>Username:</b> {username}
+      </div>
+      <div className="small">
+        <b>IP:</b> {ip}
+      </div>
+      <div className="small">
+        <b>Last Online:</b> {lastOnline}
+      </div>
+    </div>
+  );
+};
+
   return (
     <AppLayout>
-      <div className="container">
+      <div
+        className="container"
+        style={{ width: "80vw", margin: "0 auto" }}
+      >        
         <div className="topbar">
           <div>
             <h2>Members</h2>
@@ -291,6 +315,10 @@ export default function Members() {
                   <th>Member ID</th>
                   <th>Nickname</th>
                   <th>Phone</th>
+
+                  {/* ✅ NEW COLUMN */}
+                  <th>Login Details</th>
+
                   <th>Ranking</th>
                   <th>Withdraw</th>
                   <th>Balance</th>
@@ -305,9 +333,12 @@ export default function Members() {
               <tbody>
                 {filtered.map((m) => (
                   <tr key={m.short_id || m.id}>
-                    <td>{m.id}</td>
+                    <td>{m.short_id}</td>
                     <td>{m.nickname}</td>
                     <td>{m.phone}</td>
+
+                    {/* ✅ NEW CELL */}
+                    <td>{renderLoginDetails(m)}</td>
 
                     <td>
                       <span className="badge">{m.ranking}</span>
@@ -388,7 +419,8 @@ export default function Members() {
 
                 {!filtered.length && (
                   <tr>
-                    <td colSpan="11" className="small">
+                    {/* ✅ colSpan updated: now 12 columns */}
+                    <td colSpan="12" className="small">
                       No members match these filters.
                     </td>
                   </tr>

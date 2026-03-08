@@ -100,11 +100,18 @@ export default function AssignSetCreate() {
                 }
                 value={memberOptions.find((o) => o.value === form.member_id) || null}
                 // keep it matching your UI sizing
-                styles={{
-                  control: (base) => ({ ...base, minHeight: 42 }),
-                  menu: (base) => ({ ...base, zIndex: 50 }),
-                }}
-              />
+                  styles={{
+                    control: (base) => ({ ...base, minHeight: 42 }),
+                    menu: (base) => ({ ...base, zIndex: 50, backgroundColor: "#eef6ff" }), // menu background
+                    option: (base, state) => ({
+                      ...base,
+                      backgroundColor: state.isFocused
+                        ? "#cfe0ff" // hover color
+                        : "#eef6ff", // default background
+                      color: "#000",
+                    }),
+                  }}
+                />
 
               <div className="small">
                 Agent sees only their members. Owner sees own + agent members.

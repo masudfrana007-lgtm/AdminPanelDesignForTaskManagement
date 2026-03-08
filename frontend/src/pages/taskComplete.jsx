@@ -112,7 +112,7 @@ export default function MemberDashboard() {
                   letterSpacing: "1px",
                 }}
               >
-                Eorder.io
+                eorder.vip
               </h2>
             </div>
 

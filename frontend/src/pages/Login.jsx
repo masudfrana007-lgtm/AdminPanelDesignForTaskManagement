@@ -16,7 +16,7 @@ export default function Login() {
     try {
       const { data } = await api.post("/auth/login", { email, password });
       saveAuth(data);
-      nav("/", { replace: true });
+      nav("/admin", { replace: true });
     } catch (e2) {
       setErr(e2?.response?.data?.message || "Login failed");
     }

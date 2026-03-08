@@ -107,10 +107,6 @@
 }
 
 /* ====== TASKS TABLE: FIT WIDTH (NO H-SCROLL) ====== */
-.tableWrap{
-  width: 100%;
-  overflow: hidden;          /* no horizontal scroll */
-}
 
 .table{
   width: 100%;
@@ -201,6 +197,7 @@
   font-weight: 800;
   font-size: 20px;
   margin-top: 4px;
+  color: black;
 }
 
 .taskThumb{
@@ -460,14 +457,14 @@
 
 .sx-metricLabel{
   font-size: 12px;
-  color: var(--muted);
+  color: black;
   margin-bottom: 4px;
 }
 
 .sx-metricValue{
   font-size: 16px;
   font-weight: 800;
-  color: var(--text);
+  color: black;
 }
 
 /* responsive */
@@ -490,4 +487,31 @@
 /* keep buttons/input looking normal */
 .sx-rowCombo td {
   background: transparent;
+}
+
+/* ✅ colored action buttons - ALWAYS solid */
+.users-page .btnMini{
+  width:auto;
+  padding:8px 12px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  font-weight:900;
+  color:#fff;
+}
+
+/* 🔴 Block button */
+.users-page .btnBlock{
+  background:#ef4444 !important;
+}
+
+/* 🟢 Unblock button */
+.users-page .btnUnblock{
+  background:#22c55e !important;
+}
+
+/* disabled */
+.users-page .btnMini:disabled{
+  opacity:.55;
+  cursor:not-allowed;
 }

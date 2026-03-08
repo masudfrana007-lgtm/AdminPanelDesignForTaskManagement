@@ -199,7 +199,7 @@ export default function TaskInstructionsGuide() {
             </button>
             <button 
               className="task-guide-help-btn"
-              onClick={() => navigate('/member/service')}
+              onClick={() => navigate('/member/customerService')}
             >
               <FaFileAlt />
               Need Help?

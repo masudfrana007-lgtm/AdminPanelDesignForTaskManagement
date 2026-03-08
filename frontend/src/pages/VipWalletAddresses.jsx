@@ -14,14 +14,11 @@ const VIPS = [
 const SLOT = { asset: "USDT", network: "TRC20", label: "USDT (TRC20)" };
 
 // ✅ backend host (image preview must use backend, not frontend 5175)
-const API_HOST = import.meta.env.VITE_API_HOST || "http://159.198.40.145:5010";
-
-function toAbsUrl(p) {
-  const s = String(p || "").trim();
-  if (!s) return "";
-  if (s.startsWith("http://") || s.startsWith("https://")) return s;
-  return `${API_HOST}${s.startsWith("/") ? "" : "/"}${s}`;
-}
+ const toAbsUrl = (p) => {
+   if (!p) return "";
+   if (/^(https?:)?\/\//i.test(p)) return p;
+   return p.startsWith("/") ? p : `/${p}`;
+ };
 
 function slotKey(vip_rank, asset, network) {
   return `${vip_rank}__${String(asset || "").toUpperCase()}__${String(
@@ -193,7 +190,7 @@ export default function VipWalletAddresses() {
             <div>
               <h3 style={{ margin: 0 }}>{SLOT.label}</h3>
               <div className="small" style={{ opacity: 0.8 }}>
-                Rank: <b>{vip}</b>
+                Rank: <b>{VIPS.find(v => v.key === vip)?.label || vip}</b>
               </div>
             </div>
 
@@ -214,7 +211,7 @@ export default function VipWalletAddresses() {
           <div className="row" style={{ gap: 12, marginTop: 12, flexWrap: "wrap" }}>
             <div style={{ flex: 1, minWidth: 260 }}>
               <div className="field">
-                <div className="label">Wallet address</div>
+                <div className="label" style={{ color: "#000" }}>Wallet address</div>
                 <input
                   className="input"
                   value={row.wallet_address || ""}
@@ -225,7 +222,7 @@ export default function VipWalletAddresses() {
               </div>
 
               <div className="field" style={{ marginTop: 10 }}>
-                <div className="label">QR / Photo</div>
+                <div className="label" style={{ color: "#000" }}>QR / Photo</div>
 
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                   <input

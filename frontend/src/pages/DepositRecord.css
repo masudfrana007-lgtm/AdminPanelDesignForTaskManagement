@@ -38,7 +38,7 @@
   border-radius:12px;
   border:1px solid rgba(255,255,255,.2);
   background:rgba(255,255,255,.12);
-  color:#fff;
+  color:#fff!important;
   cursor:pointer;
 }
 
@@ -46,6 +46,7 @@
   text-align:center;
   font-weight:600;
   font-size:15px;
+  color: white!important;
 }
 
 /* Filters */
@@ -225,7 +226,7 @@
   border-radius:12px;
   border:none;
   background:var(--brand);
-  color:#fff;
+  color:#fff!important;
   font-size:13px;
   cursor:pointer;
 }
@@ -248,4 +249,37 @@
 @keyframes fadeUp{
   from { opacity: 0; transform: translate(-50%, 8px); }
   to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* --- HARD RESET for this page only (prevents global CSS from washing it out) --- */
+.dpPage,
+.dpPage *{
+  opacity: 1 !important;
+  filter: none !important;
+  color: dimgray;
+}
+
+/* Force correct text colors inside cards */
+.dpCard{
+  color: var(--text) !important;
+}
+
+.dpRow{
+  color: var(--text) !important;
+}
+
+.dpLabel{
+  color: var(--muted) !important;
+}
+
+/* Make right-side values clearly visible if they are plain spans */
+.dpRow span:not(.dpLabel):not(.dpStatus){
+  color: dimgray!important;
+  font-weight: 600;
+}
+
+/* Footer link should not look disabled */
+.dpFooter a{
+  color: var(--brand) !important;
+  font-weight: 600;
 }

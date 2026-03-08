@@ -49,7 +49,7 @@ export default function MemberLogin() {
         {/* <div className="auth-icon">→</div> */}
 
         <div className="auth-title">Welcome Back</div>
-        <div className="auth-sub">Sign in to your Eorder.io account</div>
+        <div className="auth-sub">Sign in to your eorder.vip account</div>
 
         <form onSubmit={login} style={{ display: "grid", gap: 12 }}>
           <div style={{ textAlign: "left" }}>

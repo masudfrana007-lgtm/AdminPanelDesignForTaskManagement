@@ -19,12 +19,8 @@ function toImageUrl(img) {
   // already absolute: http / https / data url
   if (/^(https?:)?\/\//i.test(s) || /^data:/i.test(s)) return s;
 
-  // remove starting slashes so we can join cleanly
-  const clean = s.replace(/^\/+/, "");
-
-  // use same base as your axios baseURL
-  const base = (import.meta.env.VITE_API_URL || "http://localhost:5010").replace(/\/+$/, "");
-  return `${base}/${clean}`;
+  // relative URL from backend: just prepend /
+  return s.startsWith("/") ? s : `/${s}`;
 }
 
 // Keep your UI shape the same

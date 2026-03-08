@@ -78,7 +78,7 @@
   border-radius: 999px;
   border: 1px solid var(--line);
   background: rgba(255,255,255,.85);
-  color: var(--text);
+  color: black;
   font-weight: 600;
   font-size: 13px;
   cursor:pointer;
@@ -132,6 +132,7 @@
   padding: 4px 0;   /* ⬅ tighter rows */
   font-weight: 500;
   font-size: 13px;
+  color: dimgray;
 }
 
 
@@ -144,7 +145,6 @@
 .wdAmount{
   font-weight: 650; /* focus only here */
   font-size: 14px;
-  color: var(--text);
 }
 
 /* Footer */
@@ -250,7 +250,7 @@
 .wdModalTitle{
   font-weight: 650;
   font-size: 14px;
-  color: var(--text);
+  color: dimgray;
 }
 
 .wdClose{
@@ -318,7 +318,7 @@
 
 .wdDetailValue{
   font-weight: 550;
-  color: var(--text);
+  color: dimgray;
   word-break: break-all;
 }
 
